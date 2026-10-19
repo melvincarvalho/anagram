@@ -9,6 +9,17 @@ A no-build Preact client for private Nostr DMs and public chat rooms, wire-compa
 - **Media:** photos, video and audio upload to a Blossom server (default `blossom.nostr.build`, as Anagram) with a kind 24242 auth event, and are sent as NIP-92 `imeta` attachments. In rooms only trusted members may post media.
 - **Login:** nsec (kept in localStorage), NIP-07 extension (needs NIP-44), or a NIP-46 `bunker://` signer.
 
+## Privacy
+
+What leaves your device, and to whom. Nothing here is hidden from you; this is the list.
+
+- **Relays** (`APP_RELAYS` in `js/nostr.js`, plus the inbox relays people publish in kind 10050 and a room's own relays) see your IP, the gift-wrapped DMs you send and receive (not their contents), and your public room messages. DM content is NIP-44 encrypted end to end; relays see only wrapped events with a random throwaway sender key.
+- **nostr.social** (the did:nostr directory, `DIRECTORY` in `js/nostr.js`; source: [beacon](https://github.com/melvincarvalho/beacon)) is asked for the profiles of people you chat with and of room posters, for people search, and for follow lists on the New message screen. It therefore sees your IP and which public keys you look up. Everything it returns is a signed Nostr event that is verified locally; nothing is sent to it other than those lookups.
+- **Blossom** (`blossom.nostr.build` by default, changeable in Settings) receives the files you choose to upload, with a kind 24242 auth event signed by your key.
+- **Avatars and media hosts**: profile pictures load automatically from wherever the profile points (with `Referrer-Policy: no-referrer`). Images, video and audio inside messages load automatically only from trusted room members and your contacts; for anyone else you tap "Show media" first, because loading a file tells its host your IP.
+- **NIP-05 addresses** (`name@domain`) are verified by fetching `https://domain/.well-known/nostr.json`. This happens automatically for yourself, your contacts and people you have messaged; for anyone else the address is shown unverified with a "verify" tap.
+- **Your key** stays in this browser (localStorage) or in your NIP-07 extension / NIP-46 signer. No account server, no analytics, no third-party scripts (the CSP allows only same-origin code).
+
 ## Run
 
 Serve the folder with any static server, e.g. `python3 -m http.server`, and open it. Preact, signals, htm and nostr-tools are vendored as pinned ES modules in `vendor/` (see its README) and wired up by the import map in `index.html`, so no third-party code runs and the CSP allows only same-origin scripts. The `gh-pages` branch is the site.

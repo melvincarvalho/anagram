@@ -1853,6 +1853,14 @@ function Settings() {
       <${BlockedSettings} />
       <${NotificationSettings} />
       <div class="card">
+        <h3>Privacy</h3>
+        <p class="muted small">
+          Messages are end-to-end encrypted. Relays, the nostr.social directory (profiles and search), the media server and the hosts of
+          pictures you open can see your IP address. Media from strangers and NIP-05 checks for strangers wait for your tap.
+          <a href="https://github.com/melvincarvalho/anagram#privacy" target="_blank" rel="noopener noreferrer">Full details ↗</a>
+        </p>
+      </div>
+      <div class="card">
         <button class="danger" onClick=${store.logout}>Sign out of this account</button>
       </div>
     </div>
