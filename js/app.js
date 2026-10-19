@@ -1550,7 +1550,6 @@ function Nip05Line({ pubkey }) {
 }
 
 function PersonInfo({ pubkey, messages }) {
-  const encryption = useAction();
   const p = profiles.value[pubkey] ?? {};
   return html`<div class="hero">
       <${Avatar} pubkey=${pubkey} size=${96} />
@@ -1564,16 +1563,8 @@ function PersonInfo({ pubkey, messages }) {
       ${p.website && html`<${Field} label="Website" value=${p.website.replace(/^https:\/\//, '')} href=${p.website} />`}
     </section>
     <section>
-      <label>Message encryption
-        <select aria-label="Message encryption" value=${store.directPreference(pubkey)} disabled=${encryption.busy}
-          onChange=${(e) => encryption.run(() => store.setDirectProtocol(pubkey, e.target.value))}>
-          <option value="auto">Auto</option>
-          <option value="nip17">NIP-17</option>
-          <option value="ndr">Double ratchet (Iris)</option>
-        </select>
-      </label>
-      <p class="muted small">${encryption.busy ? 'Connecting… Approve device registration in your signer if asked.' : 'Auto prefers double ratchet when a compatible device is available. Existing messages keep their encryption.'}</p>
-      ${encryption.error && html`<p class="error">${encryption.error}</p>`}
+      <h4>Message encryption</h4>
+      <p class="muted small">${store.directProtocol(pubkey) === 'ndr' ? 'Double ratchet' : 'NIP-17'}</p>
     </section>
     <${DidIdentity} pubkey=${pubkey} />
     <${ChatToggles} chatKey=${pubkey} />
@@ -1754,7 +1745,7 @@ function DirectChat({ id }) {
       <${Avatar} pubkey=${peer} size=${32} />
       <button class="title" title="Chat info" onClick=${() => (infoOpen.value = !infoOpen.value)}>
         <b>${peer === me.value.pubkey ? 'Note to self' : store.displayName(peer)}</b>
-        <small class="mono" title=${store.directProtocol(peer) === 'ndr' ? 'Double ratchet' : 'NIP-17'}>${store.protocolChecking.value === peer ? 'Checking encryption…' : 'Encrypted'} · ${store.verifiedNip05(peer) ? `✓ ${store.verifiedNip05(peer)}` : nostr.shortKey(peer)}</small>
+        <small class="mono">${store.verifiedNip05(peer) ? `✓ ${store.verifiedNip05(peer)}` : nostr.shortKey(peer)}</small>
       </button>
       <button class="icon" title="Search (Ctrl+F)" aria-label="Search this chat" onClick=${() => (chatSearch.value = !chatSearch.value)}>🔍</button>
     </header>
@@ -2050,7 +2041,7 @@ function Settings() {
         <h3>Messaging</h3>
         <label class="check"><input type="checkbox" checked=${store.preferDoubleRatchet.value}
           onChange=${(e) => store.setPreferDoubleRatchet(e.target.checked)} /> Prefer double ratchet when available</label>
-        <p class="muted small">For Auto chats. Existing chats keep their encryption; change it in chat info. Double-ratchet chats never switch back automatically.</p>
+        <p class="muted small">For Auto chats. Existing chats keep their encryption. Double-ratchet chats never switch back automatically.</p>
         <${MessagingDevices} owner=${signer.pubkey} />
       </div>
       <div class="card">
