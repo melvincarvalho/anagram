@@ -86,10 +86,19 @@ function rememberAccount(signer) {
 
 // Stop everything belonging to the current account without forgetting it.
 function teardown() {
+  flushSaves();
+  if (draftTimer) {
+    clearTimeout(draftTimer);
+    if (me.value) storage.set(`lite:drafts:${me.value.pubkey}`, drafts.value);
+  }
   inboxSub?.close();
   inboxSub = null;
   for (const sub of roomSubs.values()) sub.close();
   roomSubs.clear();
+  // Drop every relay connection: they carry the old account's NIP-42 auth and would link accounts.
+  nostr.pool.close([...nostr.pool.relays.keys()]);
+  contactsLoaded = null;
+  contactQueue = Promise.resolve();
   seenWraps.clear();
   deleted.clear();
   oldestWrap = Infinity;
@@ -157,7 +166,15 @@ export async function restoreSession() {
 // Sign out of the current account only; move to the next remembered one if any.
 export async function logout() {
   const current = me.value?.pubkey;
+  const flushed = flushSaves();
   teardown();
+  // Forget this account's data on this device: decrypted DMs and per-account settings.
+  if (current) {
+    await flushed;
+    await db.clearAccount(current).catch(() => {});
+    for (const key of Object.keys(localStorage)) if (key.startsWith('lite:') && key.endsWith(`:${current}`)) storage.set(key, undefined);
+    if (storage.get('lite:active', null) === current) storage.set('lite:active', undefined);
+  }
   storage.set('lite:accounts', savedAccounts().filter((a) => a.pubkey !== current));
   storage.set('lite:session', undefined);
   refreshAccounts();
@@ -192,7 +209,8 @@ export function setDraft(key, text) {
   // Debounce storage writes while typing.
   clearTimeout(draftTimer);
   const account = me.value.pubkey;
-  draftTimer = setTimeout(() => storage.set(`lite:drafts:${account}`, drafts.value), 300);
+  const snapshot = drafts.value;
+  draftTimer = setTimeout(() => storage.set(`lite:drafts:${account}`, snapshot), 300);
 }
 
 // ---------- Unread ----------
@@ -418,13 +436,18 @@ function applyDeletions(ids, author) {
 const reactionTarget = (event) => event.tags.find((t) => t[0] === 'e' && /^[a-f0-9]{64}$/.test(t[1]))?.[1];
 
 function queueSave(row) {
+  // Late writes for an account that is no longer active (e.g. just signed out) are dropped.
+  if (row.account !== me.value?.pubkey) return;
   pendingRows.push(row);
   clearTimeout(flushTimer);
-  flushTimer = setTimeout(() => {
-    const rows = pendingRows;
-    pendingRows = [];
-    db.saveDirectMessages(rows).catch((e) => notify(`Saving messages failed: ${e.message}`));
-  }, 300);
+  flushTimer = setTimeout(flushSaves, 300);
+}
+
+function flushSaves() {
+  clearTimeout(flushTimer);
+  const rows = pendingRows;
+  pendingRows = [];
+  return rows.length ? db.saveDirectMessages(rows).catch((e) => notify(`Saving messages failed: ${e.message}`)) : Promise.resolve();
 }
 
 function peerOf(rumor, self) {
@@ -520,6 +543,7 @@ async function startInbox() {
       onevent: enqueue,
       oneose: () =>
         queue.then(() => {
+          if (me.value !== signer) return;
           syncing.value = false;
           storage.set(syncKey, nostr.now());
         }),
@@ -632,7 +656,14 @@ export async function publishDefaultInbox() {
 
 const contactRelays = () => nostr.uniq([...(inboxRelays.value ?? []), ...nostr.APP_RELAYS]);
 
-async function loadContacts() {
+let contactsLoaded = null; // resolves once the contact list has been read (or failed)
+let contactQueue = Promise.resolve(); // serialises list updates so concurrent adds can't overwrite each other
+
+function loadContacts() {
+  return (contactsLoaded = readContacts());
+}
+
+async function readContacts() {
   const signer = me.value;
   try {
     const list = await nostr.fetchContactList(signer, nostr.uniq([...nostr.APP_RELAYS, ...nostr.INDEXERS]));
@@ -646,13 +677,23 @@ async function loadContacts() {
 }
 
 // Anagram adds people you message to your private contact list; do the same.
-async function addContact(pubkey) {
+function addContact(pubkey) {
+  const run = contactQueue.then(() => addContactNow(pubkey));
+  contactQueue = run.catch(() => {});
+  return run;
+}
+
+async function addContactNow(pubkey) {
   const signer = me.value;
-  if (!contactList || contacts.value.includes(pubkey)) return;
+  await contactsLoaded;
+  if (me.value !== signer || contacts.value.includes(pubkey)) return;
+  // Never publish over a list we could not read: that would wipe the user's contacts.
+  if (!contactList) throw new Error('your contact list has not loaded yet');
   const latest = await nostr.fetchContactList(signer, contactRelays());
   const base = latest.event && latest.event.created_at > (contactList.event?.created_at ?? 0) ? latest : contactList;
   const pubkeys = nostr.uniq([...base.pubkeys, pubkey]);
   const event = await nostr.publishContactList(signer, pubkeys, contactRelays(), base.event);
+  if (me.value !== signer) return;
   contactList = { event, pubkeys };
   contacts.value = pubkeys;
 }
@@ -673,7 +714,16 @@ function setRoom(address, patch) {
   roomState.value = { ...roomState.value, [address]: { ...current, ...patch } };
 }
 
+// Blocked authors are dropped at the source so they never reach unread counts,
+// notifications, previews or search.
+const blockedIn = (address) => {
+  const room = roomState.value[address]?.room;
+  return (pubkey) => !!room && nostr.roomPolicy(room, pubkey) === 'blocked';
+};
+
 function addRoomMessages(address, events) {
+  const isBlocked = blockedIn(address);
+  events = events.filter((e) => !isBlocked(e.pubkey));
   const current = roomState.value[address]?.messages ?? [];
   const ids = new Set(current.flatMap(knownIds));
   const fresh = events.filter(
@@ -717,7 +767,9 @@ export async function openRoom(pointer) {
     return;
   }
   if (me.value !== owner) return; // switched account while loading
-  setRoom(address, { room, loading: false });
+  // A newer room definition may block people whose messages are already loaded.
+  const isBlocked = (pk) => nostr.roomPolicy(room, pk) === 'blocked';
+  setRoom(address, { room, loading: false, messages: (roomState.value[address]?.messages ?? []).filter((m) => !isBlocked(m.pubkey)) });
   if (joinedRooms.value.some((r) => r.address === address)) {
     // Refresh name/picture without moving the room in the list.
     const entry = roomEntry(room);
