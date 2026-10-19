@@ -359,8 +359,9 @@ function Tick({ id }) {
 function MessageList({ messages, policy = () => 'trusted', badge = () => '', mediaAuto = () => true, onReply, onReact, onEdit, onDelete, footer, header }) {
   const ref = useRef();
   const stick = useRef(true);
-  const press = useRef();
+  const touch = useRef(null);
   const [menu, setMenu] = useState(null);
+  const [away, setAway] = useState(null); // message count when the user scrolled up, else null
   const byId = Object.fromEntries(messages.map((m) => [m.id, m]));
   useLayoutEffect(() => {
     if (stick.current) ref.current.scrollTop = ref.current.scrollHeight;
@@ -368,7 +369,13 @@ function MessageList({ messages, policy = () => 'trusted', badge = () => '', med
   const onScroll = () => {
     const el = ref.current;
     stick.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+    if (stick.current && away !== null) setAway(null);
+    else if (!stick.current && away === null) setAway(messages.length);
     if (menu) setMenu(null);
+  };
+  const toBottom = () => {
+    ref.current.scrollTo({ top: ref.current.scrollHeight, behavior: 'smooth' });
+    setAway(null);
   };
   const jumpTo = (id) => {
     const el = ref.current.querySelector(`[data-id="${id}"]`);
@@ -379,14 +386,40 @@ function MessageList({ messages, policy = () => 'trusted', badge = () => '', med
     el.classList.add('flash');
   };
   const openMenu = (message, x, y) => setMenu({ message, x, y });
-  // Long-press opens the menu on touch screens.
+  // Touch: long-press opens the menu, swipe right replies (Telegram mobile).
   const touchStart = (m) => (e) => {
     const t = e.touches[0];
-    press.current = setTimeout(() => openMenu(m, t.clientX, t.clientY), 450);
+    const state = { m, x: t.clientX, y: t.clientY, dx: 0, el: e.currentTarget, swiping: false };
+    state.press = setTimeout(() => openMenu(m, t.clientX, t.clientY), 450);
+    touch.current = state;
   };
-  const touchEnd = () => clearTimeout(press.current);
+  const touchMove = (e) => {
+    const s = touch.current;
+    if (!s) return;
+    const t = e.touches[0];
+    const dx = t.clientX - s.x;
+    const dy = t.clientY - s.y;
+    if (Math.abs(dx) > 8 || Math.abs(dy) > 8) clearTimeout(s.press);
+    if (!s.swiping && onReply && dx > 12 && Math.abs(dx) > 2 * Math.abs(dy)) s.swiping = true;
+    if (s.swiping) {
+      s.dx = Math.max(0, Math.min(dx, 90));
+      s.el.style.transform = `translateX(${s.dx}px)`;
+      s.el.classList.toggle('will-reply', s.dx > 60);
+    }
+  };
+  const touchEnd = () => {
+    const s = touch.current;
+    touch.current = null;
+    if (!s) return;
+    clearTimeout(s.press);
+    if (!s.swiping) return;
+    s.el.style.transform = '';
+    s.el.classList.remove('will-reply');
+    if (s.dx > 60) onReply(s.m);
+  };
   const visible = messages.filter((m) => policy(m.pubkey) !== 'blocked');
-  return html`<div class="messages" ref=${ref} onScroll=${onScroll}>
+  const below = away === null ? 0 : Math.max(0, messages.length - away);
+  return html`<div class="thread"><div class="messages" ref=${ref} onScroll=${onScroll}>
     ${header}
     ${visible.map((m, i) => {
       const mine = m.pubkey === me.value.pubkey;
@@ -408,9 +441,10 @@ function MessageList({ messages, policy = () => 'trusted', badge = () => '', med
             openMenu(m, e.clientX, e.clientY);
           }}
           onDblClick=${() => onReply?.(m)}
-          onTouchStart=${touchStart(m)}
-          onTouchEnd=${touchEnd}
-          onTouchMove=${touchEnd}
+          ontouchstart=${touchStart(m)}
+          ontouchmove=${touchMove}
+          ontouchend=${touchEnd}
+          ontouchcancel=${touchEnd}
         >
           <div class="slot">${last && !mine && html`<${Avatar} pubkey=${m.pubkey} size=${32} />`}</div>
           <div class="bubble">
@@ -427,6 +461,11 @@ function MessageList({ messages, policy = () => 'trusted', badge = () => '', med
     })}
     ${footer}
     ${menu && html`<${MessageMenu} menu=${menu} onReply=${onReply} onReact=${onReact} onEdit=${onEdit} onDelete=${onDelete} onClose=${() => setMenu(null)} />`}
+  </div>
+  ${away !== null &&
+  html`<button class="to-bottom" title="Jump to latest" onClick=${toBottom}>
+    ↓${below > 0 && html`<span class="unread">${below}</span>`}
+  </button>`}
   </div>`;
 }
 
@@ -604,6 +643,8 @@ function RoomInfo({ room, messages }) {
       <${Field} label="Relays" value=${room.relays.map((r) => r.replace(/^wss:\/\//, '')).join(', ')} />
     </section>
     <${SharedMedia} messages=${messages} allowed=${(pk) => nostr.roomPolicy(room, pk) === 'trusted'} />
+    ${joinedRooms.value.some((r) => r.address === room.address) &&
+    html`<section><button class="danger wide" onClick=${() => store.leaveRoom(room.address)}>Leave room</button></section>`}
     <section>
       <h4>Members</h4>
       ${authors.map(
@@ -699,9 +740,9 @@ function RoomChat({ id }) {
         <b>${room.name}</b>
         <small>${room.about || `by ${store.displayName(room.owner)}`}</small>
       </button>
-      <button onClick=${() => copy(`${location.origin}${location.pathname}#/room/${nostr.encodeRoomLink(room)}`, 'Room link copied')}>Share</button>
+      <button class="wide-only" onClick=${() => copy(`${location.origin}${location.pathname}#/room/${nostr.encodeRoomLink(room)}`, 'Room link copied')}>Share</button>
       ${joined
-        ? html`<button onClick=${() => store.leaveRoom(room.address)}>Leave</button>`
+        ? html`<button class="wide-only" onClick=${() => store.leaveRoom(room.address)}>Leave</button>`
         : html`<button class="primary" onClick=${() => store.joinRoom(room)}>Join</button>`}
     </header>
     <${InfoPanel}><${RoomInfo} room=${room} messages=${state.messages} /></${InfoPanel}>
