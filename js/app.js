@@ -1548,13 +1548,13 @@ function DirectChat({ id }) {
   useEffect(() => peer && store.requestProfiles([peer]), [peer]);
   useEffect(() => peer ? store.openDirectChat(peer) : undefined, [peer]);
   if (!peer) return html`<section class="main empty"><p class="error">Invalid contact.</p></section>`;
-  return html`<section class="main">
+  return html`<section class="main" data-testid="direct-chat" data-protocol=${store.directProtocol(peer)}>
     <header class="bar">
       <a class="back" href="#">‹</a>
       <${Avatar} pubkey=${peer} size=${32} />
       <button class="title" title="Chat info" onClick=${() => (infoOpen.value = !infoOpen.value)}>
         <b>${peer === me.value.pubkey ? 'Note to self' : store.displayName(peer)}</b>
-        <small class="mono">${store.protocolChecking.value === peer ? 'Checking encryption…' : store.directProtocol(peer) === 'ndr' ? 'Double ratchet' : 'NIP-17'} · ${store.verifiedNip05(peer) ? `✓ ${store.verifiedNip05(peer)}` : nostr.shortKey(peer)}</small>
+        <small class="mono" title=${store.directProtocol(peer) === 'ndr' ? 'Double ratchet' : 'NIP-17'}>${store.protocolChecking.value === peer ? 'Checking encryption…' : 'Encrypted'} · ${store.verifiedNip05(peer) ? `✓ ${store.verifiedNip05(peer)}` : nostr.shortKey(peer)}</small>
       </button>
       <button class="icon" title="Search (Ctrl+F)" aria-label="Search this chat" onClick=${() => (chatSearch.value = !chatSearch.value)}>🔍</button>
     </header>
@@ -1579,7 +1579,7 @@ function DirectChat({ id }) {
           <button onClick=${() => store.toggleBlock(peer).catch(fail('Unblock'))}>Unblock</button></footer>`
       : html`<${Composer}
       ...${actions.composer}
-      placeholder=${store.protocolChecking.value === peer ? 'Checking encryption…' : store.directProtocol(peer) === 'ndr' ? 'Double-ratchet message' : 'NIP-17 message'}
+      placeholder=${store.protocolChecking.value === peer ? 'Checking encryption…' : 'Encrypted message'}
       draftKey=${peer}
       mentionables=${[peer]}
       onSend=${async (text, tags) => {

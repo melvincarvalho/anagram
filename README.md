@@ -25,7 +25,7 @@ Auto chat is open and rechecks on reopening, so later support upgrades future
 messages. Sending does not poll relays. Once Auto selects double ratchet it never
 automatically downgrades, including after failure or disabling the preference.
 Existing NIP-17 conversations upgrade only after choosing Auto or Double ratchet.
-The header shows the current transport; a message's menu shows its own transport.
+The header's tooltip shows the current transport; a message's menu shows its own transport.
 
 The optional transport supports direct text messages, replies, reactions, edits and
 NIP-92 attachment tags. Both people need a compatible client, such as Iris. New
