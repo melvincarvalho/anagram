@@ -524,6 +524,14 @@ function ChatMenu({ menu, onClose }) {
     <button role="menuitem" onClick=${act(() => store.toggleMuted(key))}>${store.isMuted(key) ? '🔔 Unmute' : '🔕 Mute'}</button>
     ${store.unreadCount(key, messages) > 0 &&
     html`<button role="menuitem" onClick=${act(() => store.markRead(key, messages[messages.length - 1].created_at))}>✓ Mark as read</button>`}
+    ${menu.chat.peer &&
+    menu.chat.peer !== me.value.pubkey &&
+    html`<${ConfirmButton} role="menuitem" label="⛔ Block" confirm="Tap again to block" onConfirm=${act(() => store.toggleBlock(key).catch(fail('Block')))} />`}
+    ${menu.chat.peer &&
+    html`<${ConfirmButton} role="menuitem" label="🗑 Delete chat" confirm="Tap again to delete this chat" onConfirm=${act(() => {
+      store.deleteChat(key);
+      if (route.value.kind === 'dm' && nostr.decodePubkey(route.value.id) === key) store.go('');
+    })} />`}
   </div>`;
 }
 
@@ -766,6 +774,8 @@ function MessageMenu({ menu, onClose, onReply, onReact, onEdit, onDelete, onMore
     <button role="menuitem" onClick=${act(() => copy(nostr.did(m.pubkey), 'DID copied'))}>⧉ Copy author DID</button>
     <button role="menuitem" onClick=${act(() => window.open(nostr.profileUrl(m.pubkey), '_blank', 'noopener'))}>👤 View profile</button>
     ${m.pubkey === me.value.pubkey && onEdit && html`<button role="menuitem" onClick=${act(() => onEdit(m))}>✎ Edit</button>`}
+    ${m.pubkey !== me.value.pubkey &&
+    html`<${ConfirmButton} role="menuitem" label=${`⛔ Block ${store.displayName(m.pubkey)}`} confirm="Tap again to block" onConfirm=${act(() => store.toggleBlock(m.pubkey).catch(fail('Block')))} />`}
     ${m.pubkey === me.value.pubkey &&
     onDelete &&
     (confirming
@@ -1237,6 +1247,18 @@ function Field({ label, value, onCopy, href }) {
   </div>`;
 }
 
+// A destructive action that asks for a second tap instead of a browser dialog.
+function ConfirmButton({ label, confirm, onConfirm, className = 'danger', role }) {
+  const [armed, setArmed] = useState(false);
+  return html`<button role=${role} class=${className} onClick=${(e) => {
+    e.stopPropagation();
+    if (armed) onConfirm();
+    else setArmed(true);
+  }}>${armed ? confirm : label}</button>`;
+}
+
+const fail = (what) => (e) => store.notify(`${what} failed: ${e.message}`);
+
 function ChatToggles({ chatKey }) {
   return html`<section class="toggles">
     <label class="check"><input type="checkbox" checked=${store.isPinned(chatKey)} onChange=${() => store.togglePinned(chatKey)} /> 📌 Pin to top</label>
@@ -1259,6 +1281,16 @@ function PersonInfo({ pubkey, messages }) {
       <${Field} label="Profile" value="nostr.social ↗" href=${nostr.profileUrl(pubkey)} />
     </section>
     <${ChatToggles} chatKey=${pubkey} />
+    ${pubkey !== me.value.pubkey &&
+    html`<section class="actions">
+      ${store.isBlocked(pubkey)
+        ? html`<button onClick=${() => store.toggleBlock(pubkey).catch(fail('Unblock'))}>Unblock</button>`
+        : html`<${ConfirmButton} label="⛔ Block" confirm="Tap again to block" onConfirm=${() => store.toggleBlock(pubkey).catch(fail('Block'))} />`}
+      <${ConfirmButton} label="🗑 Delete chat" confirm="Tap again to delete this chat" onConfirm=${() => {
+        store.deleteChat(pubkey);
+        store.go('');
+      }} />
+    </section>`}
     <${SharedMedia} messages=${messages} allowed=${() => true} />`;
 }
 
@@ -1383,7 +1415,10 @@ function DirectChat({ id }) {
             </button>`}
       </div>`}
     />
-    <${Composer}
+    ${store.isBlocked(peer)
+      ? html`<footer class="composer blocked-bar">You blocked this person.
+          <button onClick=${() => store.toggleBlock(peer).catch(fail('Unblock'))}>Unblock</button></footer>`
+      : html`<${Composer}
       ...${actions.composer}
       placeholder="Encrypted message"
       draftKey=${peer}
@@ -1391,7 +1426,7 @@ function DirectChat({ id }) {
         await store.sendDirectMessage(peer, text, actions.composer.replyTo, null, tags);
         actions.clearReply();
       }}
-    />
+    />`}
   </section>`;
 }
 

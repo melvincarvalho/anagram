@@ -563,6 +563,33 @@ export async function fetchContactList(signer, relays) {
   return { event, pubkeys };
 }
 
+// ---------- Mute list (Anagram: kind 10000, private ['p'] muted / ['bp'] blocked, NIP-44 to self) ----------
+
+export async function fetchMuteList(signer, relays) {
+  const event = await pool.get(relays, { kinds: [10000], authors: [signer.pubkey] });
+  if (!event) return { event: null, entries: [] };
+  let entries = [];
+  if (event.content.trim()) {
+    const parsed = JSON.parse(await signer.decrypt(signer.pubkey, event.content));
+    entries = Array.isArray(parsed) ? parsed.filter((t) => Array.isArray(t)) : [];
+  }
+  return { event, entries };
+}
+
+// Rewrites only the 'bp' (blocked) entries; everything else (muted, words, ...) and public tags are kept.
+export async function publishMuteList(signer, blocked, previous, relays) {
+  const kept = (previous?.entries ?? []).filter((t) => t[0] !== 'bp' && !(t[0] === 'p' && blocked.includes(t[1])));
+  const entries = [...kept, ...uniq(blocked).map((pk) => ['bp', pk])];
+  const event = await signer.sign({
+    kind: 10000,
+    created_at: Math.max(now(), (previous?.event?.created_at ?? 0) + 1),
+    tags: previous?.event?.tags ?? [],
+    content: await signer.encrypt(signer.pubkey, JSON.stringify(entries)),
+  });
+  await publish(relays, event, signer);
+  return { event, entries };
+}
+
 export async function publishContactList(signer, pubkeys, relays, previous) {
   const event = await signer.sign({
     kind: 30000,

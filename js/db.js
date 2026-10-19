@@ -49,6 +49,13 @@ export const loadProfiles = () => run('profiles', 'readonly', (s) => s.getAll())
 export const saveProfiles = (rows) =>
   run('profiles', 'readwrite', (s) => rows.forEach((r) => s.put(r)));
 
+// Remove one conversation's stored messages (Delete chat).
+export async function deleteConversation(account, peer) {
+  const rows = await loadDirectMessages(account);
+  const ids = rows.filter((r) => r.peer === peer).map((r) => r.id);
+  return run('dms', 'readwrite', (s) => ids.forEach((id) => s.delete([account, id])));
+}
+
 export async function clearAccount(account) {
   const db = await open();
   await new Promise((resolve, reject) => {

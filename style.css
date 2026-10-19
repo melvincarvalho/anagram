@@ -1252,3 +1252,19 @@ mark {
   background: rgb(127 127 127 / 0.15);
   cursor: text;
 }
+
+.info .actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.blocked-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--muted);
+}
+.menu button.danger {
+  color: var(--danger);
+}

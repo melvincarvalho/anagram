@@ -15,6 +15,10 @@ export const toast = signal('');
 export const reactions = signal({}); // target message id -> [{ id, pubkey, emoji }]
 export const contacts = signal([]);
 export const chatPrefs = signal({ pinned: [], muted: [] }); // chat keys
+export const blocked = signal([]); // pubkeys blocked via the NIP-51 mute list ('bp', Anagram)
+export const clearedAt = signal({}); // peer -> time the chat was deleted on this device
+let muteList = null; // { event, entries } once read
+let muteQueue = Promise.resolve();
 export const drafts = signal({}); // chat key -> unsent text
 export const readMarks = signal({}); // chat key (peer hex or room address) -> last read created_at
 let readSince = 0; // messages before first use of this device count as read // pubkeys from the private contact list
@@ -102,6 +106,8 @@ function teardown() {
   nostr.pool.close([...nostr.pool.relays.keys()]);
   contactsLoaded = null;
   contactQueue = Promise.resolve();
+  muteList = null;
+  muteQueue = Promise.resolve();
   dmCursors.clear();
   dmDone.clear();
   roomPaging.clear();
@@ -111,6 +117,8 @@ function teardown() {
   batch(() => {
     me.value = null;
     contacts.value = [];
+    blocked.value = [];
+    clearedAt.value = {};
     reactions.value = {};
     dms.value = {};
     roomState.value = {};
@@ -140,6 +148,7 @@ export async function login(signer, remember) {
   readMarks.value = storage.get(`lite:read:${signer.pubkey}`, {});
   drafts.value = storage.get(`lite:drafts:${signer.pubkey}`, {});
   chatPrefs.value = { pinned: [], muted: [], ...storage.get(`lite:prefs:${signer.pubkey}`, {}) };
+  clearedAt.value = storage.get(`lite:cleared:${signer.pubkey}`, {});
   readSince = storage.get(`lite:read-since:${signer.pubkey}`, 0);
   if (!readSince) storage.set(`lite:read-since:${signer.pubkey}`, (readSince = nostr.now()));
   const starter = nostr.starterRoom();
@@ -149,6 +158,7 @@ export async function login(signer, remember) {
   requestProfiles([signer.pubkey]);
   for (const room of joinedRooms.value) openRoom(room);
   loadContacts();
+  loadMuteList();
   await startInbox();
 }
 
@@ -187,6 +197,63 @@ export async function logout() {
   go('');
   const next = accounts.value[0];
   if (next) await switchAccount(next.pubkey).catch((e) => notify(`Could not switch: ${e.message}`));
+}
+
+// ---------- Blocking & deleting chats ----------
+
+export const isBlocked = (pk) => blocked.value.includes(pk);
+
+async function loadMuteList() {
+  const signer = me.value;
+  try {
+    const list = await nostr.fetchMuteList(signer, nostr.uniq([...nostr.APP_RELAYS, ...nostr.INDEXERS]));
+    if (me.value !== signer) return;
+    muteList = list;
+    applyBlocked(nostr.uniq(list.entries.filter((t) => t[0] === 'bp').map((t) => t[1])));
+  } catch (e) {
+    notify(`Could not read your block list: ${e.message}`);
+  }
+}
+
+// Drop a blocked person's messages everywhere they are already shown.
+function applyBlocked(list) {
+  blocked.value = list;
+  const gone = new Set(list);
+  const next = { ...dms.value };
+  for (const pk of list) delete next[pk];
+  dms.value = next;
+  const rooms = {};
+  for (const [address, state] of Object.entries(roomState.value))
+    rooms[address] = { ...state, messages: state.messages.filter((m) => !gone.has(m.pubkey)) };
+  roomState.value = rooms;
+}
+
+export function toggleBlock(pubkey) {
+  const run = muteQueue.then(async () => {
+    const signer = me.value;
+    // Merge into the newest list so mutes and other entries set elsewhere survive.
+    const latest = await nostr.fetchMuteList(signer, nostr.uniq([...nostr.APP_RELAYS, ...nostr.INDEXERS])).catch(() => null);
+    const base = latest?.event && latest.event.created_at > (muteList?.event?.created_at ?? 0) ? latest : muteList;
+    if (!base && !latest) throw new Error('your block list could not be read, try again');
+    const current = nostr.uniq((base?.entries ?? []).filter((t) => t[0] === 'bp').map((t) => t[1]));
+    const nextList = current.includes(pubkey) ? current.filter((pk) => pk !== pubkey) : [...current, pubkey];
+    const relays = nostr.uniq([...nostr.APP_RELAYS, ...nostr.INDEXERS, ...(inboxRelays.value ?? [])]);
+    muteList = await nostr.publishMuteList(signer, nextList, base ?? { event: null, entries: [] }, relays);
+    if (me.value === signer) applyBlocked(nextList);
+  });
+  muteQueue = run.catch(() => {});
+  return run;
+}
+
+// Delete a chat on this device: hide everything up to now and drop stored messages.
+export async function deleteChat(peer) {
+  const signer = me.value;
+  clearedAt.value = { ...clearedAt.value, [peer]: nostr.now() };
+  storage.set(`lite:cleared:${signer.pubkey}`, clearedAt.value);
+  const next = { ...dms.value };
+  delete next[peer];
+  dms.value = next;
+  await db.deleteConversation(signer.pubkey, peer).catch(() => {});
 }
 
 // ---------- Pinned & muted chats ----------
@@ -267,7 +334,7 @@ function mentionsMe(event) {
 }
 
 function emitIncoming(chat, message) {
-  if (!me.value || message.pubkey === me.value.pubkey || message.created_at < liveSince) return;
+  if (!me.value || message.pubkey === me.value.pubkey || message.created_at < liveSince || isBlocked(message.pubkey)) return;
   const settings = notifySettings.value;
   if (isMuted(chat.peer ?? chat.room.address)) return;
   if (chat.peer && !settings.dms) return;
@@ -415,6 +482,7 @@ function addMessages(list) {
   const next = { ...dms.value };
   const touched = new Set();
   for (const m of list) {
+    if (isBlocked(m.pubkey) || isBlocked(m.peer) || m.created_at <= (clearedAt.value[m.peer] ?? 0)) continue;
     const thread = next[m.peer] ?? [];
     if (thread.some((x) => knownIds(x).includes(m.id))) continue;
     next[m.peer] = [...thread, m];
@@ -815,7 +883,8 @@ export const conversations = computed(() => {
     .filter(([, thread]) => thread.length)
     .map(([peer, thread]) => ({ peer, last: thread[thread.length - 1] }));
   const known = new Set(rows.map((r) => r.peer));
-  for (const pk of contacts.value) if (!known.has(pk)) rows.push({ peer: pk, last: null });
+  for (const pk of contacts.value)
+    if (!known.has(pk) && !isBlocked(pk) && !clearedAt.value[pk]) rows.push({ peer: pk, last: null });
   return rows.sort((a, b) => (b.last?.created_at ?? 0) - (a.last?.created_at ?? 0));
 });
 
@@ -834,8 +903,8 @@ const blockedIn = (address) => {
 };
 
 function addRoomMessages(address, events) {
-  const isBlocked = blockedIn(address);
-  events = events.filter((e) => !isBlocked(e.pubkey));
+  const roomBlocks = blockedIn(address);
+  events = events.filter((e) => !roomBlocks(e.pubkey) && !isBlocked(e.pubkey));
   const current = roomState.value[address]?.messages ?? [];
   const ids = new Set(current.flatMap(knownIds));
   const fresh = events.filter(
@@ -880,8 +949,8 @@ export async function openRoom(pointer) {
   }
   if (me.value !== owner) return; // switched account while loading
   // A newer room definition may block people whose messages are already loaded.
-  const isBlocked = (pk) => nostr.roomPolicy(room, pk) === 'blocked';
-  setRoom(address, { room, loading: false, messages: (roomState.value[address]?.messages ?? []).filter((m) => !isBlocked(m.pubkey)) });
+  const hidden = (pk) => nostr.roomPolicy(room, pk) === 'blocked' || isBlocked(pk);
+  setRoom(address, { room, loading: false, messages: (roomState.value[address]?.messages ?? []).filter((m) => !hidden(m.pubkey)) });
   if (joinedRooms.value.some((r) => r.address === address)) {
     // Refresh name/picture without moving the room in the list.
     const entry = roomEntry(room);
