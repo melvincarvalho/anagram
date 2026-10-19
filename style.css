@@ -1433,3 +1433,16 @@ mark {
 .blocked-row .label {
   flex: 1;
 }
+
+.audio {
+  display: block;
+  width: min(100%, 320px);
+  margin: 4px 0;
+}
+.nip05-unchecked,
+.nip05-failed {
+  opacity: 0.8;
+}
+.nip05-unchecked button.link {
+  font-size: inherit;
+}

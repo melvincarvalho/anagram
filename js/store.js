@@ -547,17 +547,37 @@ function pumpDid() {
 // Verified NIP-05 addresses: pubkey -> address that checked out ('' = failed). Per session.
 export const nip05Verified = signal({});
 const nip05Checking = new Set();
+// Verifying fetches https://<their domain>/.well-known/nostr.json, which tells that domain
+// your IP. So it happens automatically only for people you already deal with (yourself,
+// contacts, people you've messaged); for anyone else it waits for an explicit tap.
+const trustedForLookup = (pk) => pk === me.value?.pubkey || contacts.value.includes(pk) || (dms.value[pk] ?? []).some((m) => m.pubkey === me.value?.pubkey);
+
+export function verifyNip05Now(pk) {
+  const address = profiles.value[pk]?.nip05;
+  const key = `${pk}:${address}`;
+  if (!address || nip05Checking.has(key)) return;
+  nip05Checking.add(key);
+  nostr.verifyNip05(pk, address).then((ok) => (nip05Verified.value = { ...nip05Verified.value, [pk]: ok ? address : '' }));
+}
+
+// The verified address, or '' (unverified, failed, or not yet checked).
 export function verifiedNip05(pk) {
   const address = profiles.value[pk]?.nip05;
   if (!address) return '';
   const known = nip05Verified.value[pk];
   if (known !== undefined && (known === '' || known === address)) return known;
-  const key = `${pk}:${address}`;
-  if (!nip05Checking.has(key)) {
-    nip05Checking.add(key);
-    nostr.verifyNip05(pk, address).then((ok) => (nip05Verified.value = { ...nip05Verified.value, [pk]: ok ? address : '' }));
-  }
+  if (trustedForLookup(pk)) verifyNip05Now(pk);
   return '';
+}
+
+// 'verified' | 'failed' | 'checking' | 'unchecked' | 'none' for the claimed address.
+export function nip05State(pk) {
+  const address = profiles.value[pk]?.nip05;
+  if (!address) return { state: 'none', address: '' };
+  const known = nip05Verified.value[pk];
+  if (known === address) return { state: 'verified', address };
+  if (known === '') return { state: 'failed', address };
+  return { state: nip05Checking.has(`${pk}:${address}`) ? 'checking' : 'unchecked', address };
 }
 
 // ---------- Direct messages ----------

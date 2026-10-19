@@ -226,6 +226,11 @@ function PlainText({ content, links = true }) {
 
 const IMAGE_RE = /\.(?:png|jpe?g|gif|webp|avif|svg)(?:[?#]|$)/i;
 const VIDEO_RE = /\.(?:mp4|webm|mov|m4v)(?:[?#]|$)/i;
+const AUDIO_RE = /\.(?:mp3|m4a|ogg|oga|opus|wav|flac|aac|weba)(?:[?#]|$)/i;
+// The imeta mime type decides (audio/webm is audio, not video); the extension is the fallback.
+const mediaKind = (url, mime = '') =>
+  mime.startsWith('audio/') ? 'audio' : mime.startsWith('video/') ? 'video' : mime.startsWith('image/') ? 'image'
+  : AUDIO_RE.test(url) ? 'audio' : VIDEO_RE.test(url) ? 'video' : IMAGE_RE.test(url) ? 'image' : null;
 const viewer = signal(null); // full-screen media url
 const infoOpen = signal(false); // chat info panel
 const forwarding = signal(null); // message being forwarded
@@ -288,15 +293,20 @@ function mediaOf(message) {
   if (!mediaCache.has(message)) mediaCache.set(message, extractMedia(message));
   return mediaCache.get(message);
 }
+// -> [{ url, kind: 'image'|'video'|'audio' }], imeta first (its mime type is authoritative).
 function extractMedia(message) {
-  const urls = new Set((message.content.match(URL_RE) ?? []).filter((u) => IMAGE_RE.test(u) || VIDEO_RE.test(u)));
+  const items = new Map();
   for (const t of message.tags ?? [])
     if (t[0] === 'imeta') {
       const url = t.find((v) => v.startsWith('url '))?.slice(4);
-      const mime = t.find((v) => v.startsWith('m '))?.slice(2) ?? '';
-      if (url?.startsWith('https://') && (/^(image|video)\//.test(mime) || IMAGE_RE.test(url) || VIDEO_RE.test(url))) urls.add(url);
+      const kind = url?.startsWith('https://') && mediaKind(url, t.find((v) => v.startsWith('m '))?.slice(2) ?? '');
+      if (kind) items.set(url, { url, kind });
     }
-  return [...urls].filter((u) => u.startsWith('https://')).slice(0, 10);
+  for (const url of message.content.match(URL_RE) ?? []) {
+    const kind = !items.has(url) && mediaKind(url);
+    if (kind) items.set(url, { url, kind });
+  }
+  return [...items.values()].slice(0, 10);
 }
 
 function Media({ message, auto }) {
@@ -307,13 +317,17 @@ function Media({ message, auto }) {
     return html`<button class="show-media" onClick=${() => setShown(true)}>
       🖼 Show ${urls.length > 1 ? `${urls.length} media` : 'media'} <small>(reveals your IP to the host)</small>
     </button>`;
-  return html`<div class=${`media n${Math.min(urls.length, 3)}`}>
-    ${urls.map((url) =>
-      VIDEO_RE.test(url)
-        ? html`<video src=${url} controls preload="metadata" playsinline />`
-        : html`<img src=${url} loading="lazy" referrerpolicy="no-referrer" alt="" onClick=${() => (viewer.value = url)} />`,
-    )}
-  </div>`;
+  const visual = urls.filter((m) => m.kind !== 'audio');
+  const audio = urls.filter((m) => m.kind === 'audio');
+  return html`${visual.length > 0 &&
+    html`<div class=${`media n${Math.min(visual.length, 3)}`}>
+      ${visual.map(({ url, kind }) =>
+        kind === 'video'
+          ? html`<video src=${url} controls preload="metadata" playsinline />`
+          : html`<img src=${url} loading="lazy" referrerpolicy="no-referrer" alt="" onClick=${() => (viewer.value = url)} />`,
+      )}
+    </div>`}
+    ${audio.map(({ url }) => html`<audio class="audio" src=${url} controls preload="none" />`)}`;
 }
 
 function Viewer() {
@@ -1340,7 +1354,8 @@ function SharedMedia({ messages, allowed }) {
   const urls = messages
     .filter((m) => allowed(m.pubkey))
     .flatMap(mediaOf)
-    .filter((u) => IMAGE_RE.test(u) || !VIDEO_RE.test(u))
+    .filter((m) => m.kind === 'image')
+    .map((m) => m.url)
     .reverse()
     .slice(0, 30);
   if (!urls.length) return null;
@@ -1409,12 +1424,26 @@ function DidIdentity({ pubkey }) {
   </section>`;
 }
 
+// NIP-05 under a person's name: verified ✓, or the claimed address with a Verify tap
+// (checking it contacts their domain), or a failed mark.
+function Nip05Line({ pubkey }) {
+  const verified = store.verifiedNip05(pubkey); // auto-verifies people you already deal with
+  const { state, address } = store.nip05State(pubkey);
+  if (state === 'none') return null;
+  if (verified) return html`<small class="muted" title="Verified NIP-05 address">✓ ${address}</small>`;
+  if (state === 'failed') return html`<small class="muted nip05-failed" title="This address does not point to this key">✗ ${address}</small>`;
+  return html`<small class="muted nip05-unchecked">
+    ${address}
+    ${state === 'checking' ? html` · checking…` : html` · <button class="link" title="Checks with ${address.split('@')[1]} (they will see your IP)" onClick=${() => store.verifyNip05Now(pubkey)}>verify</button>`}
+  </small>`;
+}
+
 function PersonInfo({ pubkey, messages }) {
   const p = profiles.value[pubkey] ?? {};
   return html`<div class="hero">
       <${Avatar} pubkey=${pubkey} size=${96} />
       <h3>${pubkey === me.value.pubkey ? 'Note to self' : store.displayName(pubkey)}</h3>
-      ${store.verifiedNip05(pubkey) && html`<small class="muted" title="Verified NIP-05 address">✓ ${store.verifiedNip05(pubkey)}</small>`}
+      <${Nip05Line} pubkey=${pubkey} />
     </div>
     ${p.about && html`<section><p class="about">${p.about}</p></section>`}
     <section>
