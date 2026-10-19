@@ -941,8 +941,11 @@ export function sendDirectMessage(peer, text, reply, edit, extraTags = []) {
 // Edit our kind 0. Fields: name, about, picture, website, nip05.
 export async function saveProfile(fields, { fresh = false } = {}) {
   const signer = me.value;
-  // A brand-new key has no profile yet, so skip the relay lookup.
+  // A brand-new key has no profile yet, so skip the lookup. Otherwise never publish over a
+  // profile we could not read: that would wipe fields other clients set (lud16, banner, ...).
   const previous = fresh ? null : await nostr.fetchOwnProfile(signer.pubkey);
+  if (!fresh && !previous.event && Object.keys(profiles.value[signer.pubkey] ?? {}).length)
+    throw new Error("Couldn't read your current profile from the network. Try again in a moment.");
   const { event, data } = await nostr.publishProfile(signer, fields, previous, inboxRelays.value ?? []);
   const p = {
     pubkey: signer.pubkey,

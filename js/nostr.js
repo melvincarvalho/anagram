@@ -254,9 +254,15 @@ export async function publishInboxRelays(signer, relays) {
 }
 
 // Our own kind 0, raw, so edits keep fields other clients set (lud16, banner, ...).
+// Our own kind 0 from relays and from nostr.social (signed; verified); the newest wins.
+// Returns event: null only if neither source had one.
 export async function fetchOwnProfile(pubkey) {
-  const events = await relayQuery(uniq([...APP_RELAYS, ...INDEXERS]), { kinds: [0], authors: [pubkey] }, { maxWait: 3000 });
-  const event = events.sort((a, b) => b.created_at - a.created_at)[0] ?? null;
+  const [relay, directory] = await Promise.allSettled([
+    relayQuery(uniq([...APP_RELAYS, ...INDEXERS]), { kinds: [0], authors: [pubkey] }),
+    directoryGet(`/api/profile/${pubkey}`).then((raw) => verifiedFromDirectory(raw, 0)),
+  ]);
+  const candidates = [...(relay.value ?? []), directory.value].filter((e) => e && e.pubkey === pubkey);
+  const event = candidates.sort((a, b) => b.created_at - a.created_at)[0] ?? null;
   let data = {};
   try {
     data = event ? JSON.parse(event.content) : {};
