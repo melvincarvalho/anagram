@@ -621,6 +621,7 @@ function applyDeletions(ids, author) {
   for (const id of ids) removeMessage(id, author);
   for (const [address, state] of Object.entries(roomState.value)) {
     for (const m of state.messages) if (gone.has(m.id) && m.pubkey === author) removedById.set(m.id, m);
+    db.deleteRoomMessages(state.messages.filter((m) => gone.has(m.id) && m.pubkey === author).map((m) => m.id)).catch(() => {});
     const kept = state.messages.filter((m) => !(gone.has(m.id) && m.pubkey === author));
     if (kept.length !== state.messages.length) setRoom(address, { messages: kept });
   }
@@ -995,7 +996,19 @@ const blockedIn = (address) => {
   return (pubkey) => !!room && nostr.roomPolicy(room, pubkey) === 'blocked';
 };
 
-function addRoomMessages(address, events) {
+// Room messages are cached on the device (public signed events); saves are batched per room.
+const roomSaves = new Map(); // address -> events waiting to be written
+let roomSaveTimer;
+function queueRoomSave(address, events) {
+  roomSaves.set(address, [...(roomSaves.get(address) ?? []), ...events]);
+  clearTimeout(roomSaveTimer);
+  roomSaveTimer = setTimeout(() => {
+    for (const [room, list] of roomSaves) db.saveRoomMessages(room, list).catch(() => {});
+    roomSaves.clear();
+  }, 500);
+}
+
+function addRoomMessages(address, events, { fromCache = false } = {}) {
   const roomBlocks = blockedIn(address);
   events = events.filter((e) => !roomBlocks(e.pubkey) && !isBlocked(e.pubkey));
   const current = roomState.value[address]?.messages ?? [];
@@ -1007,6 +1020,7 @@ function addRoomMessages(address, events) {
   setRoom(address, {
     messages: collapseEdits([...current, ...fresh].sort((a, b) => a.created_at - b.created_at || (a.id < b.id ? -1 : 1))),
   });
+  if (!fromCache) queueRoomSave(address, fresh);
   requestProfiles(nostr.uniq(fresh.map((e) => e.pubkey)));
   const room = roomState.value[address]?.room;
   if (room && joinedRooms.value.some((r) => r.address === address))
@@ -1019,7 +1033,8 @@ function saveJoined(list) {
 }
 
 function roomEntry(room) {
-  return { address: room.address, owner: room.owner, slug: room.slug, relays: room.relays, name: room.name, picture: room.picture };
+  // The signed definition is kept so the room can render before (or without) the network.
+  return { address: room.address, owner: room.owner, slug: room.slug, relays: room.relays, name: room.name, picture: room.picture, event: room.event };
 }
 
 function remember(room) {
@@ -1033,6 +1048,15 @@ export async function openRoom(pointer) {
   if (!me.value) return;
   setRoom(address, { loading: true, error: '' });
   const owner = me.value;
+  // Show the remembered room and cached history straight away (and offline); the network fills in after.
+  const remembered = joinedRooms.value.find((r) => r.address === address)?.event;
+  if (remembered && !roomState.value[address]?.room)
+    try {
+      setRoom(address, { room: nostr.parseRoom(remembered, address) });
+    } catch {}
+  db.loadRoomMessages(address)
+    .then((cached) => me.value === owner && addRoomMessages(address, cached, { fromCache: true }))
+    .catch(() => {});
   let room;
   try {
     room = await nostr.fetchRoom(pointer);
