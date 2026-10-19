@@ -636,3 +636,41 @@ button.link {
   color: inherit;
   text-decoration: underline;
 }
+
+.reactions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+.reactions button {
+  padding: 1px 8px;
+  border: 0;
+  border-radius: 999px;
+  font-size: 13px;
+  background: rgb(127 127 127 / 0.15);
+  color: inherit;
+}
+.reactions button.on {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+.msg.mine .reactions button.on {
+  background: rgb(255 255 255 / 0.3);
+}
+.menu .quick {
+  display: flex;
+  gap: 2px;
+  padding: 2px 2px 6px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--line);
+}
+.menu .quick button {
+  width: auto;
+  padding: 4px;
+  font-size: 18px;
+  line-height: 1;
+}
+.menu .quick button:hover {
+  transform: scale(1.2);
+}

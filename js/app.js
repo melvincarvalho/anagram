@@ -5,7 +5,8 @@ import * as nostr from './nostr.js';
 import * as store from './store.js';
 
 const html = htm.bind(h);
-const { me, route, profiles, conversations, dms, joinedRooms, roomState, inboxRelays, syncing, toast } = store;
+const { me, route, profiles, conversations, dms, joinedRooms, roomState, inboxRelays, syncing, toast, reactions } = store;
+const QUICK_REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '🔥', '🎉', '👎'];
 
 // ---------- Small pieces ----------
 
@@ -226,7 +227,10 @@ function Sidebar() {
 
 const sameRun = (a, b) => a && b && a.pubkey === b.pubkey && dayKey(a.created_at) === dayKey(b.created_at) && Math.abs(b.created_at - a.created_at) < 300;
 
-function MessageMenu({ menu, onClose, onReply }) {
+const react = (context) => (message, emoji) =>
+  store.toggleReaction(context, message, emoji).catch((e) => store.notify(`Reaction failed: ${e.message}`));
+
+function MessageMenu({ menu, onClose, onReply, onReact }) {
   const ref = useRef();
   useEffect(() => {
     const close = (e) => !ref.current?.contains(e.target) && onClose();
@@ -253,6 +257,10 @@ function MessageMenu({ menu, onClose, onReply }) {
     onClose();
   };
   return html`<div class="menu" ref=${ref} role="menu">
+    ${onReact &&
+    html`<div class="quick">
+      ${QUICK_REACTIONS.map((e) => html`<button title=${`React ${e}`} onClick=${act(() => onReact(m, e))}>${e}</button>`)}
+    </div>`}
     ${onReply && html`<button role="menuitem" onClick=${act(() => onReply(m))}>↩ Reply</button>`}
     <button role="menuitem" onClick=${act(() => copy(m.content, 'Text copied'))}>⧉ Copy text</button>
     <button role="menuitem" onClick=${act(() => copy(nostr.did(m.pubkey), 'DID copied'))}>⧉ Copy author DID</button>
@@ -260,7 +268,24 @@ function MessageMenu({ menu, onClose, onReply }) {
   </div>`;
 }
 
-function MessageList({ messages, policy = () => 'trusted', badge = () => '', onReply, footer, header }) {
+function Reactions({ message, onReact }) {
+  const list = reactions.value[message.id];
+  if (!list?.length) return null;
+  const groups = new Map();
+  for (const r of list) groups.set(r.emoji, [...(groups.get(r.emoji) ?? []), r.pubkey]);
+  return html`<div class="reactions">
+    ${[...groups].map(([emoji, who]) => {
+      const mine = who.includes(me.value.pubkey);
+      return html`<button
+        class=${mine ? 'on' : ''}
+        title=${who.map(store.displayName).join(', ')}
+        onClick=${() => onReact?.(message, emoji)}
+      >${emoji} ${who.length}</button>`;
+    })}
+  </div>`;
+}
+
+function MessageList({ messages, policy = () => 'trusted', badge = () => '', onReply, onReact, footer, header }) {
   const ref = useRef();
   const stick = useRef(true);
   const press = useRef();
@@ -324,11 +349,12 @@ function MessageList({ messages, policy = () => 'trusted', badge = () => '', onR
               <b>${store.displayName(quote.pubkey)}</b>${previewText(quote.content).slice(0, 140)}
             </button>`}
             <div class="body"><${Text} content=${m.content} links=${policy(m.pubkey) === 'trusted'} /><span class="meta">${clock(m.created_at)}</span></div>
+            <${Reactions} message=${m} onReact=${onReact} />
           </div>
         </div>`;
     })}
     ${footer}
-    ${menu && html`<${MessageMenu} menu=${menu} onReply=${onReply} onClose=${() => setMenu(null)} />`}
+    ${menu && html`<${MessageMenu} menu=${menu} onReply=${onReply} onReact=${onReact} onClose=${() => setMenu(null)} />`}
   </div>`;
 }
 
@@ -388,6 +414,7 @@ function DirectChat({ id }) {
     </header>
     <${MessageList}
       onReply=${setReplyTo}
+      onReact=${react({ peer })}
       messages=${messages}
       header=${html`<div class="older">
         <button class="link" disabled=${older.busy} onClick=${() => older.run(store.loadOlderDirectMessages)}>
@@ -452,6 +479,7 @@ function RoomChat({ id }) {
       policy=${policy}
       badge=${(pk) => (pk === room.owner ? 'owner' : '')}
       onReply=${setReplyTo}
+      onReact=${react({ room: room.address })}
       header=${html`<div class="older">
         ${state.exhausted
           ? html`<span class="muted small">Start of room history</span>`

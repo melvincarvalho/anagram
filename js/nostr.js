@@ -254,14 +254,9 @@ async function giftWrap(signer, rumor, recipient) {
   );
 }
 
-export async function sendDirectMessage(signer, recipient, text, recipientRelays, ownRelays, replyId) {
-  const rumor = {
-    pubkey: signer.pubkey,
-    created_at: now(),
-    kind: 14,
-    tags: [['p', recipient], ...(replyId ? [['e', replyId, '', 'reply']] : [])],
-    content: text,
-  };
+// Wrap any rumor kind (14 message, 7 reaction, 5 deletion) to the recipient and to ourselves.
+export async function sendRumor(signer, recipient, kind, content, tags, recipientRelays, ownRelays) {
+  const rumor = { pubkey: signer.pubkey, created_at: now(), kind, tags, content };
   rumor.id = getEventHash(rumor);
   const [theirs, mine] = await Promise.all([
     giftWrap(signer, rumor, recipient),
@@ -272,6 +267,15 @@ export async function sendDirectMessage(signer, recipient, text, recipientRelays
   if (mine) publish(uniq([...ownRelays, ...APP_RELAYS]), mine, signer).catch(() => {});
   return rumor;
 }
+
+export function sendDirectMessage(signer, recipient, text, recipientRelays, ownRelays, replyId) {
+  const tags = [['p', recipient], ...(replyId ? [['e', replyId, '', 'reply']] : [])];
+  return sendRumor(signer, recipient, 14, text, tags, recipientRelays, ownRelays);
+}
+
+// NIP-25 shorthand: '+' or empty is a like, '-' a dislike.
+export const normalizeEmoji = (content) =>
+  !content || content === '+' ? '👍' : content === '-' ? '👎' : [...content].slice(0, 8).join('');
 
 // Returns a verified rumor, or throws. Seal author must match the rumor author.
 export async function unwrap(signer, wrap) {
@@ -485,6 +489,32 @@ export async function publishContactList(signer, pubkeys, relays, previous) {
     content: await signer.encrypt(signer.pubkey, JSON.stringify(uniq(pubkeys).map((pk) => ['p', pk]))),
   });
   return publish(relays, event, signer);
+}
+
+export async function sendRoomReaction(signer, room, message, emoji) {
+  const event = await signer.sign({
+    kind: 7,
+    created_at: now(),
+    content: emoji,
+    tags: [
+      ['h', room.address],
+      ['e', message.id, room.relays[0] ?? '', message.pubkey],
+      ['p', message.pubkey],
+      ['k', '9'],
+    ],
+  });
+  return publish(uniq([...room.relays, ...APP_RELAYS]), event, signer);
+}
+
+// NIP-09 deletion of our own room events (reactions: k=7, messages: k=9).
+export async function sendRoomDeletion(signer, room, ids, kind) {
+  const event = await signer.sign({
+    kind: 5,
+    created_at: now(),
+    content: '',
+    tags: [['h', room.address], ['k', String(kind)], ...ids.map((id) => ['e', id])],
+  });
+  return publish(uniq([...room.relays, ...APP_RELAYS]), event, signer);
 }
 
 export function enableAuth(signer) {

@@ -12,6 +12,7 @@ export const joinedRooms = signal([]); // [{ address, owner, slug, relays, name 
 export const roomState = signal({}); // address -> { room, messages, loading, error, exhausted }
 export const route = signal(parseRoute());
 export const toast = signal('');
+export const reactions = signal({}); // target message id -> [{ id, pubkey, emoji }]
 export const contacts = signal([]); // pubkeys from the private contact list
 let contactList = null; // { event } once loaded, so we never overwrite a list we haven't read
 
@@ -90,6 +91,7 @@ export function logout() {
   batch(() => {
     me.value = null;
     contacts.value = [];
+    reactions.value = {};
     dms.value = {};
     roomState.value = {};
     joinedRooms.value = [];
@@ -156,6 +158,38 @@ function removeMessage(id, author) {
   dms.value = next;
 }
 
+// ---------- Reactions & deletions (shared by DMs and rooms) ----------
+
+function addReactions(list) {
+  const next = { ...reactions.value };
+  let changed = false;
+  for (const r of list) {
+    if (deleted.get(r.id) === r.pubkey) continue;
+    const current = next[r.target] ?? [];
+    if (current.some((x) => x.id === r.id)) continue;
+    next[r.target] = [...current, { id: r.id, pubkey: r.pubkey, emoji: r.emoji }];
+    changed = true;
+  }
+  if (changed) reactions.value = next;
+}
+
+// Apply deletion requests; only the original author can delete.
+function applyDeletions(ids, author) {
+  for (const id of ids) deleted.set(id, author);
+  const gone = new Set(ids);
+  const next = {};
+  for (const [target, list] of Object.entries(reactions.value))
+    next[target] = list.filter((r) => !(gone.has(r.id) && r.pubkey === author));
+  reactions.value = next;
+  for (const id of ids) removeMessage(id, author);
+  for (const [address, state] of Object.entries(roomState.value)) {
+    const kept = state.messages.filter((m) => !(gone.has(m.id) && m.pubkey === author));
+    if (kept.length !== state.messages.length) setRoom(address, { messages: kept });
+  }
+}
+
+const reactionTarget = (event) => event.tags.find((t) => t[0] === 'e' && /^[a-f0-9]{64}$/.test(t[1]))?.[1];
+
 function queueSave(row) {
   pendingRows.push(row);
   clearTimeout(flushTimer);
@@ -190,11 +224,13 @@ async function handleWrap(wrap) {
   if (me.value !== signer) return;
   const peer = peerOf(rumor, signer.pubkey);
   if (peer && rumor.kind === 5) {
-    for (const t of rumor.tags.filter((t) => t[0] === 'e')) {
-      deleted.set(t[1], rumor.pubkey);
-      removeMessage(t[1], rumor.pubkey);
-      queueSave({ account: signer.pubkey, id: t[1], deletedBy: rumor.pubkey });
-    }
+    const ids = rumor.tags.filter((t) => t[0] === 'e').map((t) => t[1]);
+    applyDeletions(ids, rumor.pubkey);
+    for (const id of ids) queueSave({ account: signer.pubkey, id, deletedBy: rumor.pubkey });
+  } else if (peer && rumor.kind === 7 && reactionTarget(rumor)) {
+    const r = { account: signer.pubkey, id: rumor.id, peer, pubkey: rumor.pubkey, kind: 7, target: reactionTarget(rumor), emoji: nostr.normalizeEmoji(rumor.content), created_at: rumor.created_at };
+    addReactions([r]);
+    queueSave(r);
   } else if (peer && (rumor.kind === 14 || rumor.kind === 15) && rumor.content) {
     if (deleted.get(rumor.id) !== rumor.pubkey) {
       const reply = rumor.tags.find((t) => t[0] === 'e' && t[3] === 'reply')?.[1];
@@ -222,11 +258,14 @@ async function startInbox() {
   const signer = me.value;
   const rows = await db.loadDirectMessages(signer.pubkey).catch(() => []);
   const messages = [];
+  const saved = [];
   for (const r of rows) {
     if (r.deletedBy) deleted.set(r.id, r.deletedBy);
+    else if (r.kind === 7) saved.push(r);
     else messages.push(r);
   }
   addMessages(messages.filter((m) => deleted.get(m.id) !== m.pubkey));
+  addReactions(saved);
   requestProfiles(Object.keys(dms.value));
 
   inboxRelays.value = await nostr.fetchInboxRelays(signer.pubkey).catch(() => []);
@@ -342,7 +381,9 @@ function setRoom(address, patch) {
 function addRoomMessages(address, events) {
   const current = roomState.value[address]?.messages ?? [];
   const ids = new Set(current.map((m) => m.id));
-  const fresh = events.filter((e) => !ids.has(e.id) && nostr.validRoomMessage(e, address));
+  const fresh = events.filter(
+    (e) => !ids.has(e.id) && deleted.get(e.id) !== e.pubkey && nostr.validRoomMessage(e, address),
+  );
   if (!fresh.length) return;
   setRoom(address, {
     messages: [...current, ...fresh].sort((a, b) => a.created_at - b.created_at || (a.id < b.id ? -1 : 1)),
@@ -396,6 +437,54 @@ export async function openRoom(pointer) {
       { onevent: (e) => addRoomMessages(address, [e]) },
     ),
   );
+  roomSubs.set(
+    `${address}:activity`,
+    nostr.pool.subscribe(
+      nostr.uniq([...room.relays, ...nostr.APP_RELAYS]),
+      { kinds: [5, 7], '#h': [address], limit: 500 },
+      { onevent: (e) => roomActivity(address, e) },
+    ),
+  );
+}
+
+function roomActivity(address, event) {
+  if (!event.tags.some((t) => t[0] === 'h' && t[1] === address)) return;
+  if (event.kind === 7 && reactionTarget(event))
+    addReactions([{ id: event.id, pubkey: event.pubkey, target: reactionTarget(event), emoji: nostr.normalizeEmoji(event.content) }]);
+  else if (event.kind === 5)
+    applyDeletions(event.tags.filter((t) => t[0] === 'e').map((t) => t[1]), event.pubkey);
+}
+
+// Telegram-style toggle: same emoji again removes our reaction.
+export async function toggleReaction(context, message, emoji) {
+  const signer = me.value;
+  const mine = (reactions.value[message.id] ?? []).filter((r) => r.pubkey === signer.pubkey && r.emoji === emoji);
+  if (context.room) {
+    const room = roomState.value[context.room].room;
+    if (mine.length) {
+      await nostr.sendRoomDeletion(signer, room, mine.map((r) => r.id), 7);
+      applyDeletions(mine.map((r) => r.id), signer.pubkey);
+    } else {
+      const event = await nostr.sendRoomReaction(signer, room, message, emoji);
+      roomActivity(room.address, event);
+    }
+    return;
+  }
+  const peer = context.peer;
+  if (!theirInbox.has(peer)) theirInbox.set(peer, await nostr.fetchInboxRelays(peer).catch(() => []));
+  const send = (kind, content, tags) =>
+    nostr.sendRumor(signer, peer, kind, content, [['p', peer], ...tags], theirInbox.get(peer), inboxRelays.value ?? []);
+  if (mine.length) {
+    const ids = mine.map((r) => r.id);
+    await send(5, '', [...ids.map((id) => ['e', id]), ['k', '7']]);
+    applyDeletions(ids, signer.pubkey);
+    for (const id of ids) queueSave({ account: signer.pubkey, id, deletedBy: signer.pubkey });
+  } else {
+    const rumor = await send(7, emoji, [['e', message.id], ['p', message.pubkey], ['k', String(message.kind ?? 14)]]);
+    const r = { account: signer.pubkey, id: rumor.id, peer, pubkey: signer.pubkey, kind: 7, target: message.id, emoji, created_at: rumor.created_at };
+    addReactions([r]);
+    queueSave(r);
+  }
 }
 
 export async function loadOlderRoomMessages(address) {
@@ -418,8 +507,10 @@ export function joinRoom(room) {
 
 export function leaveRoom(address) {
   saveJoined(joinedRooms.value.filter((r) => r.address !== address));
-  roomSubs.get(address)?.close();
-  roomSubs.delete(address);
+  for (const key of [address, `${address}:activity`]) {
+    roomSubs.get(key)?.close();
+    roomSubs.delete(key);
+  }
   const next = { ...roomState.value };
   delete next[address];
   roomState.value = next;
