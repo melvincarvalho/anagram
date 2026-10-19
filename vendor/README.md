@@ -20,7 +20,7 @@ table and regenerate the sums.
 ## Optional double-ratchet transport
 
 `nostr-double-ratchet.mjs` is a local browser bundle of
-[`nostr-double-ratchet@0.0.178`](https://www.npmjs.com/package/nostr-double-ratchet/v/0.0.178),
+[`nostr-double-ratchet@0.0.179`](https://www.npmjs.com/package/nostr-double-ratchet/v/0.0.179),
 exporting `NdrRuntime`, `AppKeys` and its persistent outbox/discovery helpers. It
 loads dynamically after activation or a verified compatible roster candidate.
 Ordinary NIP-17/room startup and negative discovery do not request it. The pinned
@@ -32,6 +32,6 @@ npm run vendor:ndr
 (cd vendor && shasum -a 256 -c SHA256SUMS)
 ```
 
-At this version the optional bundle is 265,111 bytes (76,519 bytes gzip). No
+At this version the optional bundle is 267,981 bytes (77,309 bytes gzip). No
 runtime CDN, additional service, worker or CSP relaxation is needed. License
 notices are in `ndr-LICENSES.txt` and `nostr-double-ratchet.mjs.LEGAL.txt`.
