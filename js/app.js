@@ -810,7 +810,7 @@ function Tick({ id }) {
   return html`<span class="tick" title="Accepted by a relay">✓</span>`;
 }
 
-function MessageList({ messages, policy = () => 'trusted', badge = () => '', mediaAuto = () => true, onReply, onReact, onEdit, onDelete, footer, header }) {
+function MessageList({ messages, policy = () => 'trusted', badge = () => '', mediaAuto = () => true, onReply, onReact, onEdit, onDelete, footer, header, unreadAfter = Infinity, onReachTop }) {
   const ref = useRef();
   const stick = useRef(true);
   const touch = useRef(null);
@@ -836,9 +836,29 @@ function MessageList({ messages, policy = () => 'trusted', badge = () => '', med
     const node = a && inner.current.querySelector(`[data-id="${a.id}"]`);
     if (node) ref.current.scrollTop += node.getBoundingClientRect().top - a.top;
   };
+  const allVisibleRef = useRef([]);
+  const firstUnreadRef = useRef(null);
   const byId = Object.fromEntries(messages.flatMap((m) => [m.id, ...(m.prev ?? [])].map((id) => [id, m])));
   const first = messages[0]?.id;
   const lastMsg = messages[messages.length - 1];
+  const opened = useRef(false);
+  useLayoutEffect(() => {
+    if (opened.current || !allVisibleRef.current.length) return;
+    opened.current = true;
+    const target = firstUnreadRef.current;
+    if (!target) return;
+    const index = allVisibleRef.current.indexOf(target);
+    const needed = allVisibleRef.current.length - index + 10;
+    if (needed > limit) {
+      opened.current = false; // widen the window first, then position on the next render
+      return setLimit(needed);
+    }
+    const node = inner.current.querySelector(`[data-id="${target.id}"]`);
+    if (!node) return;
+    stick.current = false;
+    ref.current.scrollTop += node.getBoundingClientRect().top - ref.current.getBoundingClientRect().top - 48;
+    saveAnchor();
+  });
   useLayoutEffect(() => {
     const el = ref.current;
     const p = prev.current;
@@ -867,6 +887,8 @@ function MessageList({ messages, policy = () => 'trusted', badge = () => '', med
     lastTop.current = el.scrollTop;
     if (!stick.current) saveAnchor();
     if (el.scrollTop < 400 && limit < visibleCount) setLimit((n) => n + PAGE);
+    // Out of local messages: fetch older history from relays (infinite scroll up).
+    else if (el.scrollTop < 400 && onReachTop) onReachTop();
     if (stick.current && away !== null) setAway(null);
     else if (!stick.current && away === null) setAway(lastMsg?.id ?? '');
     if (menu) setMenu(null);
@@ -930,6 +952,10 @@ function MessageList({ messages, policy = () => 'trusted', badge = () => '', med
     if (s.dx > 60) onReply(s.m);
   };
   const allVisible = messages.filter((m) => policy(m.pubkey) !== 'blocked');
+  // Open at the first unread message (Telegram), marked by a divider.
+  const firstUnread = allVisible.find((m) => m.created_at > unreadAfter && m.pubkey !== me.value.pubkey);
+  allVisibleRef.current = allVisible;
+  firstUnreadRef.current = firstUnread;
   const visibleCount = allVisible.length;
   const visible = allVisible.length > limit ? allVisible.slice(-limit) : allVisible;
   // New messages from others since you scrolled up (older pages loading above don't count).
@@ -948,7 +974,8 @@ function MessageList({ messages, policy = () => 'trusted', badge = () => '', med
       const quote = quoteId && byId[quoteId];
       const tag = badge(m.pubkey);
       // Keyed per message, so loading older pages adds nodes instead of rewriting every row.
-      return html`<${Fragment} key=${m.id}>${newDay && html`<div class="day"><span>${dayLabel(m.created_at)}</span></div>`}
+      return html`<${Fragment} key=${m.id}>${newDay && html`<div class="day"><span>${dayLabel(m.created_at)}</span></div>`}${m === firstUnread &&
+        html`<div class="unread-divider"><span>Unread messages</span></div>`}
         <div
           class=${`msg${mine ? ' mine' : ''}${first ? ' first' : ''}${last ? ' last' : ''}`}
           data-id=${m.id}
@@ -1388,6 +1415,8 @@ function DirectChat({ id }) {
   const older = useAction();
   const messages = (peer && dms.value[peer]) || [];
   const actions = useChatActions({ peer }, messages);
+  // Read position when the chat was opened (before it gets marked read).
+  const [unreadAfter] = useState(() => (peer ? store.readPoint(peer) : Infinity));
   useMarkRead(peer, messages);
   useEffect(() => peer && store.requestProfiles([peer]), [peer]);
   if (!peer) return html`<section class="main empty"><p class="error">Invalid contact.</p></section>`;
@@ -1407,6 +1436,8 @@ function DirectChat({ id }) {
       ...${actions.list}
       mediaAuto=${(pk) => store.contacts.value.includes(pk)}
       messages=${messages}
+      unreadAfter=${unreadAfter}
+      onReachTop=${() => !older.busy && !store.dmHistoryDone.value && older.run(store.loadOlderDirectMessages)}
       header=${html`<div class="older">
         ${store.dmHistoryDone.value
           ? html`<span class="muted small">Start of history</span>`
@@ -1441,6 +1472,7 @@ function RoomChat({ id }) {
   const older = useAction();
   const state = (pointer && roomState.value[pointer.address]) || { messages: [], loading: true };
   const actions = useChatActions({ room: pointer?.address }, state.messages);
+  const [unreadAfter] = useState(() => (pointer ? store.readPoint(pointer.address) : Infinity));
   useMarkRead(pointer?.address, state.messages);
   useEffect(() => {
     if (pointer) store.openRoom(pointer);
@@ -1478,6 +1510,8 @@ function RoomChat({ id }) {
       messages=${state.messages}
       policy=${policy}
       badge=${(pk) => (pk === room.owner ? 'owner' : '')}
+      unreadAfter=${unreadAfter}
+      onReachTop=${() => !older.busy && !state.exhausted && older.run(() => store.loadOlderRoomMessages(room.address))}
       ...${actions.list}
       header=${html`<div class="older">
         ${state.exhausted

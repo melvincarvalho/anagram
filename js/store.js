@@ -294,8 +294,11 @@ export function markRead(key, ts) {
   storage.set(`lite:read:${me.value.pubkey}`, readMarks.value);
 }
 
+// Everything after this time counts as unread in a chat.
+export const readPoint = (key) => Math.max(readMarks.value[key] ?? 0, readSince);
+
 export function unreadCount(key, messages) {
-  const since = Math.max(readMarks.value[key] ?? 0, readSince);
+  const since = readPoint(key);
   let n = 0;
   for (let i = messages.length - 1; i >= 0 && messages[i].created_at > since; i--)
     if (messages[i].pubkey !== me.value?.pubkey) n++;

@@ -1268,3 +1268,16 @@ mark {
 .menu button.danger {
   color: var(--danger);
 }
+
+.unread-divider {
+  display: flex;
+  justify-content: center;
+  margin: 10px -16px 6px;
+  padding: 3px 0;
+  background: rgb(127 127 127 / 0.14);
+}
+.unread-divider span {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+}
