@@ -345,33 +345,61 @@ export async function loadOlderDirectMessages() {
   return events.length;
 }
 
-const theirInbox = new Map();
+const theirInbox = new Map(); // peer -> Promise<relays>, cached per session
+const inboxOf = (peer) => {
+  if (!theirInbox.has(peer)) theirInbox.set(peer, nostr.fetchInboxRelays(peer).catch(() => []));
+  return theirInbox.get(peer);
+};
 
-export async function sendDirectMessage(peer, text, reply, edit) {
+// Optimistic sends: id -> 'sending' | 'failed'. No entry means a relay accepted it.
+export const sendStatus = signal({});
+const retries = new Map(); // failed id -> () => Promise that re-publishes
+function setStatus(id, status) {
+  const next = { ...sendStatus.value };
+  if (status) next[id] = status;
+  else delete next[id];
+  sendStatus.value = next;
+}
+async function track(id, sending, retry) {
+  setStatus(id, 'sending');
+  try {
+    await sending;
+    retries.delete(id);
+    setStatus(id, null);
+  } catch (e) {
+    retries.set(id, retry);
+    setStatus(id, 'failed');
+    notify(`Not sent: ${e.message}`);
+  }
+}
+export const retrySend = (id) => retries.has(id) && track(id, retries.get(id)(), retries.get(id));
+
+export function sendDirectMessage(peer, text, reply, edit) {
   const signer = me.value;
-  if (!theirInbox.has(peer)) theirInbox.set(peer, await nostr.fetchInboxRelays(peer).catch(() => []));
-  const rumor = await nostr.sendDirectMessage(
-    signer,
-    peer,
-    text,
-    theirInbox.get(peer),
-    inboxRelays.value ?? [],
-    edit ? edit.reply : reply?.id,
-    edit,
-  );
-  const m = {
-    account: signer.pubkey,
-    id: rumor.id,
-    peer,
-    pubkey: signer.pubkey,
-    created_at: rumor.created_at,
-    kind: 14,
-    content: text,
-    reply: edit ? edit.reply : reply?.id,
-    edited: !!edit,
+  const replyId = edit ? edit.reply : reply?.id;
+  let rumor;
+  // Called synchronously by sendRumor before any await, so the bubble appears instantly.
+  const show = (r) => {
+    rumor = r;
+    const m = {
+      account: signer.pubkey,
+      id: r.id,
+      peer,
+      pubkey: signer.pubkey,
+      created_at: r.created_at,
+      kind: 14,
+      content: text,
+      reply: replyId,
+      edited: !!edit,
+    };
+    addMessages([m]);
+    queueSave(m);
   };
-  addMessages([m]);
-  queueSave(m);
+  const sending = nostr.sendDirectMessage(signer, peer, text, inboxOf(peer), inboxRelays.value ?? [], replyId, edit, show);
+  // A retry re-sends the same rumor, so it can't duplicate the message.
+  const retry = () =>
+    nostr.sendRumor(signer, peer, 14, text, rumor.tags, inboxOf(peer), inboxRelays.value ?? [], rumor.created_at);
+  track(rumor.id, sending, retry);
   addContact(peer).catch((e) => notify(`Could not update contact list: ${e.message}`));
 }
 
@@ -517,9 +545,8 @@ export async function toggleReaction(context, message, emoji) {
     return;
   }
   const peer = context.peer;
-  if (!theirInbox.has(peer)) theirInbox.set(peer, await nostr.fetchInboxRelays(peer).catch(() => []));
   const send = (kind, content, tags) =>
-    nostr.sendRumor(signer, peer, kind, content, [['p', peer], ...tags], theirInbox.get(peer), inboxRelays.value ?? []);
+    nostr.sendRumor(signer, peer, kind, content, [['p', peer], ...tags], inboxOf(peer), inboxRelays.value ?? []);
   if (mine.length) {
     const ids = mine.map((r) => r.id);
     await send(5, '', [...ids.map((id) => ['e', id]), ['k', '7']]);
@@ -571,8 +598,17 @@ export async function createRoom(input) {
 
 export async function sendRoomMessage(address, text, reply) {
   const room = roomState.value[address].room;
-  const event = await nostr.sendRoomMessage(me.value, room, text, reply);
-  addRoomMessages(address, [event]);
+  let onSigned;
+  const signed = new Promise((resolve) => (onSigned = resolve));
+  const sending = nostr.sendRoomMessage(me.value, room, text, reply, null, (e) => {
+    // Signed: show it now; publishing continues in the background.
+    addRoomMessages(address, [e]);
+    onSigned(e);
+  });
+  // Signing is the only wait (instant for local keys). A signing error rejects here.
+  const event = await Promise.race([signed, sending.then(() => signed)]);
+  const relays = nostr.uniq([...room.relays, ...nostr.APP_RELAYS]);
+  track(event.id, sending, () => nostr.publish(relays, event, me.value));
 }
 
 // Delete our own message: NIP-09 request, honoured by Anagram and most clients.
@@ -583,14 +619,13 @@ export async function deleteMessage(context, message) {
     await nostr.sendRoomDeletion(signer, roomState.value[context.room].room, [message.id], 9);
   } else {
     const peer = context.peer;
-    if (!theirInbox.has(peer)) theirInbox.set(peer, await nostr.fetchInboxRelays(peer).catch(() => []));
     await nostr.sendRumor(
       signer,
       peer,
       5,
       '',
       [['p', peer], ['e', message.id], ['k', String(message.kind ?? 14)]],
-      theirInbox.get(peer),
+      inboxOf(peer),
       inboxRelays.value ?? [],
     );
     queueSave({ account: signer.pubkey, id: message.id, deletedBy: signer.pubkey });

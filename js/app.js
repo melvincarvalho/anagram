@@ -348,6 +348,14 @@ function Reactions({ message, onReact }) {
   </div>`;
 }
 
+function Tick({ id }) {
+  const status = store.sendStatus.value[id];
+  if (status === 'sending') return html`<span class="tick" title="Sending">🕓</span>`;
+  if (status === 'failed')
+    return html`<button class="tick failed" title="Not sent — tap to retry" onClick=${() => store.retrySend(id)}>⚠</button>`;
+  return html`<span class="tick" title="Accepted by a relay">✓</span>`;
+}
+
 function MessageList({ messages, policy = () => 'trusted', badge = () => '', mediaAuto = () => true, onReply, onReact, onEdit, onDelete, footer, header }) {
   const ref = useRef();
   const stick = useRef(true);
@@ -412,7 +420,7 @@ function MessageList({ messages, policy = () => 'trusted', badge = () => '', med
               <b>${store.displayName(quote.pubkey)}</b>${previewText(quote.content).slice(0, 140)}
             </button>`}
             ${policy(m.pubkey) === 'trusted' && html`<${Media} message=${m} auto=${mine || mediaAuto(m.pubkey)} />`}
-            <div class="body"><${Text} content=${m.content} links=${policy(m.pubkey) === 'trusted'} /><span class="meta">${(m.edited ?? nostr.isEdited(m.tags ?? [])) ? 'edited ' : ''}${clock(m.created_at)}</span></div>
+            <div class="body"><${Text} content=${m.content} links=${policy(m.pubkey) === 'trusted'} /><span class="meta">${(m.edited ?? nostr.isEdited(m.tags ?? [])) ? 'edited ' : ''}${clock(m.created_at)}${mine && html`<${Tick} id=${m.id} />`}</span></div>
             <${Reactions} message=${m} onReact=${onReact} />
           </div>
         </div>`;
@@ -440,9 +448,15 @@ function Composer({ onSend, placeholder, replyTo, onCancelReply, editing, onEdit
     const value = text.trim();
     if (!value || busy) return;
     if (editing && value === editing.content.trim()) return cancel();
+    // Clear at once like Telegram; put the text back if sending fails outright.
+    setText('');
     run(async () => {
-      await (editing ? onEdit(editing, value) : onSend(value));
-      setText('');
+      try {
+        await (editing ? onEdit(editing, value) : onSend(value));
+      } catch (e) {
+        setText(value);
+        throw e;
+      }
     });
   };
   const context = editing ?? replyTo;

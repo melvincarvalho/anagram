@@ -224,11 +224,15 @@ export async function fetchProfiles(pubkeys) {
 }
 
 // Publish to all relays and resolve once at least one accepts.
+// Publish to all relays; resolve as soon as the first one accepts (the rest carry on).
 export async function publish(relays, event, signer) {
   const onauth = signer ? (t) => signer.sign(t) : undefined;
-  const results = await Promise.allSettled(pool.publish(relays, event, { onauth }));
-  if (!results.some((r) => r.status === 'fulfilled'))
-    throw new Error(results.map((r) => r.reason?.message ?? r.reason).join('; ') || 'No relay accepted the event.');
+  try {
+    await Promise.any(pool.publish(relays, event, { onauth }));
+  } catch (e) {
+    const reasons = (e.errors ?? []).map((r) => r?.message ?? String(r));
+    throw new Error(reasons.join('; ') || 'No relay accepted the event.');
+  }
   return event;
 }
 
@@ -257,9 +261,12 @@ async function giftWrap(signer, rumor, recipient) {
 }
 
 // Wrap any rumor kind (14 message, 7 reaction, 5 deletion) to the recipient and to ourselves.
-export async function sendRumor(signer, recipient, kind, content, tags, recipientRelays, ownRelays, createdAt = now()) {
+// recipientRelays may be a promise, so the rumor can be shown (onRumor) before relay lookup finishes.
+export async function sendRumor(signer, recipient, kind, content, tags, recipientRelays, ownRelays, createdAt = now(), onRumor) {
   const rumor = { pubkey: signer.pubkey, created_at: createdAt, kind, tags, content };
   rumor.id = getEventHash(rumor);
+  onRumor?.(rumor);
+  recipientRelays = await recipientRelays;
   const [theirs, mine] = await Promise.all([
     giftWrap(signer, rumor, recipient),
     recipient === signer.pubkey ? null : giftWrap(signer, rumor, signer.pubkey),
@@ -274,13 +281,13 @@ export async function sendRumor(signer, recipient, kind, content, tags, recipien
 export const editTag = (previousId) => ['e', previousId, '', 'edit'];
 export const isEdited = (tags) => tags.some((t) => t[0] === 'e' && t[3] === 'edit');
 
-export function sendDirectMessage(signer, recipient, text, recipientRelays, ownRelays, replyId, edit) {
+export function sendDirectMessage(signer, recipient, text, recipientRelays, ownRelays, replyId, edit, onRumor) {
   const tags = [
     ['p', recipient],
     ...(replyId ? [['e', replyId, '', 'reply']] : []),
     ...(edit ? [editTag(edit.id)] : []),
   ];
-  return sendRumor(signer, recipient, 14, text, tags, recipientRelays, ownRelays, edit?.created_at);
+  return sendRumor(signer, recipient, 14, text, tags, recipientRelays, ownRelays, edit?.created_at ?? now(), onRumor);
 }
 
 // NIP-25 shorthand: '+' or empty is a like, '-' a dislike.
@@ -426,7 +433,7 @@ export function validRoomMessage(event, address) {
   );
 }
 
-export async function sendRoomMessage(signer, room, text, reply, edit) {
+export async function sendRoomMessage(signer, room, text, reply, edit, onSigned) {
   const event = await signer.sign({
     kind: 9,
     // Edits keep the original timestamp so the message stays in place.
@@ -438,6 +445,7 @@ export async function sendRoomMessage(signer, room, text, reply, edit) {
       ...(reply && !edit ? [['q', reply.id, room.relays[0] ?? '', reply.pubkey]] : []),
     ],
   });
+  onSigned?.(event);
   return publish(uniq([...room.relays, ...APP_RELAYS]), event, signer);
 }
 

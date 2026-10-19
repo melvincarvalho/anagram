@@ -862,3 +862,15 @@ button.link {
 .info .item {
   padding: 6px 0;
 }
+
+.tick {
+  margin-left: 3px;
+  font-size: 11px;
+}
+button.tick.failed {
+  padding: 0 2px;
+  border: 0;
+  background: none;
+  color: #ffd166;
+  cursor: pointer;
+}
