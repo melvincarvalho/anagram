@@ -2039,6 +2039,7 @@ function Settings() {
       </div>
       <${ProfileSettings} />
       <${MediaServerSettings} />
+      <${RelaySettings} />
       <${BlockedSettings} />
       <${NotificationSettings} />
       <div class="card">
@@ -2110,6 +2111,56 @@ function MediaServerSettings() {
     ${save.error && html`<p class="error">${save.error}</p>`}
     <button disabled=${save.busy}>Save</button>
   </form>`;
+}
+
+// NIP-17 inbox relays: where others deliver your DMs. Suggestions come from
+// nostr.social's relay health directory (public relays ranked by uptime and latency).
+function RelaySettings() {
+  const current = store.inboxRelays.value;
+  const [list, setList] = useState(null); // null = not editing
+  const [draft, setDraft] = useState('');
+  const save = useAction();
+  const editing = list ?? current ?? [];
+  useEffect(() => store.loadRelayDirectory(), []);
+  const suggestions = (store.relayDirectory.value ?? []).filter((r) => !editing.includes(r.url) && !r.requiresPayment).slice(0, 8);
+  const add = (url) => {
+    const n = nostr.normalizeRelay(url.trim());
+    if (!n) return store.notify('Enter a wss:// relay address.');
+    if (!editing.includes(n)) setList([...editing, n]);
+    setDraft('');
+  };
+  const dirty = list && (list.length !== (current ?? []).length || list.some((r, i) => r !== current?.[i]));
+  return html`<div class="card relays">
+    <h3>Inbox relays</h3>
+    <p class="muted small">Where other people deliver your encrypted messages (NIP-17). Pick two or three reliable ones; they are published signed by your key, with a matching relay list for other apps and your did:nostr document.</p>
+    ${current === null && html`<p class="muted small">Loading your current list…</p>`}
+    ${current?.length === 0 && !list && html`<p class="error">You haven't published inbox relays yet, so people can only reach you through the shared app relays.</p>`}
+    <ul class="relay-list">
+      ${editing.map((r) => html`<li key=${r}><span class="mono">${r.replace(/^wss:\/\//, '')}</span>
+        <button class="link" title="Remove" aria-label=${`Remove ${r}`} onClick=${() => setList(editing.filter((x) => x !== r))}>✕</button></li>`)}
+    </ul>
+    <form class="row" onSubmit=${(e) => { e.preventDefault(); add(draft); }}>
+      <input value=${draft} placeholder="wss://relay.example.com" onInput=${(e) => setDraft(e.target.value)} />
+      <button type="submit" disabled=${!draft.trim()}>Add</button>
+    </form>
+    ${suggestions.length > 0 && html`<details class="suggestions">
+      <summary>Suggested relays <small class="muted">from nostr.social's health checks</small></summary>
+      ${suggestions.map((r) => html`<div class="suggestion" key=${r.url}>
+        <span class="mono">${r.url.replace(/^wss:\/\//, '')}</span>
+        <small class="muted">${r.uptime}% up · ${r.responseTime} ms${r.requiresAuth ? ' · auth' : ''}</small>
+        <button class="link" onClick=${() => add(r.url)}>+ Add</button>
+      </div>`)}
+    </details>`}
+    ${save.error && html`<p class="error">${save.error}</p>`}
+    <div class="row">
+      <button class="primary" disabled=${save.busy || !dirty} onClick=${() => save.run(async () => {
+        await store.saveInboxRelays(editing);
+        setList(null);
+        store.notify('Inbox relays published');
+      })}>${save.busy ? 'Publishing…' : 'Publish'}</button>
+      ${dirty && html`<button class="link" onClick=${() => setList(null)}>Cancel</button>`}
+    </div>
+  </div>`;
 }
 
 function BlockedSettings() {

@@ -1548,3 +1548,37 @@ mark {
   font-size: inherit;
   text-align: left;
 }
+
+/* Relay settings */
+.relay-list {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0;
+}
+.relay-list li,
+.suggestion {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  font-size: 13px;
+}
+.relay-list li .mono,
+.suggestion .mono {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.relays form.row,
+.relays .row {
+  display: flex;
+  gap: 8px;
+  margin: 8px 0;
+}
+.relays form.row input {
+  flex: 1;
+}
+.suggestions summary {
+  cursor: pointer;
+  font-size: 13px;
+}

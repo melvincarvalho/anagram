@@ -253,6 +253,42 @@ export async function publishInboxRelays(signer, relays) {
   return publish(uniq([...APP_RELAYS, ...INDEXERS, ...relays]), event);
 }
 
+// NIP-65 relay list (kind 10002): read+write for every relay given. Other clients and the
+// did:nostr document (nostr.social adds them as service entries) learn our relays from it.
+export async function publishRelayList(signer, relays) {
+  const event = await signer.sign({
+    kind: 10002,
+    created_at: now(),
+    tags: relays.map((r) => ['r', r]),
+    content: '',
+  });
+  return publish(uniq([...APP_RELAYS, ...INDEXERS, ...relays]), event);
+}
+
+// Someone's NIP-65 read relays, for reaching people who never published a NIP-17 inbox
+// list: nostr.social's indexed kind 10002 (signed, verified) first, then the relays.
+export async function fetchReadRelays(hex) {
+  if (!HEX.test(hex)) return [];
+  const [directory, relay] = await Promise.allSettled([
+    directoryGet(`/api/relays/${hex}`).then((raw) => verifiedFromDirectory(raw, 10002)),
+    relayQuery(uniq([...APP_RELAYS, ...INDEXERS]), { kinds: [10002], authors: [hex] }),
+  ]);
+  const candidates = [directory.value, ...(relay.value ?? [])].filter((e) => e && e.pubkey === hex);
+  const event = candidates.sort((a, b) => b.created_at - a.created_at)[0];
+  if (!event) return [];
+  return uniq(event.tags.filter((t) => t[0] === 'r' && (!t[2] || t[2] === 'read')).map((t) => normalizeRelay(t[1]))).slice(0, 8);
+}
+
+// nostr.social's relay health directory: public, online relays ranked by uptime and
+// latency, for suggesting inbox relays. Fields: url, uptime (%), responseTime (ms),
+// requiresAuth, requiresPayment.
+export async function fetchRelayDirectory(limit = 40) {
+  const data = await directoryGet(`/api/relays-directory?filter=public&sort=quality&limit=${limit}`);
+  return (data?.relays ?? [])
+    .map((r) => ({ url: normalizeRelay(r.relay), uptime: r.uptime, responseTime: r.responseTime, requiresAuth: !!r.requiresAuth, requiresPayment: !!r.requiresPayment, acceptsEvents: r.acceptsEvents !== false }))
+    .filter((r) => r.url && r.acceptsEvents);
+}
+
 // Our own kind 0, raw, so edits keep fields other clients set (lud16, banner, ...).
 // Our own kind 0 from relays and from nostr.social (signed; verified); the newest wins.
 // Returns event: null only if neither source had one.

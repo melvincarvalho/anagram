@@ -922,8 +922,17 @@ export async function loadOlderDirectMessages() {
 }
 
 const theirInbox = new Map(); // peer -> Promise<relays>, cached per session
+// Where to deliver to someone: their NIP-17 inbox relays, else (people who never
+// published kind 10050) their NIP-65 read relays, else only the shared app relays.
 const inboxOf = (peer) => {
-  if (!theirInbox.has(peer)) theirInbox.set(peer, nostr.fetchInboxRelays(peer).catch(() => []));
+  if (!theirInbox.has(peer))
+    theirInbox.set(
+      peer,
+      nostr
+        .fetchInboxRelays(peer)
+        .then((list) => (list.length ? list : nostr.fetchReadRelays(peer)))
+        .catch(() => []),
+    );
   return theirInbox.get(peer);
 };
 
@@ -1028,10 +1037,30 @@ export async function setUpNewAccount(name) {
   await Promise.all([publishDefaultInbox(), name.trim() ? saveProfile({ name: name.trim() }, { fresh: true }) : null]);
 }
 
-export async function publishDefaultInbox() {
-  const relays = nostr.APP_RELAYS.slice(0, 3);
-  await nostr.publishInboxRelays(me.value, relays);
-  inboxRelays.value = relays;
+export function publishDefaultInbox() {
+  return saveInboxRelays(nostr.APP_RELAYS.slice(0, 3));
+}
+
+// Publish the NIP-17 inbox list (kind 10050) and, with the same relays, the NIP-65 list
+// (kind 10002) so other clients and the did:nostr document see where to find us.
+export async function saveInboxRelays(list) {
+  const relays = nostr.uniq(list.map((r) => nostr.normalizeRelay(r)).filter(Boolean));
+  if (!relays.length) throw new Error('Add at least one wss:// relay.');
+  if (relays.length > 8) throw new Error('Up to 8 inbox relays.');
+  const signer = me.value;
+  await nostr.publishInboxRelays(signer, relays);
+  nostr.publishRelayList(signer, relays).catch(() => {}); // best effort; the inbox list is what matters
+  if (me.value === signer) inboxRelays.value = relays;
+  return relays;
+}
+
+export const relayDirectory = signal(null); // suggestions from nostr.social, loaded on demand
+export function loadRelayDirectory() {
+  if (relayDirectory.value) return;
+  nostr
+    .fetchRelayDirectory()
+    .then((list) => (relayDirectory.value = list))
+    .catch(() => (relayDirectory.value = []));
 }
 
 const contactRelays = () => nostr.uniq([...(inboxRelays.value ?? []), ...nostr.APP_RELAYS]);
