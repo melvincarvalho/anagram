@@ -464,8 +464,15 @@ export async function sendRoomMessage(signer, room, text, reply, edit, onSigned,
     content: text,
     tags: [
       ['a', room.address],
-      ...(edit ? [editTag(edit.id), ...edit.tags.filter((t) => t[0] === 'q')] : []),
-      ...(reply && !edit ? [['q', reply.id, room.relays[0] ?? '', reply.pubkey]] : []),
+      // Anagram: edit link to the current version, plus the original (root) when different.
+      ...(edit
+        ? [
+            editTag(edit.id),
+            ...(edit.prev?.length ? [['e', edit.prev[0]]] : []),
+            ...edit.tags.filter((t) => t[0] === 'q' || t[0] === 'imeta'),
+          ]
+        : []),
+      ...(reply && !edit ? [['q', reply.prev?.[0] ?? reply.id, room.relays[0] ?? '', reply.pubkey]] : []),
       ...extraTags,
     ],
   });

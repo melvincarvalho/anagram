@@ -310,18 +310,74 @@ let pendingRows = [];
 let flushTimer;
 let oldestWrap = Infinity;
 
+// ---------- Edits ----------
+// Like Anagram, a replacement takes the original's place and remembers every earlier
+// id (prev), so reactions, quotes and deletions aimed at any version still match.
+
+export const editTarget = (m) => m.tags?.find((t) => t[0] === 'e' && t[3] === 'edit')?.[1];
+export const rootId = (m) => m.prev?.[0] ?? m.id;
+const knownIds = (m) => [m.id, ...(m.prev ?? [])];
+
+const removedById = new Map(); // deleted messages, so a later replacement can inherit their ids
+
+function collapseEdits(thread, onMerged) {
+  // A replacement whose predecessor was already deleted (the edit flow deletes it first)
+  // still inherits the predecessor's id chain.
+  thread = thread.map((m) => {
+    const target = editTarget(m);
+    if (!target || m.prev?.includes(target) || thread.some((x) => x.id === target)) return m;
+    const gone = removedById.get(target);
+    if (deleted.get(target) !== m.pubkey && !(gone && gone.pubkey === m.pubkey)) return m;
+    const merged = { ...m, prev: nostr.uniq([...(gone?.prev ?? []), target, ...(m.prev ?? [])]), reply: m.reply ?? gone?.reply };
+    onMerged?.(merged);
+    return merged;
+  });
+  let list = thread;
+  for (let pass = 0; pass < 8; pass++) {
+    const byId = new Map();
+    for (const m of list) for (const id of knownIds(m)) byId.set(id, m);
+    const superseded = new Set();
+    const replaced = new Map();
+    for (const m of list) {
+      const target = editTarget(m);
+      const old = target && byId.get(target);
+      if (!old || old === m || old.pubkey !== m.pubkey || superseded.has(old.id) || replaced.has(old.id)) continue;
+      superseded.add(old.id);
+      const merged = {
+        ...m,
+        prev: nostr.uniq([...(old.prev ?? []), old.id, ...(m.prev ?? [])]).filter((id) => id !== m.id),
+        reply: m.reply ?? old.reply,
+      };
+      replaced.set(m.id, merged);
+      onMerged?.(merged);
+    }
+    if (!superseded.size) break;
+    list = list.filter((m) => !superseded.has(m.id)).map((m) => replaced.get(m.id) ?? m);
+  }
+  return list;
+}
+
+// The stored row should be the merged in-memory version (with its edit id chain).
+const current = (m) => dms.value[m.peer]?.find((x) => x.id === m.id) ?? m;
+
 function addMessages(list) {
   if (!list.length) return;
   const next = { ...dms.value };
+  const touched = new Set();
   for (const m of list) {
     const thread = next[m.peer] ?? [];
-    if (thread.some((x) => x.id === m.id)) continue;
-    next[m.peer] = [...thread, m].sort((a, b) => a.created_at - b.created_at);
+    if (thread.some((x) => knownIds(x).includes(m.id))) continue;
+    next[m.peer] = [...thread, m];
+    touched.add(m.peer);
   }
+  // Persist merged id chains so reactions to earlier versions still match after reload.
+  for (const peer of touched) next[peer] = collapseEdits(next[peer].sort((a, b) => a.created_at - b.created_at), queueSave);
   dms.value = next;
 }
 
 function removeMessage(id, author) {
+  for (const thread of Object.values(dms.value))
+    for (const m of thread) if (m.id === id && m.pubkey === author) removedById.set(id, m);
   const next = {};
   for (const [peer, thread] of Object.entries(dms.value))
     next[peer] = thread.filter((m) => !(m.id === id && m.pubkey === author));
@@ -353,6 +409,7 @@ function applyDeletions(ids, author) {
   reactions.value = next;
   for (const id of ids) removeMessage(id, author);
   for (const [address, state] of Object.entries(roomState.value)) {
+    for (const m of state.messages) if (gone.has(m.id) && m.pubkey === author) removedById.set(m.id, m);
     const kept = state.messages.filter((m) => !(gone.has(m.id) && m.pubkey === author));
     if (kept.length !== state.messages.length) setRoom(address, { messages: kept });
   }
@@ -420,9 +477,9 @@ async function handleWrap(wrap) {
         edited,
       };
       addMessages([m]);
-      queueSave(m);
+      queueSave(current(m));
       requestProfiles([peer]);
-      emitIncoming({ peer }, m);
+      if (!edited) emitIncoming({ peer }, m);
     }
   }
   db.markWraps(signer.pubkey, [wrap.id]).catch(() => {});
@@ -531,13 +588,13 @@ function resumePending(m) {
   setStatus(m.id, 'failed');
 }
 function markSent(m) {
-  const { status: _, ...sent } = m;
+  const { status: _, ...sent } = current(m);
   queueSave(sent);
 }
 
 export function sendDirectMessage(peer, text, reply, edit, extraTags = []) {
   const signer = me.value;
-  const replyId = edit ? edit.reply : reply?.id;
+  const replyId = edit ? edit.reply : reply && rootId(reply);
   let rumor;
   // Called synchronously by sendRumor before any await, so the bubble appears instantly.
   const show = (r) => {
@@ -555,8 +612,8 @@ export function sendDirectMessage(peer, text, reply, edit, extraTags = []) {
       tags: r.tags,
     };
     addMessages([m]);
-    queueSave({ ...m, status: 'pending' });
-    saved = m;
+    saved = current(m);
+    queueSave({ ...saved, status: 'pending' });
   };
   let saved;
   const sending = nostr.sendDirectMessage(signer, peer, text, inboxOf(peer), inboxRelays.value ?? [], replyId, edit, show, extraTags);
@@ -618,17 +675,18 @@ function setRoom(address, patch) {
 
 function addRoomMessages(address, events) {
   const current = roomState.value[address]?.messages ?? [];
-  const ids = new Set(current.map((m) => m.id));
+  const ids = new Set(current.flatMap(knownIds));
   const fresh = events.filter(
     (e) => !ids.has(e.id) && deleted.get(e.id) !== e.pubkey && nostr.validRoomMessage(e, address),
   );
   if (!fresh.length) return;
   setRoom(address, {
-    messages: [...current, ...fresh].sort((a, b) => a.created_at - b.created_at || (a.id < b.id ? -1 : 1)),
+    messages: collapseEdits([...current, ...fresh].sort((a, b) => a.created_at - b.created_at || (a.id < b.id ? -1 : 1))),
   });
   requestProfiles(nostr.uniq(fresh.map((e) => e.pubkey)));
   const room = roomState.value[address]?.room;
-  if (room && joinedRooms.value.some((r) => r.address === address)) for (const e of fresh) emitIncoming({ room }, e);
+  if (room && joinedRooms.value.some((r) => r.address === address))
+    for (const e of fresh) if (!editTarget(e)) emitIncoming({ room }, e);
 }
 
 function saveJoined(list) {
@@ -700,7 +758,11 @@ function roomActivity(address, event) {
 // Telegram-style toggle: same emoji again removes our reaction.
 export async function toggleReaction(context, message, emoji) {
   const signer = me.value;
-  const mine = (reactions.value[message.id] ?? []).filter((r) => r.pubkey === signer.pubkey && r.emoji === emoji);
+  const mine = knownIds(message)
+    .flatMap((id) => reactions.value[id] ?? [])
+    .filter((r) => r.pubkey === signer.pubkey && r.emoji === emoji);
+  // React to the original, as Anagram does; earlier ids map to the current version.
+  message = { ...message, id: rootId(message) };
   if (context.room) {
     const room = roomState.value[context.room].room;
     if (mine.length) {
@@ -786,11 +848,13 @@ export function forwardMessage(target, message) {
 }
 
 // Delete our own message: NIP-09 request, honoured by Anagram and most clients.
-export async function deleteMessage(context, message) {
+export async function deleteMessage(context, message, { onlyCurrent = false } = {}) {
   const signer = me.value;
   if (message.pubkey !== signer.pubkey) throw new Error('You can only delete your own messages.');
+  // Deleting removes every version of an edited message; an edit replaces only the current one (Anagram).
+  const ids = onlyCurrent ? [message.id] : knownIds(message);
   if (context.room) {
-    await nostr.sendRoomDeletion(signer, roomState.value[context.room].room, [message.id], 9);
+    await nostr.sendRoomDeletion(signer, roomState.value[context.room].room, ids, 9);
   } else {
     const peer = context.peer;
     await nostr.sendRumor(
@@ -798,23 +862,23 @@ export async function deleteMessage(context, message) {
       peer,
       5,
       '',
-      [['p', peer], ['e', message.id], ['k', String(message.kind ?? 14)]],
+      [['p', peer], ...ids.map((id) => ['e', id]), ['k', String(message.kind ?? 14)]],
       inboxOf(peer),
       inboxRelays.value ?? [],
     );
-    queueSave({ account: signer.pubkey, id: message.id, deletedBy: signer.pubkey });
+    for (const id of ids) queueSave({ account: signer.pubkey, id, deletedBy: signer.pubkey });
   }
-  applyDeletions([message.id], signer.pubkey);
+  applyDeletions(ids, signer.pubkey);
 }
 
 // Anagram's edit flow: delete the old version, then send a replacement at the same timestamp.
 export async function editMessage(context, message, text) {
-  await deleteMessage(context, message);
+  await deleteMessage(context, message, { onlyCurrent: true });
   if (context.room) {
     const room = roomState.value[context.room].room;
     const event = await nostr.sendRoomMessage(me.value, room, text, null, message);
     addRoomMessages(context.room, [event]);
   } else {
-    await sendDirectMessage(context.peer, text, null, message);
+    await sendDirectMessage(context.peer, text, null, message, (message.tags ?? []).filter((t) => t[0] === 'imeta'));
   }
 }

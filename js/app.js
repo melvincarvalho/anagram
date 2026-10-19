@@ -583,7 +583,8 @@ function MessageMenu({ menu, onClose, onReply, onReact, onEdit, onDelete, onMore
 }
 
 function Reactions({ message, onReact }) {
-  const list = reactions.value[message.id];
+  // Reactions may target any version of an edited message.
+  const list = [message.id, ...(message.prev ?? [])].flatMap((id) => reactions.value[id] ?? []);
   if (!list?.length) return null;
   const groups = new Map();
   for (const r of list) groups.set(r.emoji, [...(groups.get(r.emoji) ?? []), r.pubkey]);
@@ -614,7 +615,7 @@ function MessageList({ messages, policy = () => 'trusted', badge = () => '', med
   const [menu, setMenu] = useState(null);
   const [reactPicker, setReactPicker] = useState(null); // { message, x, y }
   const [away, setAway] = useState(null); // message count when the user scrolled up, else null
-  const byId = Object.fromEntries(messages.map((m) => [m.id, m]));
+  const byId = Object.fromEntries(messages.flatMap((m) => [m.id, ...(m.prev ?? [])].map((id) => [id, m])));
   useLayoutEffect(() => {
     if (stick.current) ref.current.scrollTop = ref.current.scrollHeight;
   }, [messages.length]);
