@@ -200,6 +200,11 @@ function renderParts(parts, links) {
   });
 }
 
+// One to three emoji and nothing else are shown large (Telegram); pattern from Anagram's singleEmoji.ts.
+const EMOJI_UNIT = '(?:\\p{Extended_Pictographic}(?:\\uFE0F|\\p{Emoji_Modifier})?(?:\\u200D\\p{Extended_Pictographic}(?:\\uFE0F|\\p{Emoji_Modifier})?)*|\\p{Regional_Indicator}{2}|[0-9#*]\\uFE0F?\\u20E3)';
+const BIG_EMOJI_RE = new RegExp(`^(?:${EMOJI_UNIT}\\s*){1,3}$`, 'u');
+const isBigEmoji = (text) => text.length <= 40 && BIG_EMOJI_RE.test(text.trim());
+
 function Text({ content, links = true }) {
   return renderParts(formatted(content), links);
 }
@@ -489,6 +494,7 @@ function RoomItem({ room, active, onMenu }) {
       <span class="line">
         ${draftPreview(room.address, active) ??
         html`<small>${last ? `${store.displayName(last.pubkey)}: ${previewText(last.content).slice(0, 80)}` : 'Public room'}</small>`}
+        ${store.unreadMentions(room.address, messages) > 0 && html`<span class="unread at" title="You were mentioned">@</span>`}
         <${Unread} count=${store.unreadCount(room.address, messages)} muted=${store.isMuted(room.address)} />
       </span>
     </span>
@@ -624,7 +630,9 @@ function Sidebar() {
     <nav>
       ${q.length >= 2 && html`<${MessageResults} q=${q} />`}
       ${pinned.length > 0 && html`<h2>Pinned</h2>${pinned}`}
-      <h2>${pinned.length ? 'All chats' : 'Chats'} ${syncing.value && html`<span class="spinner" title="Syncing" />`} <a class="add" href="#/new" title="New chat or room">+</a></h2>
+      <h2>${pinned.length ? 'All chats' : 'Chats'} ${syncing.value && html`<span class="spinner" title="Syncing" />`}
+        ${store.totalUnread.value > 0 && html`<button class="link mark-all" title="Mark all chats as read" onClick=${store.markAllRead}>✓ Mark all read</button>`}
+        <a class="add" href="#/new" title="New chat or room">+</a></h2>
       ${rows.length === 0 && !pinned.length && html`<p class="muted small pad">${q ? 'No matches.' : 'No conversations yet.'}</p>`}
       ${rows.map(({ room, chat }) =>
         room
@@ -990,7 +998,7 @@ function MessageList({ messages, policy = () => 'trusted', badge = () => '', med
       return html`<${Fragment} key=${m.id}>${newDay && html`<div class="day"><span>${dayLabel(m.created_at)}</span></div>`}${m === firstUnread &&
         html`<div class="unread-divider"><span>Unread messages</span></div>`}
         <div
-          class=${`msg${mine ? ' mine' : ''}${first ? ' first' : ''}${last ? ' last' : ''}`}
+          class=${`msg${mine ? ' mine' : ''}${first ? ' first' : ''}${last ? ' last' : ''}${isBigEmoji(m.content) && !quote && m.kind !== 15 ? ' big-emoji' : ''}`}
           data-id=${m.id}
           onContextMenu=${(e) => {
             e.preventDefault();
