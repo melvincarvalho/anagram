@@ -736,6 +736,30 @@ export function sendDirectMessage(peer, text, reply, edit, extraTags = []) {
   addContact(peer).catch((e) => notify(`Could not update contact list: ${e.message}`));
 }
 
+// Edit our kind 0. Fields: name, about, picture, website, nip05.
+export async function saveProfile(fields, { fresh = false } = {}) {
+  const signer = me.value;
+  // A brand-new key has no profile yet, so skip the relay lookup.
+  const previous = fresh ? null : await nostr.fetchOwnProfile(signer.pubkey);
+  const { event, data } = await nostr.publishProfile(signer, fields, previous, inboxRelays.value ?? []);
+  const p = {
+    pubkey: signer.pubkey,
+    created_at: event.created_at,
+    name: String(data.display_name || data.name || '').slice(0, 80),
+    picture: /^https:\/\//.test(data.picture ?? '') ? data.picture : '',
+    nip05: data.nip05 ?? '',
+    about: data.about ?? '',
+    website: /^https:\/\//.test(data.website ?? '') ? data.website : '',
+  };
+  profiles.value = { ...profiles.value, [signer.pubkey]: p };
+  db.saveProfiles([p]).catch(() => {});
+}
+
+// A brand-new key: publish a name and NIP-17 inbox relays so people can find and reach it.
+export async function setUpNewAccount(name) {
+  await Promise.all([publishDefaultInbox(), name.trim() ? saveProfile({ name: name.trim() }, { fresh: true }) : null]);
+}
+
 export async function publishDefaultInbox() {
   const relays = nostr.APP_RELAYS.slice(0, 3);
   await nostr.publishInboxRelays(me.value, relays);

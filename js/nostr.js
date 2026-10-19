@@ -199,6 +199,35 @@ export async function publishInboxRelays(signer, relays) {
   return publish(uniq([...APP_RELAYS, ...INDEXERS, ...relays]), event);
 }
 
+// Our own kind 0, raw, so edits keep fields other clients set (lud16, banner, ...).
+export async function fetchOwnProfile(pubkey) {
+  const events = await pool.querySync(uniq([...APP_RELAYS, ...INDEXERS]), { kinds: [0], authors: [pubkey] }, { maxWait: 3000 });
+  const event = events.sort((a, b) => b.created_at - a.created_at)[0] ?? null;
+  let data = {};
+  try {
+    data = event ? JSON.parse(event.content) : {};
+  } catch {}
+  return { event, data: data && typeof data === 'object' ? data : {} };
+}
+
+export async function publishProfile(signer, fields, previous, relays = []) {
+  const data = { ...(previous?.data ?? {}) };
+  for (const [key, value] of Object.entries(fields)) {
+    if (value) data[key] = value;
+    else delete data[key];
+  }
+  if (fields.name !== undefined) data.display_name = fields.name || undefined;
+  const event = await signer.sign({
+    kind: 0,
+    // Replaceable: must beat the version we merged from.
+    created_at: Math.max(now(), (previous?.event?.created_at ?? 0) + 1),
+    tags: [],
+    content: JSON.stringify(data),
+  });
+  await publish(uniq([...APP_RELAYS, ...INDEXERS, ...relays]), event, signer);
+  return { event, data };
+}
+
 export async function fetchProfiles(pubkeys) {
   if (!pubkeys.length) return [];
   const events = await pool.querySync(uniq([...APP_RELAYS, ...INDEXERS]), {

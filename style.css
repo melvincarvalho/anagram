@@ -1191,3 +1191,25 @@ mark {
   color: var(--muted);
   padding-bottom: 6px;
 }
+
+.profile-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.profile-form label input,
+.profile-form label textarea {
+  color: var(--text);
+  font-size: 15px;
+}
+.profile-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.profile-head .avatar {
+  width: 64px;
+  height: 64px;
+}

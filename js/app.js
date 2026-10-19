@@ -225,6 +225,7 @@ function Login() {
   const [value, setValue] = useState('');
   const [remember, setRemember] = useState(true);
   const [authUrl, setAuthUrl] = useState('');
+  const [newName, setNewName] = useState('');
   const { busy, error, run } = useAction();
 
   const submit = (e) => {
@@ -239,6 +240,7 @@ function Login() {
               ? await nostr.bunkerSigner(value, setAuthUrl)
               : nostr.newKeySigner();
       await store.login(signer, remember);
+      if (mode === 'new') store.setUpNewAccount(newName).catch((e) => store.notify(`Profile setup failed: ${e.message}`));
     });
   };
 
@@ -265,7 +267,8 @@ function Login() {
       ${mode === 'extension' &&
       html`<p class="muted">${window.nostr ? 'Sign in with your browser extension (needs NIP-44).' : 'No extension detected.'}</p>`}
       ${mode === 'new' &&
-      html`<p class="muted">Generates a fresh key in this browser. Back it up from Settings afterwards.</p>`}
+      html`<input placeholder="Your name" maxlength="80" value=${newName} onInput=${(e) => setNewName(e.target.value)} />
+        <p class="muted">Generates a fresh key in this browser. Back it up from Settings afterwards.</p>`}
       ${mode !== 'extension' &&
       html`<label class="check"><input type="checkbox" checked=${remember} onChange=${(e) => setRemember(e.target.checked)} /> Stay signed in on this device</label>`}
       ${mode === 'nsec' && remember && html`<p class="muted small">Your key will be stored unencrypted in this browser.</p>`}
@@ -1380,6 +1383,7 @@ function Settings() {
           )}
         </div>
       </div>
+      <${ProfileSettings} />
       <${MediaServerSettings} />
       <${NotificationSettings} />
       <div class="card">
@@ -1387,6 +1391,44 @@ function Settings() {
       </div>
     </div>
   </section>`;
+}
+
+function ProfileSettings() {
+  const pk = me.value.pubkey;
+  const p = profiles.value[pk] ?? {};
+  const [form, setForm] = useState({ name: p.name ?? '', about: p.about ?? '', picture: p.picture ?? '', website: p.website ?? '', nip05: p.nip05 ?? '' });
+  const save = useAction();
+  const upload = useAction();
+  const fileInput = useRef();
+  const field = (key) => (e) => setForm({ ...form, [key]: e.target.value });
+  return html`<form class="card profile-form" onSubmit=${(e) => {
+    e.preventDefault();
+    save.run(async () => {
+      if (form.picture && !/^https:\/\//.test(form.picture)) throw new Error('The picture must be an https:// link.');
+      if (form.website && !/^https:\/\//.test(form.website)) throw new Error('The website must be an https:// link.');
+      await store.saveProfile(form);
+      store.notify('Profile saved');
+    });
+  }}>
+    <h3>Profile</h3>
+    <div class="profile-head">
+      ${form.picture ? html`<img class="avatar" src=${form.picture} width="64" height="64" referrerpolicy="no-referrer" alt="" />` : html`<${Avatar} pubkey=${pk} size=${64} />`}
+      <button type="button" disabled=${upload.busy} onClick=${() => fileInput.current.click()}>${upload.busy ? 'Uploading…' : 'Upload picture'}</button>
+      <input ref=${fileInput} type="file" accept="image/*" hidden onChange=${(e) => {
+        const file = e.target.files[0];
+        e.target.value = '';
+        if (file) upload.run(async () => setForm({ ...form, picture: (await store.uploadMedia(file))[1].slice(4) }));
+      }} />
+    </div>
+    <label>Name<input maxlength="80" value=${form.name} onInput=${field('name')} placeholder="How people see you" /></label>
+    <label>Bio<textarea rows="3" maxlength="600" value=${form.about} onInput=${field('about')} placeholder="A few words about you" /></label>
+    <label>Picture link<input value=${form.picture} onInput=${field('picture')} placeholder="https://…" /></label>
+    <label>Website<input value=${form.website} onInput=${field('website')} placeholder="https://…" /></label>
+    <label>NIP-05 address<input value=${form.nip05} onInput=${field('nip05')} placeholder="you@example.com" /></label>
+    <p class="muted small">Public: published as your Nostr profile (kind 0), visible in every Nostr app. Other fields set elsewhere are kept.</p>
+    ${(save.error || upload.error) && html`<p class="error">${save.error || upload.error}</p>`}
+    <button class="primary" disabled=${save.busy}>${save.busy ? 'Saving…' : 'Save profile'}</button>
+  </form>`;
 }
 
 function MediaServerSettings() {
