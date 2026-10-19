@@ -181,7 +181,7 @@ export async function login(signer, remember) {
   preferDoubleRatchet.value = storage.get(`lite:prefer-ndr:${signer.pubkey}`, true);
   await startInbox();
   if (me.value === signer && storage.get(`lite:ndr:${signer.pubkey}`, false))
-    startNdr().catch((e) => notify(`Double ratchet unavailable: ${e.message}`));
+    startNdr().catch((e) => notify(`Encrypted messaging unavailable: ${e.message}`));
 }
 
 export async function restoreSession() {
@@ -625,7 +625,7 @@ export async function prepareDirectProtocol(peer) {
     onCapability: (supported) => {
       if (!active() || !supported) return;
       chooseAutoNdr(peer);
-      startNdr().catch((error) => { if (active()) notify(`Double ratchet unavailable: ${error.message}`); });
+      startNdr().catch((error) => { if (active()) notify(`Encrypted messaging unavailable: ${error.message}`); });
     },
   });
   if (live) discovery = watcher;
@@ -659,10 +659,10 @@ function stopNdr() {
 }
 
 async function lockNdr(account) {
-  if (!navigator.locks) throw new Error('This browser does not support double-ratchet storage locking.');
+  if (!navigator.locks) throw new Error('This browser cannot safely store encrypted chats. Try an up-to-date browser.');
   return new Promise((resolve, reject) => {
     navigator.locks.request(`anagram-lite:ndr:${account}`, { ifAvailable: true }, async (lock) => {
-      if (!lock) { reject(new Error('Double ratchet is active in another tab. Close it and try again.')); return; }
+      if (!lock) { reject(new Error('Encrypted messaging is active in another tab. Close it and try again.')); return; }
       await new Promise((release) => resolve(release));
     }).catch(reject);
   });
