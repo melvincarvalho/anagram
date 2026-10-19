@@ -162,7 +162,17 @@ export async function login(signer, remember) {
   await startInbox();
 }
 
+export const restoring = signal(true); // true until the saved session has been looked at
+
 export async function restoreSession() {
+  try {
+    return await restoreSavedSession();
+  } finally {
+    restoring.value = false;
+  }
+}
+
+async function restoreSavedSession() {
   const list = savedAccounts();
   refreshAccounts();
   const active = storage.get('lite:active', null);
@@ -170,8 +180,9 @@ export async function restoreSession() {
   if (!entry) return false;
   try {
     const signer = await nostr.restoreSigner(entry.saved);
-    // Fill in the pubkey for sessions migrated from the old format.
-    await login(signer, !entry.pubkey);
+    // Fill in the pubkey for sessions migrated from the old format. Not awaited: the UI
+    // renders as soon as the account is known and the inbox fills in behind it.
+    login(signer, !entry.pubkey).catch((e) => notify(`Startup problem: ${e.message}`));
     return true;
   } catch (e) {
     notify(`Could not restore session: ${e.message}`);
@@ -285,6 +296,8 @@ export function setDraft(key, text) {
   const snapshot = drafts.value;
   draftTimer = setTimeout(() => storage.set(`lite:drafts:${account}`, snapshot), 300);
 }
+
+db.onOpenBlocked(() => notify('Close other nostr.chat tabs so this one can finish updating.'));
 
 // ---------- Connection status ----------
 
@@ -1221,7 +1234,7 @@ export async function loadOlderRoomMessages(address) {
   // Reactions and deletions for the older messages too, or deleted ones would reappear.
   const ids = nostr.uniq(events.map((e) => e.id));
   for (let i = 0; i < ids.length; i += 100) {
-    const activity = await nostr.pool.querySync(relays, { kinds: [5, 7], '#e': ids.slice(i, i + 100) }).catch(() => []);
+    const activity = await nostr.relayQuery(relays, { kinds: [5, 7], '#e': ids.slice(i, i + 100) }).catch(() => []);
     for (const e of activity) roomActivity(address, e);
   }
   if (finished) setRoom(address, { exhausted: true });

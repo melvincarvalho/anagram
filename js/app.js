@@ -2057,6 +2057,7 @@ function App() {
   useEffect(() => {
     document.title = unread ? `(${unread}) nostr.chat` : 'nostr.chat';
   }, [unread]);
+  if (!me.value && store.restoring.value) return html`<p class="boot muted">Loading…</p>`;
   if (!me.value || store.addingAccount.value) return html`<${Login} />`;
   const r = route.value;
   const view =
@@ -2080,8 +2081,8 @@ function App() {
 }
 
 const root = document.getElementById('app');
-render(html`<p class="boot muted">Loading…</p>`, root);
-store.restoreSession().finally(() => render(html`<${App} />`, root));
+render(html`<${App} />`, root);
+store.restoreSession();
 
 if ('serviceWorker' in navigator) {
   // When an updated worker takes over an already-controlled page, reload once to run the new code.

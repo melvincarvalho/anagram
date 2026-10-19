@@ -28,6 +28,12 @@ const hexToBytes = (h) => Uint8Array.from(h.match(/../g), (x) => parseInt(x, 16)
 
 export const pool = new SimplePool({ enableReconnect: true });
 
+// Relay reads always have a deadline; a relay that never answers must not stall the app.
+const RELAY_WAIT = 6000;
+const withWait = (params) => ({ maxWait: RELAY_WAIT, ...(params ?? {}) });
+export const relayGet = (relays, filter, params) => pool.get(relays, filter, withWait(params));
+export const relayQuery = (relays, filter, params) => pool.querySync(relays, filter, withWait(params));
+
 export const uniq = (list) => [...new Set(list.filter(Boolean))];
 export const now = () => Math.floor(Date.now() / 1000);
 
@@ -230,7 +236,7 @@ export async function verifyNip05(pubkey, address) {
 }
 
 export async function fetchInboxRelays(pubkey) {
-  const event = await pool.get(uniq([...APP_RELAYS, ...INDEXERS]), {
+  const event = await relayGet(uniq([...APP_RELAYS, ...INDEXERS]), {
     kinds: [10050],
     authors: [pubkey],
   });
@@ -249,7 +255,7 @@ export async function publishInboxRelays(signer, relays) {
 
 // Our own kind 0, raw, so edits keep fields other clients set (lud16, banner, ...).
 export async function fetchOwnProfile(pubkey) {
-  const events = await pool.querySync(uniq([...APP_RELAYS, ...INDEXERS]), { kinds: [0], authors: [pubkey] }, { maxWait: 3000 });
+  const events = await relayQuery(uniq([...APP_RELAYS, ...INDEXERS]), { kinds: [0], authors: [pubkey] }, { maxWait: 3000 });
   const event = events.sort((a, b) => b.created_at - a.created_at)[0] ?? null;
   let data = {};
   try {
@@ -278,7 +284,7 @@ export async function publishProfile(signer, fields, previous, relays = []) {
 
 export async function fetchProfiles(pubkeys) {
   if (!pubkeys.length) return [];
-  const events = await pool.querySync(uniq([...APP_RELAYS, ...INDEXERS]), {
+  const events = await relayQuery(uniq([...APP_RELAYS, ...INDEXERS]), {
     kinds: [0],
     authors: pubkeys,
   });
@@ -335,7 +341,7 @@ export async function fetchDirectoryProfile(hex) {
 // derived (unsigned) list is a fast fallback.
 export async function fetchFollows(hex) {
   const [relay, directory] = await Promise.allSettled([
-    pool.querySync(uniq([...APP_RELAYS, ...INDEXERS]), { kinds: [3], authors: [hex] }, { maxWait: 4000 }),
+    relayQuery(uniq([...APP_RELAYS, ...INDEXERS]), { kinds: [3], authors: [hex] }, { maxWait: 4000 }),
     directoryGet(`/api/follows/${hex}`),
   ]);
   const signed = (relay.value ?? []).filter((e) => e.pubkey === hex).sort((a, b) => b.created_at - a.created_at)[0];
@@ -543,7 +549,7 @@ export function roomPolicy(room, pubkey) {
 }
 
 export async function fetchRoom(pointer) {
-  const events = await pool.querySync(uniq([...pointer.relays, ...APP_RELAYS]), {
+  const events = await relayQuery(uniq([...pointer.relays, ...APP_RELAYS]), {
     kinds: [ROOM_KIND],
     authors: [pointer.owner],
     '#d': [pointer.slug],
@@ -649,13 +655,13 @@ export function starterRoom() {
 }
 
 export async function fetchEvent(relays, id) {
-  return pool.get(relays, { ids: [id] });
+  return relayGet(relays, { ids: [id] });
 }
 
 // ---------- Private contact list (Anagram: kind 30000, d=contacts, NIP-44 to self) ----------
 
 export async function fetchContactList(signer, relays) {
-  const event = await pool.get(relays, { kinds: [30000], authors: [signer.pubkey], '#d': ['contacts'] });
+  const event = await relayGet(relays, { kinds: [30000], authors: [signer.pubkey], '#d': ['contacts'] });
   if (!event) return { event: null, pubkeys: [] };
   const tags = event.content.trim() ? JSON.parse(await signer.decrypt(signer.pubkey, event.content)) : [];
   const pubkeys = uniq(
@@ -669,7 +675,7 @@ export async function fetchContactList(signer, relays) {
 // ---------- Mute list (Anagram: kind 10000, private ['p'] muted / ['bp'] blocked, NIP-44 to self) ----------
 
 export async function fetchMuteList(signer, relays) {
-  const event = await pool.get(relays, { kinds: [10000], authors: [signer.pubkey] });
+  const event = await relayGet(relays, { kinds: [10000], authors: [signer.pubkey] });
   if (!event) return { event: null, entries: [] };
   let entries = [];
   if (event.content.trim()) {
