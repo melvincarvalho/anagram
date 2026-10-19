@@ -802,6 +802,38 @@ export async function publishMuteList(signer, blocked, previous, relays) {
   return { event, entries };
 }
 
+// ---------- App settings sync (NIP-78 kind 30078, d=nostr.chat, NIP-44 to self) ----------
+// Read marks, pinned/muted chats and hidden messages travel between devices in one
+// encrypted event. Its d tag is ours alone: Anagram keeps its own preferences under d=1.
+
+export const SETTINGS_D = 'nostr.chat';
+
+export async function fetchSettings(signer, relays) {
+  const event = await relayGet(relays, { kinds: [30078], authors: [signer.pubkey], '#d': [SETTINGS_D] });
+  return event ? parseSettings(signer, event) : null;
+}
+
+export async function parseSettings(signer, event) {
+  if (event.kind !== 30078 || event.pubkey !== signer.pubkey) return null;
+  try {
+    const data = JSON.parse(await signer.decrypt(signer.pubkey, event.content));
+    return data && typeof data === 'object' ? { event, data } : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function publishSettings(signer, data, relays, previous) {
+  const event = await signer.sign({
+    kind: 30078,
+    created_at: Math.max(now(), (previous?.created_at ?? 0) + 1),
+    tags: [['d', SETTINGS_D]],
+    content: await signer.encrypt(signer.pubkey, JSON.stringify(data)),
+  });
+  await publish(relays, event, signer);
+  return event;
+}
+
 export async function publishContactList(signer, pubkeys, relays, previous) {
   const event = await signer.sign({
     kind: 30000,

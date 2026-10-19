@@ -835,7 +835,7 @@ function menuKeys(e) {
   items[(at + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length]?.focus();
 }
 
-function MessageMenu({ menu, onClose, onReply, onReact, onEdit, onDelete, onMoreReactions, onPin, pinnedId }) {
+function MessageMenu({ menu, onClose, onReply, onReact, onEdit, onDelete, onHide, onMoreReactions, onPin, pinnedId }) {
   const ref = useRef();
   const [confirming, setConfirming] = useState(false);
   useEffect(() => {
@@ -883,6 +883,7 @@ function MessageMenu({ menu, onClose, onReply, onReact, onEdit, onDelete, onMore
     (confirming
       ? html`<button role="menuitem" class="danger" onClick=${act(() => onDelete(m))}>🗑 Tap again to delete for everyone</button>`
       : html`<button role="menuitem" class="danger" onClick=${() => setConfirming(true)}>🗑 Delete</button>`)}
+    ${onHide && html`<button role="menuitem" title="Hides it on your devices only" onClick=${act(() => onHide(m))}>🙈 Delete for me</button>`}
   </div>`;
 }
 
@@ -914,7 +915,7 @@ function Tick({ id }) {
   return html`<span class="tick" title="Accepted by a relay">✓</span>`;
 }
 
-function MessageList({ messages, policy = () => 'trusted', badge = () => '', mediaAuto = () => true, onReply, onReact, onEdit, onDelete, footer, header, unreadAfter = Infinity, onReachTop, lookupQuote, jumpOlder, onPin, pinnedId, showNames = true }) {
+function MessageList({ messages, policy = () => 'trusted', badge = () => '', mediaAuto = () => true, onReply, onReact, onEdit, onDelete, onHide, footer, header, unreadAfter = Infinity, onReachTop, lookupQuote, jumpOlder, onPin, pinnedId, showNames = true }) {
   const ref = useRef();
   const stick = useRef(true);
   const touch = useRef(null);
@@ -1115,6 +1116,7 @@ function MessageList({ messages, policy = () => 'trusted', badge = () => '', med
       onReact=${onReact}
       onEdit=${onEdit}
       onDelete=${onDelete}
+      onHide=${onHide}
       onPin=${onPin}
       pinnedId=${pinnedId}
       onMoreReactions=${(message, x, y) => setReactPicker({ message, x, y })}
@@ -1502,6 +1504,7 @@ function useChatActions(context, messages) {
       onReact: react(context),
       onEdit: startEdit,
       onDelete: (m) => store.deleteMessage(context, m).catch(fail('Delete')),
+      onHide: (m) => store.hideMessage(m),
     },
     composer: {
       replyTo,

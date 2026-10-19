@@ -104,6 +104,9 @@ function teardown() {
   }
   inboxSub?.close();
   inboxSub = null;
+  clearTimeout(settingsTimer);
+  settingsTimer = 0;
+  settingsLoaded = false;
   for (const sub of roomSubs.values()) sub.close();
   roomSubs.clear();
   // Drop every relay connection: they carry the old account's NIP-42 auth and would link accounts.
@@ -152,6 +155,8 @@ export async function login(signer, remember) {
   readMarks.value = storage.get(`lite:read:${signer.pubkey}`, {});
   drafts.value = storage.get(`lite:drafts:${signer.pubkey}`, {});
   chatPrefs.value = { pinned: [], muted: [], ...storage.get(`lite:prefs:${signer.pubkey}`, {}) };
+  prefTimes = storage.get(`lite:preftimes:${signer.pubkey}`, { pinned: {}, muted: {} });
+  hidden.value = storage.get(`lite:hidden:${signer.pubkey}`, []);
   clearedAt.value = storage.get(`lite:cleared:${signer.pubkey}`, {});
   readSince = storage.get(`lite:read-since:${signer.pubkey}`, 0);
   if (!readSince) storage.set(`lite:read-since:${signer.pubkey}`, (readSince = nostr.now()));
@@ -165,6 +170,138 @@ export async function login(signer, remember) {
   loadMuteList();
   loadMyFollows(signer);
   await startInbox();
+  loadSettingsSync(signer);
+}
+
+// ---------- Settings sync across devices ----------
+// One encrypted kind 30078 (d=nostr.chat) holds read marks (max wins), pinned/muted chats
+// (newest change per chat wins) and hidden messages (union). Published a few seconds after
+// a change; incoming copies from other devices are merged live.
+
+let prefTimes = { pinned: {}, muted: {} }; // chat key -> time of the last pin/mute change
+let settingsEvent = null; // last seen/published event (for created_at ordering)
+let settingsTimer = 0;
+let settingsLoaded = false;
+
+function settingsDoc() {
+  const read = Object.entries(readMarks.value).sort((a, b) => b[1] - a[1]).slice(0, 400);
+  const lists = {};
+  for (const list of ['pinned', 'muted'])
+    lists[list] = Object.fromEntries(Object.entries(prefTimes[list]).map(([key, at]) => [key, { on: chatPrefs.value[list].includes(key), at }]));
+  return { v: 1, read: Object.fromEntries(read), ...lists, hidden: hidden.value.slice(-500) };
+}
+
+// Merge another device's copy into local state. Returns true if anything changed here.
+function mergeSettings(data) {
+  let changed = false;
+  const read = { ...readMarks.value };
+  for (const [key, ts] of Object.entries(data.read ?? {}))
+    if (typeof ts === 'number' && ts > (read[key] ?? 0)) (read[key] = ts), (changed = true);
+  if (changed) {
+    readMarks.value = read;
+    storage.set(`lite:read:${me.value.pubkey}`, read);
+  }
+  const prefs = { ...chatPrefs.value };
+  for (const list of ['pinned', 'muted'])
+    for (const [key, entry] of Object.entries(data[list] ?? {})) {
+      if (!entry || typeof entry.at !== 'number' || entry.at <= (prefTimes[list][key] ?? 0)) continue;
+      prefTimes[list][key] = entry.at;
+      const has = prefs[list].includes(key);
+      if (entry.on && !has) prefs[list] = [...prefs[list], key];
+      if (!entry.on && has) prefs[list] = prefs[list].filter((k) => k !== key);
+      changed = true;
+    }
+  if (prefs !== chatPrefs.value) {
+    chatPrefs.value = prefs;
+    storage.set(`lite:prefs:${me.value.pubkey}`, prefs);
+    storage.set(`lite:preftimes:${me.value.pubkey}`, prefTimes);
+  }
+  const extra = (data.hidden ?? []).filter((id) => typeof id === 'string' && !hidden.value.includes(id));
+  if (extra.length) {
+    hidden.value = [...hidden.value, ...extra];
+    storage.set(`lite:hidden:${me.value.pubkey}`, hidden.value);
+    for (const id of extra) dropEverywhere(id);
+    changed = true;
+  }
+  return changed;
+}
+
+async function loadSettingsSync(signer) {
+  settingsLoaded = false;
+  settingsEvent = null;
+  try {
+    const found = await nostr.fetchSettings(signer, contactRelays());
+    if (me.value !== signer) return;
+    if (found) {
+      settingsEvent = found.event;
+      mergeSettings(found.data);
+    }
+  } catch {}
+  settingsLoaded = true;
+  roomSubs.set(
+    'settings',
+    nostr.pool.subscribe(contactRelays(), { kinds: [30078], authors: [signer.pubkey], '#d': [nostr.SETTINGS_D], since: nostr.now() }, {
+      onevent: async (event) => {
+        if (me.value !== signer || event.created_at <= (settingsEvent?.created_at ?? 0)) return;
+        const parsed = await nostr.parseSettings(signer, event);
+        if (!parsed || me.value !== signer) return;
+        settingsEvent = event;
+        mergeSettings(parsed.data);
+      },
+    }),
+  );
+}
+
+function scheduleSettingsPublish() {
+  if (!me.value || !settingsLoaded) return; // never publish over a copy we haven't read yet
+  clearTimeout(settingsTimer);
+  settingsTimer = setTimeout(publishSettingsNow, 4000);
+}
+
+async function publishSettingsNow() {
+  const signer = me.value;
+  if (!signer || !settingsLoaded) return;
+  try {
+    const event = await nostr.publishSettings(signer, settingsDoc(), contactRelays(), settingsEvent);
+    if (me.value === signer) settingsEvent = event;
+  } catch {}
+}
+
+// Flush a pending publish when the tab goes to the background.
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden' && settingsTimer) {
+    clearTimeout(settingsTimer);
+    settingsTimer = 0;
+    publishSettingsNow();
+  }
+});
+
+// ---------- Delete for me ----------
+// Hides a message on your devices only (no NIP-09); synced through the settings event.
+
+export const hidden = signal([]);
+export const isHidden = (id) => hidden.value.includes(id);
+
+function dropEverywhere(id) {
+  const next = {};
+  let touched = false;
+  for (const [peer, thread] of Object.entries(dms.value)) {
+    const kept = thread.filter((m) => m.id !== id && !m.prev?.includes(id));
+    if (kept.length !== thread.length) touched = true;
+    next[peer] = kept;
+  }
+  if (touched) dms.value = next;
+  for (const [address, state] of Object.entries(roomState.value))
+    if (state.messages.some((m) => m.id === id)) setRoom(address, { messages: state.messages.filter((m) => m.id !== id) });
+  db.deleteRoomMessages([id]).catch(() => {});
+}
+
+export function hideMessage(message) {
+  if (!me.value || isHidden(message.id)) return;
+  hidden.value = [...hidden.value, ...knownIds(message)];
+  storage.set(`lite:hidden:${me.value.pubkey}`, hidden.value);
+  for (const id of knownIds(message)) dropEverywhere(id);
+  scheduleSettingsPublish();
 }
 
 // ---------- Message requests ----------
@@ -318,6 +455,9 @@ function togglePref(list, key) {
   const next = current.includes(key) ? current.filter((k) => k !== key) : [...current, key];
   chatPrefs.value = { ...chatPrefs.value, [list]: next };
   storage.set(`lite:prefs:${me.value.pubkey}`, chatPrefs.value);
+  prefTimes[list][key] = nostr.now();
+  storage.set(`lite:preftimes:${me.value.pubkey}`, prefTimes);
+  scheduleSettingsPublish();
 }
 export const togglePinned = (key) => togglePref('pinned', key);
 export const toggleMuted = (key) => togglePref('muted', key);
@@ -360,6 +500,7 @@ export function markRead(key, ts) {
   if (!me.value || (readMarks.value[key] ?? 0) >= ts) return;
   readMarks.value = { ...readMarks.value, [key]: ts };
   storage.set(`lite:read:${me.value.pubkey}`, readMarks.value);
+  scheduleSettingsPublish();
 }
 
 // Everything after this time counts as unread in a chat.
@@ -391,6 +532,7 @@ export function markAllRead() {
   }
   readMarks.value = next;
   storage.set(`lite:read:${me.value.pubkey}`, next);
+  scheduleSettingsPublish();
 }
 
 export const totalUnread = computed(() => {
@@ -677,7 +819,7 @@ function addMessages(list) {
   const next = { ...dms.value };
   const touched = new Set();
   for (const m of list) {
-    if (isBlocked(m.pubkey) || isBlocked(m.peer) || m.created_at <= (clearedAt.value[m.peer] ?? 0)) continue;
+    if (isBlocked(m.pubkey) || isBlocked(m.peer) || m.created_at <= (clearedAt.value[m.peer] ?? 0) || isHidden(m.id)) continue;
     const thread = next[m.peer] ?? [];
     if (thread.some((x) => knownIds(x).includes(m.id))) continue;
     next[m.peer] = [...thread, m];
@@ -1151,7 +1293,7 @@ function addRoomMessages(address, events, { fromCache = false } = {}) {
   const current = roomState.value[address]?.messages ?? [];
   const ids = new Set(current.flatMap(knownIds));
   const fresh = events.filter(
-    (e) => !ids.has(e.id) && !isDeleted(e.id, e.pubkey) && nostr.validRoomMessage(e, address),
+    (e) => !ids.has(e.id) && !isDeleted(e.id, e.pubkey) && !isHidden(e.id) && nostr.validRoomMessage(e, address),
   );
   if (!fresh.length) return;
   setRoom(address, {
