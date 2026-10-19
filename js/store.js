@@ -89,7 +89,8 @@ function rememberAccount(signer) {
 }
 
 // Stop everything belonging to the current account without forgetting it.
-function teardown() {
+async function teardown() {
+  const ndrClosed = stopNdr();
   clearTimeout(incomingTimer);
   incomingTimer = undefined;
   incoming = { messages: [], reactions: [] };
@@ -108,6 +109,14 @@ function teardown() {
   contactQueue = Promise.resolve();
   muteList = null;
   muteQueue = Promise.resolve();
+  directProtocols.value = {};
+  ndrEdits.clear();
+  ndrDeletions.clear();
+  for (const timer of ndrExpiryTimers.values()) clearTimeout(timer);
+  ndrExpiryTimers.clear();
+  theirInbox.clear();
+  retries.clear();
+  sendStatus.value = {};
   dmCursors.clear();
   dmDone.clear();
   roomPaging.clear();
@@ -127,6 +136,7 @@ function teardown() {
     syncing.value = false;
     dmHistoryDone.value = false;
   });
+  await ndrClosed;
 }
 
 export async function switchAccount(pubkey) {
@@ -138,7 +148,7 @@ export async function switchAccount(pubkey) {
 }
 
 export async function login(signer, remember) {
-  if (me.value) teardown();
+  if (me.value) await teardown();
   addingAccount.value = false;
   liveSince = nostr.now() - 10;
   me.value = signer;
@@ -159,7 +169,10 @@ export async function login(signer, remember) {
   for (const room of joinedRooms.value) openRoom(room);
   loadContacts();
   loadMuteList();
+  directProtocols.value = storage.get(`lite:protocols:${signer.pubkey}`, {});
   await startInbox();
+  if (me.value === signer && storage.get(`lite:ndr:${signer.pubkey}`, false))
+    startNdr().catch((e) => notify(`Double ratchet unavailable: ${e.message}`));
 }
 
 export async function restoreSession() {
@@ -183,7 +196,7 @@ export async function restoreSession() {
 export async function logout() {
   const current = me.value?.pubkey;
   const flushed = flushSaves();
-  teardown();
+  await teardown();
   // Forget this account's data on this device: decrypted DMs and per-account settings.
   if (current) {
     await flushed;
@@ -481,10 +494,205 @@ export function verifiedNip05(pk) {
   return '';
 }
 
+// ---------- Optional double-ratchet DMs ----------
+
+export const directProtocols = signal({}); // peer -> explicit sending preference
+export const directProtocol = (peer) => directProtocols.value[peer] ?? 'nip17';
+let ndrClient;
+let ndrStarting;
+let ndrGeneration = 0;
+let releaseNdrLock;
+const ndrEdits = new Map();
+const ndrDeletions = new Map();
+const ndrExpiryTimers = new Map();
+
+function stopNdr() {
+  ndrGeneration++;
+  const closing = ndrClient?.close();
+  const starting = ndrStarting;
+  ndrClient = null;
+  ndrStarting = null;
+  const release = releaseNdrLock;
+  releaseNdrLock = null;
+  // A signer approval may stay open indefinitely. The closed adapter rejects
+  // late callbacks and storage writes; do not hold sign-out hostage to it.
+  starting?.catch(() => {});
+  return Promise.allSettled([closing]).then(() => release?.());
+}
+
+async function lockNdr(account) {
+  if (!navigator.locks) throw new Error('This browser does not support double-ratchet storage locking.');
+  return new Promise((resolve, reject) => {
+    navigator.locks.request(`anagram-lite:ndr:${account}`, { ifAvailable: true }, async (lock) => {
+      if (!lock) { reject(new Error('Double ratchet is active in another tab. Close it and try again.')); return; }
+      await new Promise((release) => resolve(release));
+    }).catch(reject);
+  });
+}
+
+function startNdr() {
+  if (ndrStarting) return ndrStarting;
+  const signer = me.value;
+  const generation = ndrGeneration;
+  const active = () => me.value === signer && generation === ndrGeneration;
+  const relays = () => nostr.uniq([...(inboxRelays.value ?? []), ...nostr.APP_RELAYS]);
+  ndrStarting = (async () => {
+    const release = await lockNdr(signer.pubkey);
+    if (!active()) { release(); throw new Error('Account changed'); }
+    releaseNdrLock = release;
+    const { createNdrClient } = await import('./ndr.js');
+    if (!active()) throw new Error('Account changed');
+    const client = createNdrClient({
+      owner: signer.pubkey,
+      storage: db.ndrStorage(signer.pubkey),
+      sign: (event) => {
+        if (!active()) throw new Error('Account changed');
+        return signer.sign(event);
+      },
+      subscribe: (filter, callback) => {
+        const sub = nostr.pool.subscribe(relays(), filter, { onevent: callback });
+        return () => sub.close();
+      },
+      fetch: (filter) => nostr.fetchNdrEvents(relays(), filter),
+      publish: async (event, context) => {
+        const recipient = context?.recipientOwnerPubkey;
+        const extra = recipient ? await inboxOf(recipient) : [];
+        if (!active()) throw new Error('Account changed');
+        return nostr.publish(nostr.uniq([...relays(), ...extra]), event, signer);
+      },
+      receive: async (event, peer) => {
+        if (!active()) throw new Error('Account changed');
+        await receiveNdr(signer, event, peer);
+      },
+      delivery: async (id, status, context) => {
+        if (!active() || !id) return;
+        const m = Object.values(dms.value).flat().find((m) => m.id === id);
+        if (!m || context && context.recipientOwnerPubkey !== m.peer) return;
+        setStatus(id, status === 'sent' ? null : 'failed');
+        if (status === 'sent') {
+          markSent(m);
+          await db.saveDirectMessages([current(m)]);
+        }
+      },
+    });
+    ndrClient = client;
+    try {
+      await client.start();
+      if (!active()) throw new Error('Account changed');
+      storage.set(`lite:ndr:${signer.pubkey}`, true);
+      return client;
+    } catch (error) {
+      await client.close();
+      if (active()) { ndrClient = null; ndrStarting = null; releaseNdrLock?.(); releaseNdrLock = null; }
+      throw error;
+    }
+  })().catch((error) => {
+    if (active()) { ndrStarting = null; releaseNdrLock?.(); releaseNdrLock = null; }
+    throw error;
+  });
+  return ndrStarting;
+}
+
+window.addEventListener('online', () => ndrClient?.retry().catch(() => {}));
+
+export async function setDirectProtocol(peer, protocol) {
+  if (!['nip17', 'ndr'].includes(protocol)) throw new Error('Unknown message encryption');
+  const signer = me.value;
+  if (protocol === 'ndr') await startNdr();
+  if (me.value !== signer) return;
+  directProtocols.value = { ...directProtocols.value, [peer]: protocol };
+  storage.set(`lite:protocols:${signer.pubkey}`, directProtocols.value);
+}
+
+const ndrExpiresAt = (row) => row.protocol === 'ndr' ? Number(row.tags?.find((t) => t[0] === 'expiration')?.[1]) || Infinity : Infinity;
+function scheduleNdrExpiry(row) {
+  const remaining = ndrExpiresAt(row) * 1000 - Date.now();
+  if (!Number.isFinite(remaining) || ndrExpiryTimers.has(row.id)) return;
+  if (remaining <= 0) {
+    if (me.value?.pubkey === row.account) removeMessage(row.id, row.pubkey);
+    db.deleteDirectMessage(row.account, row.id).catch(() => {});
+    return;
+  }
+  ndrExpiryTimers.set(row.id, setTimeout(() => {
+    ndrExpiryTimers.delete(row.id);
+    scheduleNdrExpiry(row);
+  }, Math.min(remaining, 2147483647)));
+}
+
+function applyNdrEdit(message) {
+  const edit = ndrEdits.get(`${message.id}:${message.pubkey}:${message.peer}`);
+  return edit && edit.created_at >= message.created_at && message.protocol === 'ndr' && edit.pubkey === message.pubkey && edit.peer === message.peer
+    ? { ...message, content: edit.content, edited: true } : message;
+}
+
+function rememberNdrEdit(row) {
+  const target = row.tags.find((t) => t[0] === 'e')?.[1];
+  const key = `${target}:${row.pubkey}:${row.peer}`;
+  const previous = ndrEdits.get(key);
+  const order = (r) => `${String(r.created_at).padStart(12, '0')}:${String(r.tags.find((t) => t[0] === 'ms')?.[1] ?? r.created_at * 1000).padStart(16, '0')}:${r.id}`;
+  if (!previous || order(row) > order(previous)) ndrEdits.set(key, row);
+  return target;
+}
+
+async function receiveNdr(signer, event, peer) {
+  if (!Number.isSafeInteger(event.created_at) || event.created_at < 0 || event.created_at > nostr.now() + 300) return;
+  if (isBlocked(peer) || event.created_at <= (clearedAt.value[peer] ?? 0)) return;
+  const expiration = event.tags.find((t) => t[0] === 'expiration')?.[1];
+  if (expiration !== undefined && (!Number.isSafeInteger(Number(expiration)) || Number(expiration) <= nostr.now())) return;
+  const base = { ...event, account: signer.pubkey, peer, protocol: 'ndr' };
+  if (event.kind === 5) {
+    if (event.content !== '') return;
+    const ids = event.tags.filter((t) => t[0] === 'e' && /^[a-f0-9]{64}$/.test(t[1])).map((t) => t[1]);
+    // A deletion from another author must not overwrite the original cached row.
+    await db.saveDirectMessages(ids.map((id) => ({ account: signer.pubkey, id: `ndr-delete:${event.pubkey}:${id}`, deletedId: id, deletedBy: event.pubkey, created_at: Math.max(event.created_at, ndrDeletions.get(`${id}:${event.pubkey}`) ?? 0) })));
+    if (me.value === signer) {
+      for (const id of ids) ndrDeletions.set(`${id}:${event.pubkey}`, Math.max(event.created_at, ndrDeletions.get(`${id}:${event.pubkey}`) ?? 0));
+      const eligible = ids.filter((id) => !(dms.value[peer] ?? []).some((m) => m.id === id && m.created_at > event.created_at));
+      applyDeletions(eligible, event.pubkey);
+    }
+  } else if (event.kind === 1009) {
+    const targets = event.tags.filter((t) => t[0] === 'e');
+    const kinds = event.tags.filter((t) => t[0] === 'k');
+    const ms = event.tags.filter((t) => t[0] === 'ms');
+    if (targets.length !== 1 || !/^[a-f0-9]{64}$/.test(targets[0][1]) || !event.content.trim() ||
+        new TextEncoder().encode(event.content).length > 32768 || kinds.length !== 1 || kinds[0][1] !== '14' ||
+        ms.length > 1 || ms.length && (!/^\d+$/.test(ms[0][1]) || !Number.isSafeInteger(Number(ms[0][1])) || Math.floor(Number(ms[0][1]) / 1000) !== event.created_at)) return;
+    await db.saveDirectMessages([base]);
+    if (me.value !== signer) return;
+    const target = rememberNdrEdit(base);
+    const thread = dms.value[peer] ?? [];
+    dms.value = { ...dms.value, [peer]: thread.map((m) => m.id === target ? applyNdrEdit(m) : m) };
+  } else if (event.kind === 7 && reactionTarget(event)) {
+    const row = { ...base, target: reactionTarget(event), emoji: nostr.normalizeEmoji(event.content) };
+    await db.saveDirectMessages([row]);
+    if (me.value === signer) addReactions([row]);
+  } else if (event.kind === 14 && event.content && deleted.get(event.id) !== event.pubkey) {
+    const row = { ...base, reply: event.tags.find((t) => t[0] === 'e' && (!t[3] || t[3] === 'reply'))?.[1] };
+    await db.saveDirectMessages([row]);
+    if (me.value !== signer) return;
+    const seen = dms.value[peer]?.some((m) => m.id === row.id);
+    addMessages([row]);
+    requestProfiles([peer]);
+    if (!seen) emitIncoming({ peer }, row);
+  }
+}
+
+async function sendNdrRumor(peer, kind, content, tags, onRumor) {
+  const signer = me.value;
+  const client = await startNdr();
+  if (me.value !== signer) throw new Error('Account changed');
+  const nowMs = Date.now();
+  const event = nostr.makeRumor(signer.pubkey, kind, content, [...tags, ['ms', String(nowMs)]], Math.floor(nowMs / 1000));
+  onRumor?.(event);
+  await client.send(peer, event);
+  return event;
+}
+
 // ---------- Direct messages ----------
 
 const seenWraps = new Set();
 const deleted = new Map(); // message id -> deleter pubkey
+const isDeleted = (message) => deleted.get(message.id) === message.pubkey || (ndrDeletions.get(`${message.id}:${message.pubkey}`) ?? -1) >= message.created_at;
 let queue = Promise.resolve();
 let pendingRows = [];
 let flushTimer;
@@ -544,10 +752,12 @@ function addMessages(list) {
   const next = { ...dms.value };
   const touched = new Set();
   for (const m of list) {
+    scheduleNdrExpiry(m);
+    if (ndrExpiresAt(m) <= nostr.now() || isDeleted(m)) continue;
     if (isBlocked(m.pubkey) || isBlocked(m.peer) || m.created_at <= (clearedAt.value[m.peer] ?? 0)) continue;
     const thread = next[m.peer] ?? [];
     if (thread.some((x) => knownIds(x).includes(m.id))) continue;
-    next[m.peer] = [...thread, m];
+    next[m.peer] = [...thread, applyNdrEdit(m)];
     touched.add(m.peer);
   }
   // Persist merged id chains so reactions to earlier versions still match after reload.
@@ -599,7 +809,7 @@ const reactionTarget = (event) => event.tags.find((t) => t[0] === 'e' && /^[a-f0
 
 function queueSave(row) {
   // Late writes for an account that is no longer active (e.g. just signed out) are dropped.
-  if (row.account !== me.value?.pubkey) return;
+  if (row.account !== me.value?.pubkey || ndrExpiresAt(row) <= nostr.now()) return;
   pendingRows.push(row);
   clearTimeout(flushTimer);
   flushTimer = setTimeout(flushSaves, 300);
@@ -711,12 +921,14 @@ async function startInbox() {
   const messages = [];
   const saved = [];
   for (const r of rows) {
-    if (r.deletedBy) deleted.set(r.id, r.deletedBy);
+    if (r.deletedId) ndrDeletions.set(`${r.deletedId}:${r.deletedBy}`, r.created_at ?? Infinity);
+    else if (r.deletedBy) deleted.set(r.id, r.deletedBy);
+    else if (r.kind === 1009) rememberNdrEdit(r);
     else if (r.kind === 7) saved.push(r);
     else messages.push(r);
   }
   if (me.value !== signer) return; // switched account while loading
-  addMessages(messages.filter((m) => deleted.get(m.id) !== m.pubkey));
+  addMessages(messages.filter((m) => !isDeleted(m)));
   addReactions(saved);
   for (const m of messages) if (m.status === 'pending' && m.tags) resumePending(m);
   requestProfiles(Object.keys(dms.value));
@@ -817,6 +1029,19 @@ async function track(id, sending, retry, onSent) {
   }
 }
 export function retrySend(id) {
+  const message = Object.values(dms.value).flat().find((m) => m.id === id);
+  if (message?.protocol === 'ndr') {
+    setStatus(id, 'queued');
+    startNdr().then(async (client) => {
+      if (!message.ndrQueued) {
+        const { id, pubkey, kind, content, tags, created_at } = message;
+        await client.send(message.peer, { id, pubkey, kind, content, tags, created_at });
+        await markNdrQueued(message);
+      }
+      await client.retry();
+    }).catch((e) => { setStatus(id, 'failed'); notify(e.message); });
+    return;
+  }
   const entry = retries.get(id);
   if (entry) track(id, entry.retry(), entry.retry, entry.onSent);
 }
@@ -824,6 +1049,11 @@ export function retrySend(id) {
 // A sent DM is stored with status 'pending' until a relay accepts it, so a reload
 // mid-send shows ⚠ (with retry) instead of a false ✓.
 function resumePending(m) {
+  if (m.protocol === 'ndr') {
+    retries.set(m.id, { retry: () => startNdr().then((c) => c.retry()) });
+    setStatus(m.id, 'queued');
+    return;
+  }
   const retry = () =>
     nostr.sendRumor(me.value, m.peer, m.kind ?? 14, m.content, m.tags, inboxOf(m.peer), inboxRelays.value ?? [], m.created_at);
   retries.set(m.id, { retry, onSent: () => markSent(m) });
@@ -831,10 +1061,13 @@ function resumePending(m) {
 }
 function markSent(m) {
   const { status: _, ...sent } = current(m);
+  dms.value = { ...dms.value, [m.peer]: (dms.value[m.peer] ?? []).map((row) => row.id === m.id ? sent : row) };
   queueSave(sent);
 }
 
 export function sendDirectMessage(peer, text, reply, edit, extraTags = []) {
+  if ((edit ? edit.protocol ?? 'nip17' : directProtocol(peer)) === 'ndr')
+    return sendNdrMessage(peer, text, reply, extraTags);
   const signer = me.value;
   const replyId = edit ? edit.reply : reply && rootId(reply);
   let rumor;
@@ -863,6 +1096,36 @@ export function sendDirectMessage(peer, text, reply, edit, extraTags = []) {
   const retry = () =>
     nostr.sendRumor(signer, peer, 14, text, rumor.tags, inboxOf(peer), inboxRelays.value ?? [], rumor.created_at);
   track(rumor.id, sending, retry, () => markSent(saved));
+  addContact(peer).catch((e) => notify(`Could not update contact list: ${e.message}`));
+}
+
+async function markNdrQueued(message) {
+  if (message.account !== me.value?.pubkey) return;
+  const row = { ...current(message), ndrQueued: true };
+  dms.value = { ...dms.value, [row.peer]: (dms.value[row.peer] ?? []).map((m) => m.id === row.id ? row : m) };
+  await db.saveDirectMessages([row]);
+}
+
+async function sendNdrMessage(peer, text, reply, extraTags) {
+  const signer = me.value;
+  const client = await startNdr();
+  if (me.value !== signer) throw new Error('Account changed');
+  const nowMs = Date.now();
+  const tags = [['p', peer], ['ms', String(nowMs)], ...(reply ? [['e', rootId(reply)]] : []), ...extraTags];
+  const event = nostr.makeRumor(signer.pubkey, 14, text, tags, Math.floor(nowMs / 1000));
+  const message = { ...event, account: signer.pubkey, peer, protocol: 'ndr', reply: reply && rootId(reply), status: 'pending' };
+  // Save plaintext before handing it to the durable ratchet queue.
+  await db.saveDirectMessages([message]);
+  if (me.value !== signer) throw new Error('Account changed');
+  addMessages([message]);
+  setStatus(event.id, 'queued');
+  try {
+    await client.send(peer, event);
+    await markNdrQueued(message);
+  } catch (error) {
+    setStatus(event.id, 'failed');
+    throw error;
+  }
   addContact(peer).catch((e) => notify(`Could not update contact list: ${e.message}`));
 }
 
@@ -1070,8 +1333,9 @@ export async function toggleReaction(context, message, emoji) {
     return;
   }
   const peer = context.peer;
-  const send = (kind, content, tags) =>
-    nostr.sendRumor(signer, peer, kind, content, [['p', peer], ...tags], inboxOf(peer), inboxRelays.value ?? []);
+  const send = (kind, content, tags) => message.protocol === 'ndr'
+    ? sendNdrRumor(peer, kind, content, [['p', peer], ...tags])
+    : nostr.sendRumor(signer, peer, kind, content, [['p', peer], ...tags], inboxOf(peer), inboxRelays.value ?? []);
   if (mine.length) {
     const ids = mine.map((r) => r.id);
     await send(5, '', [...ids.map((id) => ['e', id]), ['k', '7']]);
@@ -1157,7 +1421,9 @@ export async function deleteMessage(context, message, { onlyCurrent = false } = 
     await nostr.sendRoomDeletion(signer, roomState.value[context.room].room, ids, 9);
   } else {
     const peer = context.peer;
-    await nostr.sendRumor(
+    if (message.protocol === 'ndr') {
+      for (const id of ids) await sendNdrRumor(peer, 5, '', [['p', peer], ['e', id], ['k', String(message.kind ?? 14)]]);
+    } else await nostr.sendRumor(
       signer,
       peer,
       5,
@@ -1166,13 +1432,22 @@ export async function deleteMessage(context, message, { onlyCurrent = false } = 
       inboxOf(peer),
       inboxRelays.value ?? [],
     );
-    for (const id of ids) queueSave({ account: signer.pubkey, id, deletedBy: signer.pubkey });
+    for (const id of ids) queueSave(message.protocol === 'ndr'
+      ? { account: signer.pubkey, id: `ndr-delete:${signer.pubkey}:${id}`, deletedId: id, deletedBy: signer.pubkey, created_at: nostr.now() }
+      : { account: signer.pubkey, id, deletedBy: signer.pubkey });
   }
   applyDeletions(ids, signer.pubkey);
 }
 
 // Anagram's edit flow: delete the old version, then send a replacement at the same timestamp.
 export async function editMessage(context, message, text) {
+  if (message.protocol === 'ndr') {
+    const signer = me.value;
+    if (message.pubkey !== signer.pubkey) throw new Error('You can only edit your own messages.');
+    const rumor = await sendNdrRumor(context.peer, 1009, text, [['p', context.peer], ['e', rootId(message)], ['k', '14']]);
+    if (me.value === signer) await receiveNdr(signer, rumor, context.peer);
+    return;
+  }
   await deleteMessage(context, message, { onlyCurrent: true });
   if (context.room) {
     const room = roomState.value[context.room].room;

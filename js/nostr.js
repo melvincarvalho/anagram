@@ -371,6 +371,11 @@ async function giftWrap(signer, rumor, recipient) {
 
 // Wrap any rumor kind (14 message, 7 reaction, 5 deletion) to the recipient and to ourselves.
 // recipientRelays may be a promise, so the rumor can be shown (onRumor) before relay lookup finishes.
+export function makeRumor(pubkey, kind, content, tags, createdAt = now()) {
+  const rumor = { pubkey, created_at: createdAt, kind, tags, content };
+  return { ...rumor, id: getEventHash(rumor) };
+}
+
 export async function sendRumor(signer, recipient, kind, content, tags, recipientRelays, ownRelays, createdAt = now(), onRumor) {
   const rumor = { pubkey: signer.pubkey, created_at: createdAt, kind, tags, content };
   rumor.id = getEventHash(rumor);
@@ -761,4 +766,30 @@ export async function uploadBlossom(signer, file, server = DEFAULT_BLOSSOM) {
 
 export function enableAuth(signer) {
   pool.automaticallyAuth = () => (t) => signer.sign(t);
+}
+
+// Registration must distinguish an empty roster from unavailable relays. Only
+// a real EOSE counts; a failed connection or query timeout cannot authorize it.
+export async function fetchNdrEvents(relays, filter) {
+  const results = await Promise.allSettled(relays.map(async (url) => {
+    const relay = await pool.ensureRelay(url, { connectionTimeout: 5000 });
+    return new Promise((resolve, reject) => {
+      const events = [];
+      let sub;
+      const finish = (error) => {
+        clearTimeout(timer);
+        if (error) reject(error); else resolve(events);
+        sub?.close();
+      };
+      const timer = setTimeout(() => finish(new Error('Relay discovery timed out')), 5000);
+      sub = relay.subscribe([filter], {
+        onevent: (event) => events.push(event),
+        oneose: () => finish(),
+        onclose: () => { clearTimeout(timer); reject(new Error('Relay discovery unavailable')); },
+      });
+    });
+  }));
+  const available = results.filter((result) => result.status === 'fulfilled');
+  if (!available.length) throw new Error('Connect to a relay before enabling double ratchet.');
+  return available.flatMap((result) => result.value);
 }

@@ -804,6 +804,7 @@ function Reactions({ message, onReact }) {
 
 function Tick({ id }) {
   const status = store.sendStatus.value[id];
+  if (status === 'queued') return html`<button class="tick" title="Queued for double-ratchet delivery — tap to retry" onClick=${() => store.retrySend(id)}>🕓</button>`;
   if (status === 'sending') return html`<span class="tick" title="Sending">🕓</span>`;
   if (status === 'failed')
     return html`<button class="tick failed" title="Not sent — tap to retry" onClick=${() => store.retrySend(id)}>⚠</button>`;
@@ -1294,6 +1295,7 @@ function ChatToggles({ chatKey }) {
 }
 
 function PersonInfo({ pubkey, messages }) {
+  const encryption = useAction();
   const p = profiles.value[pubkey] ?? {};
   return html`<div class="hero">
       <${Avatar} pubkey=${pubkey} size=${96} />
@@ -1306,6 +1308,17 @@ function PersonInfo({ pubkey, messages }) {
       <${Field} label="npub" value=${nostr.shortKey(pubkey)} onCopy=${() => copy(nostr.npub(pubkey), 'npub copied')} />
       ${p.website && html`<${Field} label="Website" value=${p.website.replace(/^https:\/\//, '')} href=${p.website} />`}
       <${Field} label="Profile" value="nostr.social ↗" href=${nostr.profileUrl(pubkey)} />
+    </section>
+    <section>
+      <label>Message encryption
+        <select aria-label="Message encryption" value=${store.directProtocol(pubkey)} disabled=${encryption.busy}
+          onChange=${(e) => encryption.run(() => store.setDirectProtocol(pubkey, e.target.value))}>
+          <option value="nip17">NIP-17</option>
+          <option value="ndr">Double ratchet (Iris)</option>
+        </select>
+      </label>
+      <p class="muted small">${encryption.busy ? 'Connecting… Approve device registration in your signer if asked.' : 'Double ratchet needs a compatible client, such as Iris. Existing NIP-17 messages remain available.'}</p>
+      ${encryption.error && html`<p class="error">${encryption.error}</p>`}
     </section>
     <${ChatToggles} chatKey=${pubkey} />
     ${pubkey !== me.value.pubkey &&
@@ -1426,7 +1439,7 @@ function DirectChat({ id }) {
       <${Avatar} pubkey=${peer} size=${32} />
       <button class="title" title="Chat info" onClick=${() => (infoOpen.value = !infoOpen.value)}>
         <b>${peer === me.value.pubkey ? 'Note to self' : store.displayName(peer)}</b>
-        <small class="mono">${store.verifiedNip05(peer) ? `✓ ${store.verifiedNip05(peer)}` : nostr.shortKey(peer)}</small>
+        <small class="mono">${store.directProtocol(peer) === 'ndr' ? 'Double ratchet · ' : ''}${store.verifiedNip05(peer) ? `✓ ${store.verifiedNip05(peer)}` : nostr.shortKey(peer)}</small>
       </button>
       <button class="icon" title="Search (Ctrl+F)" onClick=${() => (chatSearch.value = !chatSearch.value)}>🔍</button>
     </header>
@@ -1451,7 +1464,7 @@ function DirectChat({ id }) {
           <button onClick=${() => store.toggleBlock(peer).catch(fail('Unblock'))}>Unblock</button></footer>`
       : html`<${Composer}
       ...${actions.composer}
-      placeholder="Encrypted message"
+      placeholder=${store.directProtocol(peer) === 'ndr' ? 'Double-ratchet message' : 'Encrypted message'}
       draftKey=${peer}
       onSend=${async (text, tags) => {
         await store.sendDirectMessage(peer, text, actions.composer.replyTo, null, tags);
