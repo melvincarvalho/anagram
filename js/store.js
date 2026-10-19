@@ -1,6 +1,7 @@
 // App state as Preact signals. Every update replaces values immutably so components re-render.
 import { signal, computed, batch } from '@preact/signals';
 import * as nostr from './nostr.js';
+import * as transport from './transport.js';
 import * as db from './db.js';
 
 export const me = signal(null); // signer
@@ -109,15 +110,12 @@ function teardown() {
   settingsLoaded = false;
   for (const sub of roomSubs.values()) sub.close();
   roomSubs.clear();
-  // Drop every relay connection: they carry the old account's NIP-42 auth and would link accounts.
-  nostr.pool.close([...nostr.pool.relays.keys()]);
+  // Drop every relay connection (they carry the old account's AUTH) and all paging cursors.
+  transport.reset();
   contactsLoaded = null;
   contactQueue = Promise.resolve();
   muteList = null;
   muteQueue = Promise.resolve();
-  dmCursors.clear();
-  dmDone.clear();
-  roomPaging.clear();
   seenWraps.clear();
   deleted.clear();
   contactList = null;
@@ -230,7 +228,7 @@ async function loadSettingsSync(signer) {
   settingsLoaded = false;
   settingsEvent = null;
   try {
-    const found = await nostr.fetchSettings(signer, contactRelays());
+    const found = await nostr.fetchSettings(signer);
     if (me.value !== signer) return;
     if (found) {
       settingsEvent = found.event;
@@ -240,7 +238,7 @@ async function loadSettingsSync(signer) {
   settingsLoaded = true;
   roomSubs.set(
     'settings',
-    nostr.pool.subscribe(contactRelays(), { kinds: [30078], authors: [signer.pubkey], '#d': [nostr.SETTINGS_D], since: nostr.now() }, {
+    transport.subscribe('self', { kinds: [30078], authors: [signer.pubkey], '#d': [nostr.SETTINGS_D], since: nostr.now() }, {
       onevent: async (event) => {
         if (me.value !== signer || event.created_at <= (settingsEvent?.created_at ?? 0)) return;
         const parsed = await nostr.parseSettings(signer, event);
@@ -262,7 +260,7 @@ async function publishSettingsNow() {
   const signer = me.value;
   if (!signer || !settingsLoaded) return;
   try {
-    const event = await nostr.publishSettings(signer, settingsDoc(), contactRelays(), settingsEvent);
+    const event = await nostr.publishSettings(signer, settingsDoc(), settingsEvent);
     if (me.value === signer) settingsEvent = event;
   } catch {}
 }
@@ -384,7 +382,7 @@ export const isBlocked = (pk) => blocked.value.includes(pk);
 async function loadMuteList() {
   const signer = me.value;
   try {
-    const list = await nostr.fetchMuteList(signer, nostr.uniq([...nostr.APP_RELAYS, ...nostr.INDEXERS]));
+    const list = await nostr.fetchMuteList(signer);
     if (me.value !== signer) return;
     muteList = list;
     applyBlocked(nostr.uniq(list.entries.filter((t) => t[0] === 'bp').map((t) => t[1])));
@@ -421,13 +419,12 @@ export function toggleBlock(pubkey) {
   const run = muteQueue.then(async () => {
     const signer = me.value;
     // Merge into the newest list so mutes and other entries set elsewhere survive.
-    const latest = await nostr.fetchMuteList(signer, nostr.uniq([...nostr.APP_RELAYS, ...nostr.INDEXERS])).catch(() => null);
+    const latest = await nostr.fetchMuteList(signer).catch(() => null);
     const base = latest?.event && latest.event.created_at > (muteList?.event?.created_at ?? 0) ? latest : muteList;
     if (!base && !latest) throw new Error('your block list could not be read, try again');
     const current = nostr.uniq((base?.entries ?? []).filter((t) => t[0] === 'bp').map((t) => t[1]));
     const nextList = current.includes(pubkey) ? current.filter((pk) => pk !== pubkey) : [...current, pubkey];
-    const relays = nostr.uniq([...nostr.APP_RELAYS, ...nostr.INDEXERS, ...(inboxRelays.value ?? [])]);
-    muteList = await nostr.publishMuteList(signer, nextList, base ?? { event: null, entries: [] }, relays);
+    muteList = await nostr.publishMuteList(signer, nextList, base ?? { event: null, entries: [] });
     if (me.value === signer) applyBlocked(nextList);
   });
   muteQueue = run.catch(() => {});
@@ -487,8 +484,7 @@ export const connection = signal('ok');
 function updateConnection() {
   if (!me.value) return (connection.value = 'ok');
   if (!navigator.onLine) return (connection.value = 'offline');
-  const up = [...nostr.pool.listConnectionStatus().values()].some(Boolean);
-  connection.value = !up ? 'connecting' : syncing.value ? 'updating' : 'ok';
+  connection.value = !transport.up() ? 'connecting' : syncing.value ? 'updating' : 'ok';
 }
 addEventListener('online', updateConnection);
 addEventListener('offline', updateConnection);
@@ -999,11 +995,12 @@ async function startInbox() {
 
   inboxRelays.value = await nostr.fetchInboxRelays(signer.pubkey).catch(() => []);
   if (me.value !== signer) return;
+  transport.setOwnRelays(inboxRelays.value);
   const syncKey = `lite:sync:${signer.pubkey}`;
   const lastSync = storage.get(syncKey, 0);
   syncing.value = true;
-  inboxSub = nostr.pool.subscribe(
-    nostr.uniq([...inboxRelays.value, ...nostr.APP_RELAYS]),
+  inboxSub = transport.subscribe(
+    'self',
     {
       kinds: [1059],
       '#p': [signer.pubkey],
@@ -1023,36 +1020,13 @@ async function startInbox() {
   );
 }
 
-// Page history from each relay on its own, with its own cursor, so a slow or sparse
-// relay can't make us skip events another relay has (Anagram pages per relay too).
-async function pagePerRelay(relays, filter, cursors, done, limit) {
-  const pages = await Promise.all(
-    relays
-      .filter((r) => !done.has(r))
-      .map(async (relay) => {
-        const until = cursors.get(relay);
-        const events = await nostr.pool
-          .querySync([relay], { ...filter, limit, ...(until ? { until: until - 1 } : {}) })
-          .catch(() => null);
-        if (!events) return []; // relay failed: try it again next time
-        if (!events.length) done.add(relay);
-        else cursors.set(relay, Math.min(...events.map((e) => e.created_at)));
-        return events;
-      }),
-  );
-  return { events: pages.flat(), finished: relays.every((r) => done.has(r)) };
-}
-
-const dmCursors = new Map();
-const dmDone = new Set();
 export const dmHistoryDone = signal(false);
 
 export async function loadOlderDirectMessages() {
   const signer = me.value;
   syncing.value = true;
   try {
-    const relays = nostr.uniq([...(inboxRelays.value ?? []), ...nostr.APP_RELAYS]);
-    const { events, finished } = await pagePerRelay(relays, { kinds: [1059], '#p': [signer.pubkey] }, dmCursors, dmDone, 500);
+    const { events, finished } = await transport.pageOlder('self', { kinds: [1059], '#p': [signer.pubkey] }, `dm:${signer.pubkey}`, 500);
     if (me.value !== signer) return;
     events.forEach(enqueue);
     await queue;
@@ -1111,7 +1085,7 @@ export function retrySend(id) {
 // mid-send shows ⚠ (with retry) instead of a false ✓.
 function resumePending(m) {
   const retry = () =>
-    nostr.sendRumor(me.value, m.peer, m.kind ?? 14, m.content, m.tags, inboxOf(m.peer), inboxRelays.value ?? [], m.created_at);
+    nostr.sendRumor(me.value, m.peer, m.kind ?? 14, m.content, m.tags, inboxOf(m.peer), m.created_at);
   retries.set(m.id, { retry, onSent: () => markSent(m) });
   setStatus(m.id, 'failed');
 }
@@ -1144,10 +1118,10 @@ export function sendDirectMessage(peer, text, reply, edit, extraTags = []) {
     queueSave({ ...saved, status: 'pending' });
   };
   let saved;
-  const sending = nostr.sendDirectMessage(signer, peer, text, inboxOf(peer), inboxRelays.value ?? [], replyId, edit, show, extraTags);
+  const sending = nostr.sendDirectMessage(signer, peer, text, inboxOf(peer), replyId, edit, show, extraTags);
   // A retry re-sends the same rumor, so it can't duplicate the message.
   const retry = () =>
-    nostr.sendRumor(signer, peer, 14, text, rumor.tags, inboxOf(peer), inboxRelays.value ?? [], rumor.created_at);
+    nostr.sendRumor(signer, peer, 14, text, rumor.tags, inboxOf(peer), rumor.created_at);
   track(rumor.id, sending, retry, () => markSent(saved));
   if (peer !== signer.pubkey) addContact(peer).catch((e) => notify(`Could not update contact list: ${e.message}`));
 }
@@ -1160,7 +1134,7 @@ export async function saveProfile(fields, { fresh = false } = {}) {
   const previous = fresh ? null : await nostr.fetchOwnProfile(signer.pubkey);
   if (!fresh && !previous.event && Object.keys(profiles.value[signer.pubkey] ?? {}).length)
     throw new Error("Couldn't read your current profile from the network. Try again in a moment.");
-  const { event, data } = await nostr.publishProfile(signer, fields, previous, inboxRelays.value ?? []);
+  const { event, data } = await nostr.publishProfile(signer, fields, previous);
   const p = {
     pubkey: signer.pubkey,
     created_at: event.created_at,
@@ -1192,7 +1166,10 @@ export async function saveInboxRelays(list) {
   const signer = me.value;
   await nostr.publishInboxRelays(signer, relays);
   nostr.publishRelayList(signer, relays).catch(() => {}); // best effort; the inbox list is what matters
-  if (me.value === signer) inboxRelays.value = relays;
+  if (me.value === signer) {
+    inboxRelays.value = relays;
+    transport.setOwnRelays(relays);
+  }
   return relays;
 }
 
@@ -1205,7 +1182,6 @@ export function loadRelayDirectory() {
     .catch(() => (relayDirectory.value = []));
 }
 
-const contactRelays = () => nostr.uniq([...(inboxRelays.value ?? []), ...nostr.APP_RELAYS]);
 
 let contactsLoaded = null; // resolves once the contact list has been read (or failed)
 let contactQueue = Promise.resolve(); // serialises list updates so concurrent adds can't overwrite each other
@@ -1217,7 +1193,7 @@ function loadContacts() {
 async function readContacts() {
   const signer = me.value;
   try {
-    const list = await nostr.fetchContactList(signer, nostr.uniq([...nostr.APP_RELAYS, ...nostr.INDEXERS]));
+    const list = await nostr.fetchContactList(signer);
     if (me.value !== signer) return;
     contactList = list;
     contacts.value = list.pubkeys;
@@ -1240,10 +1216,10 @@ async function addContactNow(pubkey) {
   if (me.value !== signer || contacts.value.includes(pubkey)) return;
   // Never publish over a list we could not read: that would wipe the user's contacts.
   if (!contactList) throw new Error('your contact list has not loaded yet');
-  const latest = await nostr.fetchContactList(signer, contactRelays());
+  const latest = await nostr.fetchContactList(signer);
   const base = latest.event && latest.event.created_at > (contactList.event?.created_at ?? 0) ? latest : contactList;
   const pubkeys = nostr.uniq([...base.pubkeys, pubkey]);
-  const event = await nostr.publishContactList(signer, pubkeys, contactRelays(), base.event);
+  const event = await nostr.publishContactList(signer, pubkeys, base.event);
   if (me.value !== signer) return;
   contactList = { event, pubkeys };
   contacts.value = pubkeys;
@@ -1359,21 +1335,21 @@ export async function openRoom(pointer) {
   requestProfiles([room.owner]);
   if (room.pinned)
     nostr
-      .fetchEvent(nostr.uniq([...room.relays, ...nostr.APP_RELAYS]), room.pinned)
+      .fetchEvent({ room }, room.pinned)
       .then((e) => e && nostr.validRoomMessage(e, address) && setRoom(address, { pinnedEvent: e }))
       .catch(() => {});
   roomSubs.set(
     address,
-    nostr.pool.subscribe(
-      nostr.uniq([...room.relays, ...nostr.APP_RELAYS]),
+    transport.subscribe(
+      { room },
       { kinds: [9], '#a': [address], limit: 100 },
       { onevent: (e) => addRoomMessages(address, [e]) },
     ),
   );
   roomSubs.set(
     `${address}:activity`,
-    nostr.pool.subscribe(
-      nostr.uniq([...room.relays, ...nostr.APP_RELAYS]),
+    transport.subscribe(
+      { room },
       { kinds: [5, 7], '#h': [address], limit: 500 },
       { onevent: (e) => roomActivity(address, e) },
     ),
@@ -1419,17 +1395,17 @@ export async function toggleReaction(context, message, emoji) {
     if (mine.length) {
       const event = await nostr.signRoomDeletion(signer, room, ids, 7);
       applyDeletions(ids, signer.pubkey);
-      nostr.publish(nostr.roomRelays(room), event, signer).catch(fail('Removing reaction', () => undoDeletions(ids, signer.pubkey, () => addReactions(mine))));
+      nostr.publish({ room }, event, signer).catch(fail('Removing reaction', () => undoDeletions(ids, signer.pubkey, () => addReactions(mine))));
     } else {
       const event = await nostr.signRoomReaction(signer, room, message, emoji);
       roomActivity(room.address, event);
-      nostr.publish(nostr.roomRelays(room), event, signer).catch(fail('Reaction', () => applyDeletions([event.id], signer.pubkey)));
+      nostr.publish({ room }, event, signer).catch(fail('Reaction', () => applyDeletions([event.id], signer.pubkey)));
     }
     return;
   }
   const peer = context.peer;
   const send = (kind, content, tags, onRumor) =>
-    nostr.sendRumor(signer, peer, kind, content, [['p', peer], ...tags], inboxOf(peer), inboxRelays.value ?? [], nostr.now(), onRumor);
+    nostr.sendRumor(signer, peer, kind, content, [['p', peer], ...tags], inboxOf(peer), nostr.now(), onRumor);
   if (mine.length) {
     applyDeletions(ids, signer.pubkey);
     for (const id of ids) queueSave(tombstone(signer.pubkey, id, signer.pubkey));
@@ -1465,7 +1441,7 @@ export function fetchQuote(address, id) {
   const room = roomState.value[address]?.room;
   if (!room) return;
   nostr
-    .fetchEvent(nostr.roomRelays(room), id)
+    .fetchEvent({ room }, id)
     .then((e) => (quotes.value = { ...quotes.value, [id]: e && nostr.validRoomMessage(e, address) ? e : null }))
     .catch(() => {});
 }
@@ -1477,20 +1453,18 @@ export async function loadUntil(address, id, maxPages = 10) {
   return has();
 }
 
-const roomPaging = new Map(); // address -> { cursors, done }
 
 export async function loadOlderRoomMessages(address) {
   const state = roomState.value[address];
   if (!state?.room) return;
-  if (!roomPaging.has(address)) roomPaging.set(address, { cursors: new Map(), done: new Set() });
-  const { cursors, done } = roomPaging.get(address);
-  const relays = nostr.uniq([...state.room.relays, ...nostr.APP_RELAYS]);
-  const { events, finished } = await pagePerRelay(relays, { kinds: [9], '#a': [address] }, cursors, done, 100);
+  const room = state.room;
+  const oldest = state.messages[0]?.created_at;
+  const { events, finished } = await transport.pageOlder({ room }, { kinds: [9], '#a': [address] }, `room:${address}`, 100, oldest);
   addRoomMessages(address, events);
   // Reactions and deletions for the older messages too, or deleted ones would reappear.
   const ids = nostr.uniq(events.map((e) => e.id));
   for (let i = 0; i < ids.length; i += 100) {
-    const activity = await nostr.relayQuery(relays, { kinds: [5, 7], '#e': ids.slice(i, i + 100) }).catch(() => []);
+    const activity = await transport.query({ room }, { kinds: [5, 7], '#e': ids.slice(i, i + 100) }).catch(() => []);
     for (const e of activity) roomActivity(address, e);
   }
   if (finished) setRoom(address, { exhausted: true });
@@ -1559,8 +1533,7 @@ export async function sendRoomMessage(address, text, reply, extraTags = []) {
   // Signing is the only wait (instant for local keys). A signing error rejects here.
   sending.catch(() => {}); // publish failures are reported by track()
   const event = await Promise.race([signed, sending.then(() => signed)]);
-  const relays = nostr.uniq([...room.relays, ...nostr.APP_RELAYS]);
-  track(event.id, sending, () => nostr.publish(relays, event, me.value));
+  track(event.id, sending, () => nostr.publish({ room }, event, me.value));
 }
 
 // Forward a copy like Anagram does: same text plus its NIP-92 attachments, no attribution.
@@ -1590,12 +1563,12 @@ export async function deleteMessage(context, message, { onlyCurrent = false, bac
     const room = roomState.value[context.room].room;
     const event = await nostr.signRoomDeletion(signer, room, ids, 9);
     applyDeletions(ids, signer.pubkey);
-    publishing = nostr.publish(nostr.roomRelays(room), event, signer);
+    publishing = nostr.publish({ room }, event, signer);
   } else {
     const peer = context.peer;
     applyDeletions(ids, signer.pubkey);
     for (const id of ids) queueSave(tombstone(signer.pubkey, id, signer.pubkey));
-    publishing = nostr.sendRumor(signer, peer, 5, '', [['p', peer], ...ids.map((id) => ['e', id]), ['k', String(message.kind ?? 14)]], inboxOf(peer), inboxRelays.value ?? []);
+    publishing = nostr.sendRumor(signer, peer, 5, '', [['p', peer], ...ids.map((id) => ['e', id]), ['k', String(message.kind ?? 14)]], inboxOf(peer));
   }
   if (!background) return publishing;
   publishing.catch((e) => {
@@ -1610,16 +1583,15 @@ export async function editMessage(context, message, text) {
   const signer = me.value;
   if (context.room) {
     const room = roomState.value[context.room].room;
-    const relays = nostr.roomRelays(room);
     // signRoomMessage copies the edited message's q and imeta tags (Anagram's edit format).
     const replacement = await nostr.signRoomMessage(signer, room, text, null, message);
     const deletion = await nostr.signRoomDeletion(signer, room, [message.id], 9);
     applyDeletions([message.id], signer.pubkey);
     addRoomMessages(context.room, [replacement]);
     setStatus(replacement.id, 'sending');
-    const publishReplacement = () => nostr.publish(relays, replacement, signer);
+    const publishReplacement = () => nostr.publish({ room }, replacement, signer);
     try {
-      await nostr.publish(relays, deletion, signer);
+      await nostr.publish({ room }, deletion, signer);
     } catch (e) {
       // Nothing changed on the relays, so undo the edit here too; the old text stays.
       dropRoomMessage(context.room, replacement.id);

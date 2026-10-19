@@ -9,6 +9,12 @@ A no-build Preact client for private Nostr DMs and public chat rooms, wire-compa
 - **Media:** photos, video and audio upload to a Blossom server (default `blossom.nostr.build`, as Anagram) with a kind 24242 auth event, and are sent as NIP-92 `imeta` attachments. In rooms only trusted members may post media.
 - **Login:** nsec (kept in localStorage), NIP-07 extension (needs NIP-44), or a NIP-46 `bunker://` signer.
 
+## Transport
+
+`js/transport.js` is the only module that talks to relays. Everything above it (`nostr.js` protocol helpers, `store.js`) asks for a **scope** rather than relay URLs: `'app'`, `'index'` (profiles and lists of anyone), `'self'` (your own inbox relays, lists and settings), `{ room }`, `{ peer, relays }` (a DM recipient; a publish only counts if one of *their* relays accepts) or an explicit `{ relays }`. The transport resolves scopes to relay sets, runs reads with a deadline, keeps the per-relay history cursors, answers NIP-42 AUTH, reports whether anything is connected, and resets on account switch.
+
+Relays are the interim transport. The plan is NIP-98-authenticated HTTP ([nip98.com](https://nip98.com)): one base URL where `query`/`subscribe`/`publish` become `GET`/`SSE`/`POST` with the scope as a parameter and a signed kind 27235 `Authorization` header from the account's signer. That swap is a change to `transport.js` alone; the scopes, the signers and everything in `store.js` stay as they are.
+
 ## Privacy
 
 What leaves your device, and to whom. Nothing here is hidden from you; this is the list.
