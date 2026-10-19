@@ -281,11 +281,12 @@ export async function sendRumor(signer, recipient, kind, content, tags, recipien
 export const editTag = (previousId) => ['e', previousId, '', 'edit'];
 export const isEdited = (tags) => tags.some((t) => t[0] === 'e' && t[3] === 'edit');
 
-export function sendDirectMessage(signer, recipient, text, recipientRelays, ownRelays, replyId, edit, onRumor) {
+export function sendDirectMessage(signer, recipient, text, recipientRelays, ownRelays, replyId, edit, onRumor, extraTags = []) {
   const tags = [
     ['p', recipient],
     ...(replyId ? [['e', replyId, '', 'reply']] : []),
     ...(edit ? [editTag(edit.id)] : []),
+    ...extraTags,
   ];
   return sendRumor(signer, recipient, 14, text, tags, recipientRelays, ownRelays, edit?.created_at ?? now(), onRumor);
 }
@@ -433,7 +434,7 @@ export function validRoomMessage(event, address) {
   );
 }
 
-export async function sendRoomMessage(signer, room, text, reply, edit, onSigned) {
+export async function sendRoomMessage(signer, room, text, reply, edit, onSigned, extraTags = []) {
   const event = await signer.sign({
     kind: 9,
     // Edits keep the original timestamp so the message stays in place.
@@ -443,6 +444,7 @@ export async function sendRoomMessage(signer, room, text, reply, edit, onSigned)
       ['a', room.address],
       ...(edit ? [editTag(edit.id), ...edit.tags.filter((t) => t[0] === 'q')] : []),
       ...(reply && !edit ? [['q', reply.id, room.relays[0] ?? '', reply.pubkey]] : []),
+      ...extraTags,
     ],
   });
   onSigned?.(event);

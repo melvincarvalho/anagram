@@ -456,7 +456,7 @@ async function track(id, sending, retry) {
 }
 export const retrySend = (id) => retries.has(id) && track(id, retries.get(id)(), retries.get(id));
 
-export function sendDirectMessage(peer, text, reply, edit) {
+export function sendDirectMessage(peer, text, reply, edit, extraTags = []) {
   const signer = me.value;
   const replyId = edit ? edit.reply : reply?.id;
   let rumor;
@@ -473,11 +473,12 @@ export function sendDirectMessage(peer, text, reply, edit) {
       content: text,
       reply: replyId,
       edited: !!edit,
+      ...(extraTags.length ? { tags: r.tags } : {}),
     };
     addMessages([m]);
     queueSave(m);
   };
-  const sending = nostr.sendDirectMessage(signer, peer, text, inboxOf(peer), inboxRelays.value ?? [], replyId, edit, show);
+  const sending = nostr.sendDirectMessage(signer, peer, text, inboxOf(peer), inboxRelays.value ?? [], replyId, edit, show, extraTags);
   // A retry re-sends the same rumor, so it can't duplicate the message.
   const retry = () =>
     nostr.sendRumor(signer, peer, 14, text, rumor.tags, inboxOf(peer), inboxRelays.value ?? [], rumor.created_at);
@@ -680,7 +681,7 @@ export async function createRoom(input) {
   return room;
 }
 
-export async function sendRoomMessage(address, text, reply) {
+export async function sendRoomMessage(address, text, reply, extraTags = []) {
   const room = roomState.value[address].room;
   let onSigned;
   const signed = new Promise((resolve) => (onSigned = resolve));
@@ -688,11 +689,17 @@ export async function sendRoomMessage(address, text, reply) {
     // Signed: show it now; publishing continues in the background.
     addRoomMessages(address, [e]);
     onSigned(e);
-  });
+  }, extraTags);
   // Signing is the only wait (instant for local keys). A signing error rejects here.
   const event = await Promise.race([signed, sending.then(() => signed)]);
   const relays = nostr.uniq([...room.relays, ...nostr.APP_RELAYS]);
   track(event.id, sending, () => nostr.publish(relays, event, me.value));
+}
+
+// Forward a copy like Anagram does: same text plus its NIP-92 attachments, no attribution.
+export function forwardMessage(target, message) {
+  const tags = (message.tags ?? []).filter((t) => t[0] === 'imeta');
+  return target.room ? sendRoomMessage(target.room, message.content, null, tags) : sendDirectMessage(target.peer, message.content, null, null, tags);
 }
 
 // Delete our own message: NIP-09 request, honoured by Anagram and most clients.
