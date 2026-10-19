@@ -288,7 +288,9 @@ function DirectChat({ id }) {
       <a class="back" href="#">‹</a>
       <${Avatar} pubkey=${peer} size=${32} />
       <div class="title">
-        <b>${peer === me.value.pubkey ? 'Note to self' : store.displayName(peer)}</b>
+        <a class="name" href=${nostr.profileUrl(peer)} target="_blank" rel="noopener" title="View profile on nostr.social">
+          ${peer === me.value.pubkey ? 'Note to self' : store.displayName(peer)}
+        </a>
         <small class="mono" title=${nostr.did(peer)} onClick=${() => copy(nostr.did(peer), 'DID copied')}>${nostr.shortKey(peer)}</small>
       </div>
     </header>
@@ -438,6 +440,7 @@ function Settings() {
         <div class="buttons">
           <button onClick=${() => copy(nostr.did(signer.pubkey), 'DID copied')}>Copy DID</button>
           <button onClick=${() => copy(nostr.npub(signer.pubkey), 'npub copied')}>Copy npub</button>
+          <a class="button" href=${nostr.profileUrl(signer.pubkey)} target="_blank" rel="noopener">View profile</a>
         </div>
         <p class="muted small">Signed in with ${signer.type === 'nsec' ? 'a private key' : signer.type === 'bunker' ? 'a remote signer' : 'a browser extension'}.</p>
         ${signer.type === 'nsec' &&

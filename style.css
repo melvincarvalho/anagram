@@ -525,3 +525,12 @@ button.link {
   flex-wrap: wrap;
   gap: 8px;
 }
+
+.bar .title a.name {
+  color: inherit;
+  font-weight: 700;
+  text-decoration: none;
+}
+.bar .title a.name:hover {
+  text-decoration: underline;
+}

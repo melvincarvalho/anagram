@@ -138,6 +138,7 @@ export function serializeSigner(signer) {
 
 // did:nostr (did-nostr.com) is the canonical identifier; npub is display only.
 export const did = (hex) => `did:nostr:${hex}`;
+export const profileUrl = (hex) => `https://nostr.social/${did(hex)}`;
 export const npub = (hex) => nip19.npubEncode(hex);
 export const shortKey = (hex) => {
   const n = npub(hex);
