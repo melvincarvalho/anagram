@@ -1195,7 +1195,7 @@ function Composer({ onSend, placeholder, replyTo, onCancelReply, editing, onEdit
   const input = useRef();
   const { busy, error, run } = useAction();
   useEffect(() => {
-    if (editing) setText(editing.content);
+    if (editing) setText(collapseMentions(editing.content));
     if (editing || replyTo) input.current?.focus();
   }, [editing?.id, replyTo?.id]);
   const cancel = () => {
@@ -1207,14 +1207,15 @@ function Composer({ onSend, placeholder, replyTo, onCancelReply, editing, onEdit
   const send = () => {
     const value = text.trim();
     if (!value || busy) return;
-    if (editing && value === editing.content.trim()) return cancel();
+    if (editing && expandMentions(value) === editing.content.trim()) return cancel();
     // Clear at once like Telegram; put the text back if sending fails outright.
     // After an edit, bring back whatever draft was there before.
     if (editing) setTextState(store.drafts.value[draftKey] ?? '');
     else setText('');
     run(async () => {
       try {
-        await (editing ? onEdit(editing, value) : onSend(value, attachmentsFor(value)));
+        const wire = expandMentions(value); // @Name -> nostr:nprofile… (Anagram's mention format)
+        await (editing ? onEdit(editing, wire) : onSend(wire, attachmentsFor(value)));
       } catch (e) {
         setText(value);
         throw e;
@@ -1292,10 +1293,31 @@ function Composer({ onSend, placeholder, replyTo, onCancelReply, editing, onEdit
         .filter((pk) => pk !== me.value.pubkey && store.displayName(pk).toLowerCase().includes(mention.query))
         .slice(0, 6)
     : [];
+  // The composer shows @Name; the wire format (nostr:nprofile…) is produced on send.
+  const mentionMap = useRef(new Map()); // '@Name' -> pubkey
+  const labelFor = (pk) => `@${store.displayName(pk).replace(/\s+/g, ' ').trim()}`;
+  const expandMentions = (value) => {
+    let out = value;
+    for (const [label, pk] of [...mentionMap.current].sort((a, b) => b[0].length - a[0].length)) {
+      const re = new RegExp(`(^|[^\\p{L}\\p{N}_])${label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?=$|[^\\p{L}\\p{N}_])`, 'gu');
+      out = out.replace(re, (_, before) => `${before}${nostr.mentionUri(pk)}`);
+    }
+    return out;
+  };
+  const collapseMentions = (value) =>
+    value.replace(MENTION_RE, (m) => {
+      const pk = nostr.decodePubkey(m);
+      if (!pk) return m;
+      const label = labelFor(pk);
+      mentionMap.current.set(label, pk);
+      return label;
+    });
   const pickMention = (pk) => {
     const el = input.current;
     const end = el.selectionStart;
-    const uri = `${nostr.mentionUri(pk)} `;
+    const label = labelFor(pk);
+    mentionMap.current.set(label, pk);
+    const uri = `${label} `;
     setText(text.slice(0, mention.start) + uri + text.slice(end));
     setMention(null);
     requestAnimationFrame(() => {
