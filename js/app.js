@@ -1044,7 +1044,7 @@ function MessageList({ messages, policy = () => 'trusted', badge = () => '', med
   </div>`;
 }
 
-function Composer({ onSend, placeholder, replyTo, onCancelReply, editing, onEdit, onCancelEdit, draftKey, canUpload = true }) {
+function Composer({ onSend, placeholder, replyTo, onCancelReply, editing, onEdit, onCancelEdit, draftKey, canUpload = true, mentionables = [] }) {
   const [text, setTextState] = useState(() => store.drafts.value[draftKey] ?? '');
   // Keep the per-chat draft in step with what is typed (not while editing a sent message).
   // Drafts reach the store after a pause in typing, so each keystroke doesn't re-render the sidebar.
@@ -1130,6 +1130,31 @@ function Composer({ onSend, placeholder, replyTo, onCancelReply, editing, onEdit
     const tokens = new Set(value.split(/\s+/));
     return [...uploads.current].filter(([url]) => tokens.has(url)).map(([, tag]) => tag);
   };
+  // @mention autocomplete: "@query" right before the caret suggests people in this chat.
+  const [mention, setMention] = useState(null); // { start, query, index }
+  const updateMention = (el) => {
+    const before = el.value.slice(0, el.selectionStart);
+    const m = /(^|\s)@([\p{L}\p{N}_.\-]{0,30})$/u.exec(before);
+    setMention(m ? { start: before.length - m[2].length - 1, query: m[2].toLowerCase(), index: 0 } : null);
+  };
+  const candidates = mention
+    ? nostr
+        .uniq([...mentionables, ...store.contacts.value])
+        .filter((pk) => pk !== me.value.pubkey && store.displayName(pk).toLowerCase().includes(mention.query))
+        .slice(0, 6)
+    : [];
+  const pickMention = (pk) => {
+    const el = input.current;
+    const end = el.selectionStart;
+    const uri = `${nostr.mentionUri(pk)} `;
+    setText(text.slice(0, mention.start) + uri + text.slice(end));
+    setMention(null);
+    requestAnimationFrame(() => {
+      el.focus();
+      el.setSelectionRange(mention.start + uri.length, mention.start + uri.length);
+    });
+  };
+
   const insert = (e) => {
     const el = input.current;
     const start = el?.selectionStart ?? text.length;
@@ -1159,6 +1184,18 @@ function Composer({ onSend, placeholder, replyTo, onCancelReply, editing, onEdit
   >
     ${uploading > 0 && html`<div class="uploading">Uploading ${uploading} file${uploading > 1 ? 's' : ''} to ${new URL(store.mediaServer.value).host}…</div>`}
     ${emojiOpen && html`<${EmojiPanel} onPick=${insert} onClose=${() => setEmojiOpen(false)} />`}
+    ${candidates.length > 0 &&
+    html`<div class="mentions-popup" role="listbox">
+      ${candidates.map(
+        (pk, i) => html`<button role="option" aria-selected=${i === mention.index} class=${i === mention.index ? 'on' : ''}
+          onMouseDown=${(e) => {
+            e.preventDefault();
+            pickMention(pk);
+          }}>
+          <${Avatar} pubkey=${pk} size=${28} /><span><b>${store.displayName(pk)}</b> <small>${profiles.value[pk]?.nip05 || ''}</small></span>
+        </button>`,
+      )}
+    </div>`}
     ${context &&
     html`<div class="replying">
       <span class="what">${editing ? '✎ Edit message' : `↩ Reply to ${store.displayName(replyTo.pubkey)}`}</span>
@@ -1184,7 +1221,9 @@ function Composer({ onSend, placeholder, replyTo, onCancelReply, editing, onEdit
         onInput=${(e) => {
           setText(e.target.value);
           autosize(e.target);
+          updateMention(e.target);
         }}
+        onBlur=${() => setTimeout(() => setMention(null), 150)}
         onPaste=${(e) => {
           const files = [...(e.clipboardData?.files ?? [])];
           if (files.length && !editing) {
@@ -1193,6 +1232,18 @@ function Composer({ onSend, placeholder, replyTo, onCancelReply, editing, onEdit
           }
         }}
         onKeyDown=${(e) => {
+          if (candidates.length) {
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+              e.preventDefault();
+              const step = e.key === 'ArrowDown' ? 1 : -1;
+              return setMention({ ...mention, index: (mention.index + step + candidates.length) % candidates.length });
+            }
+            if (e.key === 'Enter' || e.key === 'Tab') {
+              e.preventDefault();
+              return pickMention(candidates[mention.index] ?? candidates[0]);
+            }
+            if (e.key === 'Escape') return setMention(null);
+          }
           // On touch keyboards Enter makes a new line (like Telegram mobile); send with the button.
           if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && !touchKeyboard) {
             e.preventDefault();
@@ -1495,6 +1546,7 @@ function DirectChat({ id }) {
       ...${actions.composer}
       placeholder="Encrypted message"
       draftKey=${peer}
+      mentionables=${[peer]}
       onSend=${async (text, tags) => {
         await store.sendDirectMessage(peer, text, actions.composer.replyTo, null, tags);
         actions.clearReply();
@@ -1565,6 +1617,7 @@ function RoomChat({ id }) {
     />
     <${Composer}
       ...${actions.composer}
+      mentionables=${nostr.uniq(state.messages.map((m) => m.pubkey).reverse())}
       placeholder="Public message — anyone can read this"
       draftKey=${room.address}
       canUpload=${nostr.roomPolicy(room, me.value.pubkey) === 'trusted'}

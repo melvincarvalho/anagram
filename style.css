@@ -1352,3 +1352,35 @@ mark {
 .connection.connecting {
   color: #b45309;
 }
+
+.mentions-popup {
+  position: absolute;
+  left: 52px;
+  bottom: calc(100% + 4px);
+  z-index: 16;
+  min-width: 240px;
+  max-width: calc(100vw - 80px);
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.18);
+}
+.mentions-popup button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  text-align: left;
+  padding: 5px 8px;
+}
+.mentions-popup button.on,
+.mentions-popup button:hover {
+  background: var(--bg);
+}
+.mentions-popup small {
+  color: var(--muted);
+}

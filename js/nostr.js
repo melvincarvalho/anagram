@@ -183,6 +183,8 @@ export async function resolveDid(hex) {
   };
 }
 export const npub = (hex) => nip19.npubEncode(hex);
+// Anagram's mention format inside message text.
+export const mentionUri = (hex) => `nostr:${nip19.nprofileEncode({ pubkey: hex, relays: [] })}`;
 export const shortKey = (hex) => {
   const n = npub(hex);
   return `${n.slice(0, 10)}…${n.slice(-4)}`;
