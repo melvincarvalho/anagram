@@ -1281,3 +1281,106 @@ mark {
   font-weight: 600;
   color: var(--accent);
 }
+
+/* People finder */
+.card.people {
+  max-width: 560px;
+}
+.people-list {
+  display: flex;
+  flex-direction: column;
+  max-height: 420px;
+  overflow-y: auto;
+  margin: 0 -20px;
+}
+.people-list h4 {
+  margin: 10px 20px 4px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+.people-list .person {
+  width: 100%;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  text-align: left;
+  padding: 8px 20px;
+}
+.people-list .person:hover {
+  background: var(--bg);
+}
+.people-list > p {
+  margin: 6px 20px;
+}
+
+.did-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin: 2px 0 8px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.did-stats b {
+  color: var(--text);
+}
+.info section.did .buttons {
+  margin-top: 6px;
+}
+
+.connection {
+  position: fixed;
+  top: 8px;
+  left: 50%;
+  z-index: 40;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.12);
+  color: var(--muted);
+}
+.connection.offline,
+.connection.connecting {
+  color: #b45309;
+}
+
+.mentions-popup {
+  position: absolute;
+  left: 52px;
+  bottom: calc(100% + 4px);
+  z-index: 16;
+  min-width: 240px;
+  max-width: calc(100vw - 80px);
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.18);
+}
+.mentions-popup button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  text-align: left;
+  padding: 5px 8px;
+}
+.mentions-popup button.on,
+.mentions-popup button:hover {
+  background: var(--bg);
+}
+.mentions-popup small {
+  color: var(--muted);
+}

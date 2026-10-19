@@ -141,13 +141,16 @@ export const did = (hex) => `did:nostr:${hex}`;
 // nostr.social serves did:nostr profile pages at /<hex> (the DID document is at
 // /.well-known/did/nostr/<hex>.json); /did:nostr:<hex> is not a route there.
 export const profileUrl = (hex) => `https://nostr.social/${hex}`;
+// Shareable chat link: https://nostr.chat/did:nostr:<hex> (404.html routes it into the app).
+export const chatLink = (hex) => `${location.origin}${location.pathname.replace(/[^/]*$/, '')}${did(hex)}`;
 export const didDocumentUrl = (hex) => `https://nostr.social/.well-known/did/nostr/${hex}.json`;
 
 // Resolve a did:nostr DID document over HTTP (did-nostr.com, served by nostr.social).
 // Server-provided and unsigned: treat its profile as a display hint; signed kind 0 wins.
 export async function resolveDid(hex) {
   if (!HEX.test(hex)) throw new Error('Not a did:nostr key.');
-  const res = await fetch(didDocumentUrl(hex), {
+  // /api/did is the same conformant document plus graph counts (beacon).
+  const res = await fetch(`${DIRECTORY}/api/did/${hex}`, {
     headers: { Accept: 'application/did+json, application/json' },
     referrerPolicy: 'no-referrer',
     signal: AbortSignal.timeout(5000),
@@ -173,10 +176,15 @@ export async function resolveDid(hex) {
       .map((d) => (typeof d === 'string' ? decodePubkey(d) : null))
       .filter(Boolean),
     alsoKnownAs: Array.isArray(doc.alsoKnownAs) ? doc.alsoKnownAs.filter((x) => typeof x === 'string').slice(0, 20) : [],
+    followers: Number.isSafeInteger(doc.followersCount) ? doc.followersCount : null,
+    following: Number.isSafeInteger(doc.followingCount) ? doc.followingCount : null,
+    keyMatches: (doc.verificationMethod ?? []).some((v) => typeof v.publicKeyMultibase === 'string' && v.publicKeyMultibase.endsWith(hex)),
     service: Array.isArray(doc.service) ? doc.service.slice(0, 20) : [],
   };
 }
 export const npub = (hex) => nip19.npubEncode(hex);
+// Anagram's mention format inside message text.
+export const mentionUri = (hex) => `nostr:${nip19.nprofileEncode({ pubkey: hex, relays: [] })}`;
 export const shortKey = (hex) => {
   const n = npub(hex);
   return `${n.slice(0, 10)}…${n.slice(-4)}`;
@@ -184,6 +192,9 @@ export const shortKey = (hex) => {
 
 export function decodePubkey(value) {
   value = value.trim().replace(/^nostr:/, '');
+  // Profile links: nostr.social/<hex> and nostr.chat/#/dm/did:nostr:<hex>.
+  const link = /^https?:\/\/[^/]+\/(?:#\/dm\/)?(did:nostr:[a-f0-9]{64}|[a-f0-9]{64}|npub1[02-9ac-hj-np-z]+)\/?$/i.exec(value);
+  if (link) value = decodeURIComponent(link[1]);
   const fromDid = /^did:nostr:([a-f0-9]{64})$/.exec(value.toLowerCase());
   if (fromDid) return fromDid[1];
   if (HEX.test(value)) return value;
@@ -318,6 +329,19 @@ export async function fetchDirectoryProfile(hex) {
   if (!HEX.test(hex)) return null;
   const event = verifiedFromDirectory(await directoryGet(`/api/profile/${hex}`), 0);
   return event && event.pubkey === hex ? parseProfile(event) : null;
+}
+
+// Who someone follows: their signed kind 3 from relays is authoritative; nostr.social's
+// derived (unsigned) list is a fast fallback.
+export async function fetchFollows(hex) {
+  const [relay, directory] = await Promise.allSettled([
+    pool.querySync(uniq([...APP_RELAYS, ...INDEXERS]), { kinds: [3], authors: [hex] }, { maxWait: 4000 }),
+    directoryGet(`/api/follows/${hex}`),
+  ]);
+  const signed = (relay.value ?? []).filter((e) => e.pubkey === hex).sort((a, b) => b.created_at - a.created_at)[0];
+  if (signed) return uniq(signed.tags.filter((t) => t[0] === 'p' && HEX.test(t[1])).map((t) => t[1]));
+  const list = directory.value?.pubkey === hex && Array.isArray(directory.value.follows) ? directory.value.follows : [];
+  return uniq(list.filter((pk) => HEX.test(pk)));
 }
 
 // People search (full text over profiles, ranked by followers); every hit is verified.
@@ -570,7 +594,7 @@ export function validRoomMessage(event, address) {
   );
 }
 
-export async function sendRoomMessage(signer, room, text, reply, edit, onSigned, extraTags = []) {
+export async function signRoomMessage(signer, room, text, reply, edit, extraTags = []) {
   const event = await signer.sign({
     kind: 9,
     // Edits keep the original timestamp so the message stays in place.
@@ -590,8 +614,13 @@ export async function sendRoomMessage(signer, room, text, reply, edit, onSigned,
       ...extraTags,
     ],
   });
+  return event;
+}
+
+export async function sendRoomMessage(signer, room, text, reply, edit, onSigned, extraTags = []) {
+  const event = await signRoomMessage(signer, room, text, reply, edit, extraTags);
   onSigned?.(event);
-  return publish(uniq([...room.relays, ...APP_RELAYS]), event, signer);
+  return publish(roomRelays(room), event, signer);
 }
 
 // Anagram's starter room, as an owner-signed snapshot so it shows before relays answer.
@@ -683,8 +712,10 @@ export async function publishContactList(signer, pubkeys, relays, previous) {
   return publish(relays, event, signer);
 }
 
-export async function sendRoomReaction(signer, room, message, emoji) {
-  const event = await signer.sign({
+export const roomRelays = (room) => uniq([...room.relays, ...APP_RELAYS]);
+
+export function signRoomReaction(signer, room, message, emoji) {
+  return signer.sign({
     kind: 7,
     created_at: now(),
     content: emoji,
@@ -695,18 +726,20 @@ export async function sendRoomReaction(signer, room, message, emoji) {
       ['k', '9'],
     ],
   });
-  return publish(uniq([...room.relays, ...APP_RELAYS]), event, signer);
 }
 
 // NIP-09 deletion of our own room events (reactions: k=7, messages: k=9).
-export async function sendRoomDeletion(signer, room, ids, kind) {
-  const event = await signer.sign({
+export function signRoomDeletion(signer, room, ids, kind) {
+  return signer.sign({
     kind: 5,
     created_at: now(),
     content: '',
     tags: [['h', room.address], ['k', String(kind)], ...ids.map((id) => ['e', id])],
   });
-  return publish(uniq([...room.relays, ...APP_RELAYS]), event, signer);
+}
+
+export async function sendRoomDeletion(signer, room, ids, kind) {
+  return publish(roomRelays(room), await signRoomDeletion(signer, room, ids, kind), signer);
 }
 
 // ---------- Blossom media uploads (Anagram's format) ----------

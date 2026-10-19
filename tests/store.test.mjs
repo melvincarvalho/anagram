@@ -4,10 +4,18 @@ import { build } from 'esbuild';
 import { mkdir } from 'node:fs/promises';
 import 'fake-indexeddb/auto';
 
+// The browser's connection-status poll should not keep this Node test alive.
+const setIntervalForTest = globalThis.setInterval;
+globalThis.setInterval = (...args) => { const timer = setIntervalForTest(...args); timer.unref?.(); return timer; };
 const local = new Map();
-globalThis.localStorage = { getItem: (key) => local.get(key) ?? null, setItem: (key, value) => local.set(key, value), removeItem: (key) => local.delete(key) };
+globalThis.localStorage = {
+  getItem: (key) => local.get(key) ?? null,
+  setItem(key, value) { local.set(key, value); this[key] = value; },
+  removeItem(key) { local.delete(key); delete this[key]; },
+};
 globalThis.location = { hash: '' };
 globalThis.window = { addEventListener() {} };
+globalThis.addEventListener = () => {};
 globalThis.fetch = async () => { throw new Error('No directory request in tests'); };
 // Web Locks keep the browser's device state single-writer. The test owns one tab.
 Object.defineProperty(globalThis, 'navigator', { value: { locks: { request: (_name, _options, callback) => callback({}) } }, configurable: true });
@@ -82,4 +90,30 @@ test('received edits authenticate authors and persist before an out-of-order bas
   await store.logout();
   assert.equal(clients[0].closed, true);
   assert.deepEqual(store.dms.value, {});
+});
+
+
+test('upstream NIP-17 optimistic reactions and deletes roll back on relay refusal', async () => {
+  await store.login(signer, false);
+  await store.setDirectProtocol(peer, 'nip17');
+  await store.sendDirectMessage(peer, 'NIP-17 optimistic baseline');
+  const message = store.dms.value[peer].find((row) => row.content === 'NIP-17 optimistic baseline');
+  const published = nostr.pool.publish;
+  nostr.pool.publish = () => [Promise.reject(new Error('Relay refused'))];
+  const until = async (predicate) => {
+    for (let i = 0; i < 50 && !predicate(); i++) await new Promise((resolve) => setTimeout(resolve, 10));
+    assert.ok(predicate());
+  };
+  try {
+    await store.toggleReaction({ peer }, message, '👍');
+    assert.ok(store.reactions.value[message.id]?.length);
+    await until(() => !(store.reactions.value[message.id]?.length));
+    await store.deleteMessage({ peer }, message);
+    assert.ok(!store.dms.value[peer].some((row) => row.id === message.id));
+    await until(() => store.dms.value[peer].some((row) => row.id === message.id));
+    assert.equal(clients.length, 1); // no NDR activation or transport fallback
+  } finally {
+    nostr.pool.publish = published;
+    await store.logout();
+  }
 });

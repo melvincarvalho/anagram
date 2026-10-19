@@ -386,6 +386,19 @@ function RoomAvatar({ room, size = 36 }) {
     : html`<span class="avatar room" style=${`width:${size}px;height:${size}px`}>#</span>`;
 }
 
+// Native share sheet where available (phones), otherwise copy the link.
+async function shareLink(url, title) {
+  if (navigator.share) {
+    try {
+      await navigator.share({ title, url });
+      return;
+    } catch (e) {
+      if (e.name === 'AbortError') return;
+    }
+  }
+  copy(url, 'Link copied');
+}
+
 async function copy(text, label = 'Copied') {
   try {
     await navigator.clipboard.writeText(text);
@@ -1032,7 +1045,7 @@ function MessageList({ messages, policy = () => 'trusted', badge = () => '', med
   </div>`;
 }
 
-function Composer({ onSend, placeholder, replyTo, onCancelReply, editing, onEdit, onCancelEdit, draftKey, canUpload = true }) {
+function Composer({ onSend, placeholder, replyTo, onCancelReply, editing, onEdit, onCancelEdit, draftKey, canUpload = true, mentionables = [] }) {
   const [text, setTextState] = useState(() => store.drafts.value[draftKey] ?? '');
   // Keep the per-chat draft in step with what is typed (not while editing a sent message).
   // Drafts reach the store after a pause in typing, so each keystroke doesn't re-render the sidebar.
@@ -1118,6 +1131,31 @@ function Composer({ onSend, placeholder, replyTo, onCancelReply, editing, onEdit
     const tokens = new Set(value.split(/\s+/));
     return [...uploads.current].filter(([url]) => tokens.has(url)).map(([, tag]) => tag);
   };
+  // @mention autocomplete: "@query" right before the caret suggests people in this chat.
+  const [mention, setMention] = useState(null); // { start, query, index }
+  const updateMention = (el) => {
+    const before = el.value.slice(0, el.selectionStart);
+    const m = /(^|\s)@([\p{L}\p{N}_.\-]{0,30})$/u.exec(before);
+    setMention(m ? { start: before.length - m[2].length - 1, query: m[2].toLowerCase(), index: 0 } : null);
+  };
+  const candidates = mention
+    ? nostr
+        .uniq([...mentionables, ...store.contacts.value])
+        .filter((pk) => pk !== me.value.pubkey && store.displayName(pk).toLowerCase().includes(mention.query))
+        .slice(0, 6)
+    : [];
+  const pickMention = (pk) => {
+    const el = input.current;
+    const end = el.selectionStart;
+    const uri = `${nostr.mentionUri(pk)} `;
+    setText(text.slice(0, mention.start) + uri + text.slice(end));
+    setMention(null);
+    requestAnimationFrame(() => {
+      el.focus();
+      el.setSelectionRange(mention.start + uri.length, mention.start + uri.length);
+    });
+  };
+
   const insert = (e) => {
     const el = input.current;
     const start = el?.selectionStart ?? text.length;
@@ -1147,6 +1185,18 @@ function Composer({ onSend, placeholder, replyTo, onCancelReply, editing, onEdit
   >
     ${uploading > 0 && html`<div class="uploading">Uploading ${uploading} file${uploading > 1 ? 's' : ''} to ${new URL(store.mediaServer.value).host}…</div>`}
     ${emojiOpen && html`<${EmojiPanel} onPick=${insert} onClose=${() => setEmojiOpen(false)} />`}
+    ${candidates.length > 0 &&
+    html`<div class="mentions-popup" role="listbox">
+      ${candidates.map(
+        (pk, i) => html`<button role="option" aria-selected=${i === mention.index} class=${i === mention.index ? 'on' : ''}
+          onMouseDown=${(e) => {
+            e.preventDefault();
+            pickMention(pk);
+          }}>
+          <${Avatar} pubkey=${pk} size=${28} /><span><b>${store.displayName(pk)}</b> <small>${profiles.value[pk]?.nip05 || ''}</small></span>
+        </button>`,
+      )}
+    </div>`}
     ${context &&
     html`<div class="replying">
       <span class="what">${editing ? '✎ Edit message' : `↩ Reply to ${store.displayName(replyTo.pubkey)}`}</span>
@@ -1172,7 +1222,9 @@ function Composer({ onSend, placeholder, replyTo, onCancelReply, editing, onEdit
         onInput=${(e) => {
           setText(e.target.value);
           autosize(e.target);
+          updateMention(e.target);
         }}
+        onBlur=${() => setTimeout(() => setMention(null), 150)}
         onPaste=${(e) => {
           const files = [...(e.clipboardData?.files ?? [])];
           if (files.length && !editing) {
@@ -1181,6 +1233,18 @@ function Composer({ onSend, placeholder, replyTo, onCancelReply, editing, onEdit
           }
         }}
         onKeyDown=${(e) => {
+          if (candidates.length) {
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+              e.preventDefault();
+              const step = e.key === 'ArrowDown' ? 1 : -1;
+              return setMention({ ...mention, index: (mention.index + step + candidates.length) % candidates.length });
+            }
+            if (e.key === 'Enter' || e.key === 'Tab') {
+              e.preventDefault();
+              return pickMention(candidates[mention.index] ?? candidates[0]);
+            }
+            if (e.key === 'Escape') return setMention(null);
+          }
           // On touch keyboards Enter makes a new line (like Telegram mobile); send with the button.
           if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && !touchKeyboard) {
             e.preventDefault();
@@ -1294,6 +1358,35 @@ function ChatToggles({ chatKey }) {
   </section>`;
 }
 
+// The person's did:nostr identity, resolved from nostr.social (did-nostr.com).
+function DidIdentity({ pubkey }) {
+  const entry = store.didDocs.value[pubkey];
+  useEffect(() => {
+    store.resolveDid(pubkey);
+  }, [pubkey]);
+  const count = (n) => (n == null ? '—' : n >= 10000 ? `${Math.round(n / 1000)}k` : n.toLocaleString());
+  const links = (entry?.alsoKnownAs ?? []).filter((u) => /^https:\/\//.test(u));
+  const relays = (entry?.service ?? []).map((s) => (typeof s.serviceEndpoint === 'string' ? s.serviceEndpoint : '')).filter(Boolean);
+  return html`<section class="did">
+    <h4>did:nostr identity</h4>
+    ${!entry && html`<p class="muted small">Resolving…</p>`}
+    ${entry?.error && html`<p class="muted small">Not resolved: ${entry.error}</p>`}
+    ${entry?.doc &&
+    html`<div class="did-stats">
+        <span><b>${count(entry.following)}</b> following</span>
+        <span><b>${count(entry.followers)}</b> followers</span>
+        <span title="The DID document's key matches this account">${entry.keyMatches ? '🔑 key matches' : '⚠ key mismatch'}</span>
+      </div>
+      ${links.length > 0 && html`<${Field} label="Also known as" value=${links.map((u) => html`<a href=${u} target="_blank" rel="noopener noreferrer">${u.replace(/^https:\/\//, '')}</a> `)} />`}
+      ${relays.length > 0 && html`<${Field} label="Relays" value=${relays.map((r) => r.replace(/^wss:\/\//, '')).join(', ')} />`}`}
+    <div class="buttons">
+      <button onClick=${() => shareLink(nostr.chatLink(pubkey), `${store.displayName(pubkey)} on nostr.chat`)}>Share contact</button>
+      <a class="button" href=${nostr.profileUrl(pubkey)} target="_blank" rel="noopener">nostr.social ↗</a>
+      <a class="button" href=${nostr.didDocumentUrl(pubkey)} target="_blank" rel="noopener">DID document ↗</a>
+    </div>
+  </section>`;
+}
+
 function PersonInfo({ pubkey, messages }) {
   const encryption = useAction();
   const p = profiles.value[pubkey] ?? {};
@@ -1307,7 +1400,6 @@ function PersonInfo({ pubkey, messages }) {
       <${Field} label="DID" value=${nostr.did(pubkey)} onCopy=${() => copy(nostr.did(pubkey), 'DID copied')} />
       <${Field} label="npub" value=${nostr.shortKey(pubkey)} onCopy=${() => copy(nostr.npub(pubkey), 'npub copied')} />
       ${p.website && html`<${Field} label="Website" value=${p.website.replace(/^https:\/\//, '')} href=${p.website} />`}
-      <${Field} label="Profile" value="nostr.social ↗" href=${nostr.profileUrl(pubkey)} />
     </section>
     <section>
       <label>Message encryption
@@ -1320,6 +1412,7 @@ function PersonInfo({ pubkey, messages }) {
       <p class="muted small">${encryption.busy ? 'Connecting… Approve device registration in your signer if asked.' : 'Double ratchet needs a compatible client, such as Iris. Existing NIP-17 messages remain available.'}</p>
       ${encryption.error && html`<p class="error">${encryption.error}</p>`}
     </section>
+    <${DidIdentity} pubkey=${pubkey} />
     <${ChatToggles} chatKey=${pubkey} />
     ${pubkey !== me.value.pubkey &&
     html`<section class="actions">
@@ -1466,6 +1559,7 @@ function DirectChat({ id }) {
       ...${actions.composer}
       placeholder=${store.directProtocol(peer) === 'ndr' ? 'Double-ratchet message' : 'Encrypted message'}
       draftKey=${peer}
+      mentionables=${[peer]}
       onSend=${async (text, tags) => {
         await store.sendDirectMessage(peer, text, actions.composer.replyTo, null, tags);
         actions.clearReply();
@@ -1536,6 +1630,7 @@ function RoomChat({ id }) {
     />
     <${Composer}
       ...${actions.composer}
+      mentionables=${nostr.uniq(state.messages.map((m) => m.pubkey).reverse())}
       placeholder="Public message — anyone can read this"
       draftKey=${room.address}
       canUpload=${nostr.roomPolicy(room, me.value.pubkey) === 'trusted'}
@@ -1548,29 +1643,75 @@ function RoomChat({ id }) {
   </section>`;
 }
 
+// Find someone to message: paste an identity, search nostr.social, or pick from your follows.
+function PeopleFinder() {
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState({ q: '', people: [], error: '' });
+  const [follows, setFollows] = useState(null);
+  const open = useAction();
+  const q = query.trim();
+  const direct = nostr.decodePubkey(q);
+  useEffect(() => {
+    store.followsOf(me.value.pubkey).then(setFollows, () => setFollows([]));
+  }, []);
+  useEffect(() => {
+    if (q.length < 2 || direct || q.includes('@')) return setResults({ q: '', people: [], error: '' });
+    const timer = setTimeout(() => {
+      nostr.searchDirectory(q, 20).then(
+        (people) => {
+          store.rememberProfiles(people);
+          setResults({ q, people, error: '' });
+        },
+        (e) => setResults({ q, people: [], error: e.message }),
+      );
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [q]);
+  const go = (pk) => store.go(`#/dm/${nostr.did(pk)}`);
+  const lower = q.toLowerCase();
+  const followRows = (follows ?? []).filter((pk) => !lower || store.displayName(pk).toLowerCase().includes(lower)).slice(0, 60);
+  useEffect(() => follows && store.requestProfiles(follows.slice(0, 60)), [follows]);
+  const row = (pk, extra) => html`<button class="item person" onClick=${() => go(pk)}>
+    <${Avatar} pubkey=${pk} />
+    <span class="label">
+      <b>${store.displayName(pk)}</b>
+      <small>${extra ?? (profiles.value[pk]?.nip05 || nostr.shortKey(pk))}</small>
+    </span>
+  </button>`;
+  return html`<div class="card people">
+    <h3>New message</h3>
+    <form onSubmit=${(e) => {
+      e.preventDefault();
+      open.run(async () => go((await nostr.resolvePubkey(q)).pubkey));
+    }}>
+      <input autofocus placeholder="Search people, or paste did:nostr / nostr.social link / name@domain" value=${query} onInput=${(e) => setQuery(e.target.value)} />
+    </form>
+    ${open.error && html`<p class="error">${open.error}</p>`}
+    <div class="people-list">
+      ${direct && row(direct, nostr.did(direct))}
+      ${!direct && q.includes('@') && html`<button class="item person" onClick=${() => open.run(async () => go((await nostr.resolvePubkey(q)).pubkey))}>
+        <span class="avatar room">@</span><span class="label"><b>Look up ${q}</b><small>NIP-05 address</small></span></button>`}
+      ${results.q === q &&
+      results.people.map((p) => row(p.pubkey, `${p.nip05 || nostr.shortKey(p.pubkey)} · ${p.followers} followers`))}
+      ${results.q === q && !results.people.length && !results.error && html`<p class="muted small">No people found on nostr.social.</p>`}
+      ${results.error && html`<p class="muted small">Search unavailable: ${results.error}</p>`}
+      ${!direct && followRows.length > 0 && html`<h4>People you follow</h4>${followRows.map((pk) => row(pk))}`}
+      ${follows === null && html`<p class="muted small">Loading people you follow…</p>`}
+    </div>
+    <p class="muted small">Search by nostr.social · results are signature-checked.</p>
+  </div>`;
+}
+
 function NewThing() {
-  const [contact, setContact] = useState('');
   const [link, setLink] = useState('');
   const [name, setName] = useState('');
   const [about, setAbout] = useState('');
-  const dm = useAction();
   const join = useAction();
   const create = useAction();
   return html`<section class="main scroll">
     <header class="bar"><a class="back" href="#">‹</a><div class="title"><b>New</b></div></header>
     <div class="forms">
-      <form class="card" onSubmit=${(e) => {
-        e.preventDefault();
-        dm.run(async () => {
-          const { pubkey } = await nostr.resolvePubkey(contact);
-          store.go(`#/dm/${nostr.did(pubkey)}`);
-        });
-      }}>
-        <h3>Direct message</h3>
-        <input placeholder="did:nostr:…, name@domain or npub" value=${contact} onInput=${(e) => setContact(e.target.value)} />
-        ${dm.error && html`<p class="error">${dm.error}</p>`}
-        <button class="primary" disabled=${dm.busy}>Open chat</button>
-      </form>
+      <${PeopleFinder} />
       <form class="card" onSubmit=${(e) => {
         e.preventDefault();
         join.run(async () => {
@@ -1613,10 +1754,13 @@ function Settings() {
       <div class="card">
         <h3>Account</h3>
         <p class="mono wrap">${nostr.did(signer.pubkey)}</p>
+        <p class="muted small">Your identity is this did:nostr. Anyone can resolve it at nostr.social.</p>
         <div class="buttons">
           <button onClick=${() => copy(nostr.did(signer.pubkey), 'DID copied')}>Copy DID</button>
           <button onClick=${() => copy(nostr.npub(signer.pubkey), 'npub copied')}>Copy npub</button>
-          <a class="button" href=${nostr.profileUrl(signer.pubkey)} target="_blank" rel="noopener">View profile</a>
+          <button class="primary" onClick=${() => shareLink(nostr.chatLink(signer.pubkey), 'Message me on nostr.chat')}>Share my link</button>
+          <a class="button" href=${nostr.profileUrl(signer.pubkey)} target="_blank" rel="noopener">nostr.social ↗</a>
+          <a class="button" href=${nostr.didDocumentUrl(signer.pubkey)} target="_blank" rel="noopener">DID document ↗</a>
         </div>
         <p class="muted small">Signed in with ${signer.type === 'nsec' ? 'a private key' : signer.type === 'bunker' ? 'a remote signer' : 'a browser extension'}.</p>
         ${signer.type === 'nsec' &&
@@ -1837,6 +1981,16 @@ function ForwardPicker() {
   </div>`;
 }
 
+const CONNECTION_TEXT = { offline: 'Waiting for network…', connecting: 'Connecting…', updating: 'Updating…' };
+
+function ConnectionBanner() {
+  const state = store.connection.value;
+  if (state === 'ok') return null;
+  return html`<div class=${`connection ${state}`} role="status" aria-live="polite">
+    ${state === 'updating' ? html`<span class="spinner" />` : '⚠'} ${CONNECTION_TEXT[state]}
+  </div>`;
+}
+
 function Home() {
   return html`<section class="main empty">
     <div>
@@ -1882,6 +2036,7 @@ function App() {
     <${Sidebar} />
     ${view}
     ${toast.value && html`<div class="toast">${toast.value}</div>`}
+    <${ConnectionBanner} />
     <${Viewer} />
     <${ForwardPicker} />
   </div>`;
