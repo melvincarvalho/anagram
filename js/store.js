@@ -319,6 +319,22 @@ export function requestProfiles(pubkeys) {
 
 export const displayName = (pk) => profiles.value[pk]?.name || nostr.shortKey(pk);
 
+// Verified NIP-05 addresses: pubkey -> address that checked out ('' = failed). Per session.
+export const nip05Verified = signal({});
+const nip05Checking = new Set();
+export function verifiedNip05(pk) {
+  const address = profiles.value[pk]?.nip05;
+  if (!address) return '';
+  const known = nip05Verified.value[pk];
+  if (known !== undefined && (known === '' || known === address)) return known;
+  const key = `${pk}:${address}`;
+  if (!nip05Checking.has(key)) {
+    nip05Checking.add(key);
+    nostr.verifyNip05(pk, address).then((ok) => (nip05Verified.value = { ...nip05Verified.value, [pk]: ok ? address : '' }));
+  }
+  return '';
+}
+
 // ---------- Direct messages ----------
 
 const seenWraps = new Set();

@@ -175,6 +175,12 @@ export async function resolvePubkey(input) {
 
 // ---------- Relay lists & profiles ----------
 
+// NIP-05: the name only counts if the domain's nostr.json maps it to this key.
+export async function verifyNip05(pubkey, address) {
+  if (!nip05.isNip05(address)) return false;
+  return nip05.isValid(pubkey, address).catch(() => false);
+}
+
 export async function fetchInboxRelays(pubkey) {
   const event = await pool.get(uniq([...APP_RELAYS, ...INDEXERS]), {
     kinds: [10050],

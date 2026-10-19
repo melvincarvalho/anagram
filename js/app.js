@@ -919,7 +919,7 @@ function PersonInfo({ pubkey, messages }) {
   return html`<div class="hero">
       <${Avatar} pubkey=${pubkey} size=${96} />
       <h3>${pubkey === me.value.pubkey ? 'Note to self' : store.displayName(pubkey)}</h3>
-      ${p.nip05 && html`<small class="muted">${p.nip05}</small>`}
+      ${store.verifiedNip05(pubkey) && html`<small class="muted" title="Verified NIP-05 address">✓ ${store.verifiedNip05(pubkey)}</small>`}
     </div>
     ${p.about && html`<section><p class="about">${p.about}</p></section>`}
     <section>
@@ -992,7 +992,7 @@ function DirectChat({ id }) {
       <${Avatar} pubkey=${peer} size=${32} />
       <button class="title" title="Chat info" onClick=${() => (infoOpen.value = !infoOpen.value)}>
         <b>${peer === me.value.pubkey ? 'Note to self' : store.displayName(peer)}</b>
-        <small class="mono">${profiles.value[peer]?.nip05 || nostr.shortKey(peer)}</small>
+        <small class="mono">${store.verifiedNip05(peer) ? `✓ ${store.verifiedNip05(peer)}` : nostr.shortKey(peer)}</small>
       </button>
       <button class="icon" title="Search (Ctrl+F)" onClick=${() => (chatSearch.value = !chatSearch.value)}>🔍</button>
     </header>
