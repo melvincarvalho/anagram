@@ -583,8 +583,12 @@ function Sidebar() {
       return null;
     })
     .filter(Boolean);
-  const unpinnedRooms = rooms.filter((room) => !pinnedKeys.includes(room.address));
-  const unpinnedChats = chats.filter(({ peer }) => !pinnedKeys.includes(peer));
+  // One list like Telegram: rooms and DMs together, most recent activity first.
+  const lastOf = (address) => roomState.value[address]?.messages.at(-1)?.created_at ?? 0;
+  const rows = [
+    ...rooms.filter((room) => !pinnedKeys.includes(room.address)).map((room) => ({ room, at: lastOf(room.address) })),
+    ...chats.filter(({ peer }) => !pinnedKeys.includes(peer)).map((chat) => ({ chat, at: chat.last?.created_at ?? 0 })),
+  ].sort((a, b) => b.at - a.at);
   return html`<aside class="sidebar">
     <header>
       <button class="me" title="Accounts" onClick=${() => setAccountsOpen(!accountsOpen)}>
@@ -599,11 +603,13 @@ function Sidebar() {
     <nav>
       ${q.length >= 2 && html`<${MessageResults} q=${q} />`}
       ${pinned.length > 0 && html`<h2>Pinned</h2>${pinned}`}
-      <h2>Rooms <a class="add" href="#/new" title="Join or create a room">+</a></h2>
-      ${unpinnedRooms.map((room) => html`<${RoomItem} key=${room.address} room=${room} active=${activeRoom(room)} onMenu=${onMenu} />`)}
-      <h2>Chats ${syncing.value && html`<span class="spinner" title="Syncing" />`} <a class="add" href="#/new" title="New chat">+</a></h2>
-      ${chats.length === 0 && html`<p class="muted small pad">${q ? 'No matches.' : 'No conversations yet.'}</p>`}
-      ${unpinnedChats.map((chat) => html`<${ChatItem} key=${chat.peer} ...${chat} active=${activePeer(chat.peer)} onMenu=${onMenu} />`)}
+      <h2>${pinned.length ? 'All chats' : 'Chats'} ${syncing.value && html`<span class="spinner" title="Syncing" />`} <a class="add" href="#/new" title="New chat or room">+</a></h2>
+      ${rows.length === 0 && !pinned.length && html`<p class="muted small pad">${q ? 'No matches.' : 'No conversations yet.'}</p>`}
+      ${rows.map(({ room, chat }) =>
+        room
+          ? html`<${RoomItem} key=${room.address} room=${room} active=${activeRoom(room)} onMenu=${onMenu} />`
+          : html`<${ChatItem} key=${chat.peer} ...${chat} active=${activePeer(chat.peer)} onMenu=${onMenu} />`,
+      )}
     </nav>
     ${menu && html`<${ChatMenu} menu=${menu} onClose=${() => setMenu(null)} />`}
   </aside>`;
