@@ -32,8 +32,14 @@ export const loadDirectMessages = (account) =>
 export const saveDirectMessages = (rows) =>
   run('dms', 'readwrite', (s) => rows.forEach((r) => s.put(r)));
 
+// A wrap is done once processed, or after 3 sessions of transient (signer) failures.
 export const hasWrap = (account, id) =>
-  run('wraps', 'readonly', (s) => s.getKey([account, id])).then((k) => k !== undefined);
+  run('wraps', 'readonly', (s) => s.get([account, id])).then((row) => !!row && (row.failures ?? 3) >= 3);
+
+export async function markWrapFailure(account, id) {
+  const row = await run('wraps', 'readonly', (s) => s.get([account, id]));
+  return run('wraps', 'readwrite', (s) => s.put({ account, id, failures: (row?.failures ?? 0) + 1 }));
+}
 
 export const markWraps = (account, ids) =>
   run('wraps', 'readwrite', (s) => ids.forEach((id) => s.put({ account, id })));

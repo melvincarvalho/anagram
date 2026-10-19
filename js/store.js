@@ -387,8 +387,10 @@ async function handleWrap(wrap) {
   let rumor;
   try {
     rumor = await nostr.unwrap(signer, wrap);
-  } catch {
-    db.markWraps(signer.pubkey, [wrap.id]).catch(() => {});
+  } catch (e) {
+    // Bad data is final; signer trouble (locked extension, bunker timeout) retries next session.
+    if (e.permanent) db.markWraps(signer.pubkey, [wrap.id]).catch(() => {});
+    else db.markWrapFailure(signer.pubkey, wrap.id).catch(() => {});
     return;
   }
   if (me.value !== signer) return;
@@ -413,6 +415,7 @@ async function handleWrap(wrap) {
         created_at: rumor.created_at,
         kind: rumor.kind,
         content: rumor.content,
+        tags: rumor.tags,
         reply,
         edited,
       };
@@ -437,8 +440,10 @@ async function startInbox() {
     else if (r.kind === 7) saved.push(r);
     else messages.push(r);
   }
+  if (me.value !== signer) return; // switched account while loading
   addMessages(messages.filter((m) => deleted.get(m.id) !== m.pubkey));
   addReactions(saved);
+  for (const m of messages) if (m.status === 'pending' && m.tags) resumePending(m);
   requestProfiles(Object.keys(dms.value));
 
   inboxRelays.value = await nostr.fetchInboxRelays(signer.pubkey).catch(() => []);
@@ -498,19 +503,37 @@ function setStatus(id, status) {
   else delete next[id];
   sendStatus.value = next;
 }
-async function track(id, sending, retry) {
+// onSent runs once a relay accepts (e.g. to clear the persisted 'pending' flag).
+async function track(id, sending, retry, onSent) {
   setStatus(id, 'sending');
   try {
     await sending;
     retries.delete(id);
     setStatus(id, null);
+    onSent?.();
   } catch (e) {
-    retries.set(id, retry);
+    retries.set(id, { retry, onSent });
     setStatus(id, 'failed');
     notify(`Not sent: ${e.message}`);
   }
 }
-export const retrySend = (id) => retries.has(id) && track(id, retries.get(id)(), retries.get(id));
+export function retrySend(id) {
+  const entry = retries.get(id);
+  if (entry) track(id, entry.retry(), entry.retry, entry.onSent);
+}
+
+// A sent DM is stored with status 'pending' until a relay accepts it, so a reload
+// mid-send shows ⚠ (with retry) instead of a false ✓.
+function resumePending(m) {
+  const retry = () =>
+    nostr.sendRumor(me.value, m.peer, m.kind ?? 14, m.content, m.tags, inboxOf(m.peer), inboxRelays.value ?? [], m.created_at);
+  retries.set(m.id, { retry, onSent: () => markSent(m) });
+  setStatus(m.id, 'failed');
+}
+function markSent(m) {
+  const { status: _, ...sent } = m;
+  queueSave(sent);
+}
 
 export function sendDirectMessage(peer, text, reply, edit, extraTags = []) {
   const signer = me.value;
@@ -529,16 +552,18 @@ export function sendDirectMessage(peer, text, reply, edit, extraTags = []) {
       content: text,
       reply: replyId,
       edited: !!edit,
-      ...(extraTags.length ? { tags: r.tags } : {}),
+      tags: r.tags,
     };
     addMessages([m]);
-    queueSave(m);
+    queueSave({ ...m, status: 'pending' });
+    saved = m;
   };
+  let saved;
   const sending = nostr.sendDirectMessage(signer, peer, text, inboxOf(peer), inboxRelays.value ?? [], replyId, edit, show, extraTags);
   // A retry re-sends the same rumor, so it can't duplicate the message.
   const retry = () =>
     nostr.sendRumor(signer, peer, 14, text, rumor.tags, inboxOf(peer), inboxRelays.value ?? [], rumor.created_at);
-  track(rumor.id, sending, retry);
+  track(rumor.id, sending, retry, () => markSent(saved));
   addContact(peer).catch((e) => notify(`Could not update contact list: ${e.message}`));
 }
 

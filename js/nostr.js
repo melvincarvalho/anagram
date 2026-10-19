@@ -296,14 +296,36 @@ export const normalizeEmoji = (content) =>
   !content || content === '+' ? '👍' : content === '-' ? '👎' : [...content].slice(0, 8).join('');
 
 // Returns a verified rumor, or throws. Seal author must match the rumor author.
+// Errors marked permanent can never succeed (bad data); others (a locked extension,
+// a bunker timeout) may work later and must not cause the message to be dropped.
+const permanent = (message) => Object.assign(new Error(message), { permanent: true });
+
+async function decryptOrFlag(signer, peer, payload) {
+  try {
+    return await signer.decrypt(peer, payload);
+  } catch (e) {
+    // A local key failing to decrypt means the payload is bad; a remote signer may just be unavailable.
+    if (signer.type === 'nsec') throw permanent(e.message);
+    throw e;
+  }
+}
+
+function parseOrFlag(text) {
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw permanent('Malformed gift wrap.');
+  }
+}
+
 export async function unwrap(signer, wrap) {
-  if (wrap.kind !== 1059 || wrap.content.length > 200000) throw new Error('Not a gift wrap.');
-  const seal = JSON.parse(await signer.decrypt(wrap.pubkey, wrap.content));
-  if (seal.kind !== 13 || !verifyEvent(seal)) throw new Error('Invalid seal.');
-  const raw = JSON.parse(await signer.decrypt(seal.pubkey, seal.content));
-  if (raw.pubkey !== seal.pubkey) throw new Error('Rumor author does not match seal.');
+  if (wrap.kind !== 1059 || wrap.content.length > 200000) throw permanent('Not a gift wrap.');
+  const seal = parseOrFlag(await decryptOrFlag(signer, wrap.pubkey, wrap.content));
+  if (seal?.kind !== 13 || !verifyEvent(seal)) throw permanent('Invalid seal.');
+  const raw = parseOrFlag(await decryptOrFlag(signer, seal.pubkey, seal.content));
+  if (raw?.pubkey !== seal.pubkey) throw permanent('Rumor author does not match seal.');
   if (!Number.isSafeInteger(raw.created_at) || !Number.isSafeInteger(raw.kind) || !Array.isArray(raw.tags))
-    throw new Error('Invalid rumor.');
+    throw permanent('Invalid rumor.');
   const rumor = {
     pubkey: raw.pubkey,
     created_at: raw.created_at,
