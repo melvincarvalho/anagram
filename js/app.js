@@ -515,11 +515,41 @@ function draftPreview(key, open) {
   return draft && !open ? html`<small><span class="draft">Draft:</span> ${draft.slice(0, 80)}</small>` : null;
 }
 
+// Touch long-press (450 ms, no movement) opens the row's menu; iOS Safari fires no
+// contextmenu event. The click that follows a long-press is swallowed.
+// State lives on the element: opening the menu re-renders the row with new handlers.
+function longPress(open) {
+  const st = (e) => (e.currentTarget._press ??= {});
+  return {
+    ontouchstart: (e) => {
+      const t = e.touches[0];
+      const p = st(e);
+      p.start = { x: t.clientX, y: t.clientY };
+      p.fired = false;
+      p.timer = setTimeout(() => {
+        p.fired = true;
+        open({ preventDefault() {}, clientX: p.start.x, clientY: p.start.y });
+      }, 450);
+    },
+    ontouchmove: (e) => {
+      const t = e.touches[0];
+      const p = st(e);
+      if (p.start && (Math.abs(t.clientX - p.start.x) > 8 || Math.abs(t.clientY - p.start.y) > 8)) clearTimeout(p.timer);
+    },
+    ontouchend: (e) => {
+      const p = st(e);
+      clearTimeout(p.timer);
+      if (p.fired) e.preventDefault();
+    },
+    ontouchcancel: (e) => clearTimeout(st(e).timer),
+  };
+}
+
 function RoomItem({ room, active, onMenu }) {
   const messages = roomState.value[room.address]?.messages ?? [];
   const last = messages[messages.length - 1];
   const link = nostr.encodeRoomLink(room);
-  return html`<a class=${'item' + (active ? ' on' : '')} href=${`#/room/${link}`} onContextMenu=${onMenu({ room })}>
+  return html`<a class=${'item' + (active ? ' on' : '')} href=${`#/room/${link}`} onContextMenu=${onMenu({ room })} ...${longPress(onMenu({ room }))}>
     <${RoomAvatar} room=${room} />
     <span class="label">
       <span class="line"><b>${room.name}</b><${ChatFlags} chatKey=${room.address} />${last && html`<time>${shortTime(last.created_at)}</time>`}</span>
@@ -534,7 +564,7 @@ function RoomItem({ room, active, onMenu }) {
 }
 
 function ChatItem({ peer, last, active, onMenu }) {
-  return html`<a class=${'item' + (active ? ' on' : '')} href=${`#/dm/${nostr.did(peer)}`} onContextMenu=${onMenu({ peer })}>
+  return html`<a class=${'item' + (active ? ' on' : '')} href=${`#/dm/${nostr.did(peer)}`} onContextMenu=${onMenu({ peer })} ...${longPress(onMenu({ peer }))}>
     <${Avatar} pubkey=${peer} />
     <span class="label">
       <span class="line">
@@ -884,7 +914,7 @@ function Tick({ id }) {
   return html`<span class="tick" title="Accepted by a relay">✓</span>`;
 }
 
-function MessageList({ messages, policy = () => 'trusted', badge = () => '', mediaAuto = () => true, onReply, onReact, onEdit, onDelete, footer, header, unreadAfter = Infinity, onReachTop, lookupQuote, jumpOlder, onPin, pinnedId }) {
+function MessageList({ messages, policy = () => 'trusted', badge = () => '', mediaAuto = () => true, onReply, onReact, onEdit, onDelete, footer, header, unreadAfter = Infinity, onReachTop, lookupQuote, jumpOlder, onPin, pinnedId, showNames = true }) {
   const ref = useRef();
   const stick = useRef(true);
   const touch = useRef(null);
@@ -1063,9 +1093,9 @@ function MessageList({ messages, policy = () => 'trusted', badge = () => '', med
           ontouchend=${touchEnd}
           ontouchcancel=${touchEnd}
         >
-          <div class="slot">${last && !mine && html`<${Avatar} pubkey=${m.pubkey} size=${32} />`}</div>
+          ${showNames && html`<div class="slot">${last && !mine && html`<${Avatar} pubkey=${m.pubkey} size=${32} />`}</div>`}
           <div class="bubble">
-            ${first && !mine && html`<div class="who" style=${`--name-color:${nameColor(m.pubkey)}`}>${store.displayName(m.pubkey)}${tag && html`<span class="badge">${tag}</span>`}</div>`}
+            ${showNames && first && !mine && html`<div class="who" style=${`--name-color:${nameColor(m.pubkey)}`}>${store.displayName(m.pubkey)}${tag && html`<span class="badge">${tag}</span>`}</div>`}
             ${quote &&
             html`<button class="quote" onClick=${() => (byId[quote.id] || !jumpOlder ? (focusMessage.value = quote.id) : jumpOlder(quote.id))}>
               <b>${store.displayName(quote.pubkey)}</b>${previewText(quote.content).slice(0, 140)}
@@ -1785,6 +1815,7 @@ function DirectChat({ id }) {
     <${MessageList}
       ...${actions.list}
       mediaAuto=${(pk) => store.contacts.value.includes(pk)}
+      showNames=${false}
       messages=${messages}
       unreadAfter=${unreadAfter}
       onReachTop=${() => !older.busy && !store.dmHistoryDone.value && older.run(store.loadOlderDirectMessages)}
@@ -2383,6 +2414,11 @@ function App() {
   }, []);
   useEffect(() => {
     document.title = unread ? `(${unread}) nostr.chat` : 'nostr.chat';
+    // Installed-app icon badge (where supported).
+    try {
+      if (unread) navigator.setAppBadge?.(unread)?.catch?.(() => {});
+      else navigator.clearAppBadge?.()?.catch?.(() => {});
+    } catch {}
   }, [unread]);
   if (!me.value && store.restoring.value) return html`<p class="boot muted">Loading…</p>`;
   if (!me.value || store.addingAccount.value) return html`<${Login} />`;
