@@ -286,6 +286,26 @@ test('explicit NDR remains selected after registration failure and retries witho
   }
 });
 
+test('unblocking an NDR contact restores messages without displaying persisted edits', async () => {
+  const alice = nostr.newKeySigner(), bob = nostr.newKeySigner();
+  localStorage.setItem(`lite:rooms:${alice.pubkey}`, '[]');
+  await store.login(alice, false);
+  await store.setDirectProtocol(bob.pubkey, 'ndr');
+  const receiver = clients.at(-1).options.receive;
+  const original = nostr.makeRumor(bob.pubkey, 14, 'Before editing', [['p', alice.pubkey]]);
+  const edit = nostr.makeRumor(bob.pubkey, 1009, 'After editing', [['p', alice.pubkey], ['e', original.id], ['k', '14']]);
+  try {
+    await receiver(original, bob.pubkey);
+    await receiver(edit, bob.pubkey);
+    await store.toggleBlock(bob.pubkey);
+    assert.deepEqual(store.dms.value[bob.pubkey] ?? [], []);
+    await store.toggleBlock(bob.pubkey);
+    for (let i = 0; i < 50 && !store.dms.value[bob.pubkey]?.length; i++)
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    assert.deepEqual(store.dms.value[bob.pubkey].map((message) => [message.id, message.kind, message.content]), [[original.id, 14, 'After editing']]);
+  } finally { await store.logout(); }
+});
+
 test('a new incoming NIP-17 conversation remains Auto and can upgrade later', async () => {
   const alice = nostr.newKeySigner(), bob = nostr.newKeySigner();
   localStorage.setItem(`lite:rooms:${alice.pubkey}`, '[]');

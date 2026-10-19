@@ -52,7 +52,11 @@ function parseRoute() {
   const page = location.hash.match(/^#\/(settings|new)$/)?.[1];
   if (page) return { kind: page };
   const [, kind, id] = location.hash.match(/^#\/(dm|room|public)\/(.+)$/) ?? [];
-  return kind ? { kind: kind === 'public' ? 'room' : kind, id: decodeURIComponent(id) } : { kind: 'home' };
+  try {
+    return kind ? { kind: kind === 'public' ? 'room' : kind, id: decodeURIComponent(id) } : { kind: 'home' };
+  } catch {
+    return { kind: 'home' }; // malformed percent-encoding in the hash
+  }
 }
 window.addEventListener('hashchange', () => (route.value = parseRoute()));
 export const go = (hash) => (location.hash = hash);
@@ -184,7 +188,17 @@ export async function login(signer, remember) {
     startNdr().catch((e) => notify(`Encrypted messaging unavailable: ${e.message}`));
 }
 
+export const restoring = signal(true); // true until the saved session has been looked at
+
 export async function restoreSession() {
+  try {
+    return await restoreSavedSession();
+  } finally {
+    restoring.value = false;
+  }
+}
+
+async function restoreSavedSession() {
   const list = savedAccounts();
   refreshAccounts();
   const active = storage.get('lite:active', null);
@@ -192,8 +206,9 @@ export async function restoreSession() {
   if (!entry) return false;
   try {
     const signer = await nostr.restoreSigner(entry.saved);
-    // Fill in the pubkey for sessions migrated from the old format.
-    await login(signer, !entry.pubkey);
+    // Fill in the pubkey for sessions migrated from the old format. Not awaited: the UI
+    // renders as soon as the account is known and the inbox fills in behind it.
+    login(signer, !entry.pubkey).catch((e) => notify(`Startup problem: ${e.message}`));
     return true;
   } catch (e) {
     notify(`Could not restore session: ${e.message}`);
@@ -239,6 +254,7 @@ async function loadMuteList() {
 
 // Drop a blocked person's messages everywhere they are already shown.
 function applyBlocked(list) {
+  const unblocked = blocked.value.filter((pk) => !list.includes(pk));
   blocked.value = list;
   const gone = new Set(list);
   const next = { ...dms.value };
@@ -248,6 +264,16 @@ function applyBlocked(list) {
   for (const [address, state] of Object.entries(roomState.value))
     rooms[address] = { ...state, messages: state.messages.filter((m) => !gone.has(m.pubkey)) };
   roomState.value = rooms;
+  // Unblocked: their stored conversation comes back without a reload.
+  if (unblocked.length && me.value) {
+    const account = me.value.pubkey;
+    db.loadDirectMessages(account)
+      .then((rows) => {
+        if (me.value?.pubkey !== account) return;
+        addMessages(rows.filter((m) => unblocked.includes(m.peer) && !m.deletedBy && m.kind !== 7 && !isDeleted(m.id, m.pubkey)));
+      })
+      .catch(() => {});
+  }
 }
 
 export function toggleBlock(pubkey) {
@@ -307,6 +333,8 @@ export function setDraft(key, text) {
   const snapshot = drafts.value;
   draftTimer = setTimeout(() => storage.set(`lite:drafts:${account}`, snapshot), 300);
 }
+
+db.onOpenBlocked(() => notify('Close other nostr.chat tabs so this one can finish updating.'));
 
 // ---------- Connection status ----------
 
@@ -541,16 +569,26 @@ function pumpDid() {
 // Verified NIP-05 addresses: pubkey -> address that checked out ('' = failed). Per session.
 export const nip05Verified = signal({});
 const nip05Checking = new Set();
+// Verifying fetches https://<their domain>/.well-known/nostr.json, which tells that domain
+// your IP. So it happens automatically only for people you already deal with (yourself,
+// contacts, people you've messaged); for anyone else it waits for an explicit tap.
+const trustedForLookup = (pk) => pk === me.value?.pubkey || contacts.value.includes(pk) || (dms.value[pk] ?? []).some((m) => m.pubkey === me.value?.pubkey);
+
+export function verifyNip05Now(pk) {
+  const address = profiles.value[pk]?.nip05;
+  const key = `${pk}:${address}`;
+  if (!address || nip05Checking.has(key)) return;
+  nip05Checking.add(key);
+  nostr.verifyNip05(pk, address).then((ok) => (nip05Verified.value = { ...nip05Verified.value, [pk]: ok ? address : '' }));
+}
+
+// The verified address, or '' (unverified, failed, or not yet checked).
 export function verifiedNip05(pk) {
   const address = profiles.value[pk]?.nip05;
   if (!address) return '';
   const known = nip05Verified.value[pk];
   if (known !== undefined && (known === '' || known === address)) return known;
-  const key = `${pk}:${address}`;
-  if (!nip05Checking.has(key)) {
-    nip05Checking.add(key);
-    nostr.verifyNip05(pk, address).then((ok) => (nip05Verified.value = { ...nip05Verified.value, [pk]: ok ? address : '' }));
-  }
+  if (trustedForLookup(pk)) verifyNip05Now(pk);
   return '';
 }
 
@@ -806,7 +844,7 @@ async function receiveNdr(signer, event, peer) {
     const row = { ...base, target: reactionTarget(event), emoji: nostr.normalizeEmoji(event.content) };
     await db.saveDirectMessages([row]);
     if (me.value === signer) addReactions([row]);
-  } else if (event.kind === 14 && event.content && deleted.get(event.id) !== event.pubkey) {
+  } else if (event.kind === 14 && event.content && !isMessageDeleted(base)) {
     const row = { ...base, reply: event.tags.find((t) => t[0] === 'e' && (!t[3] || t[3] === 'reply'))?.[1] };
     await db.saveDirectMessages([row]);
     if (me.value !== signer) return;
@@ -830,11 +868,28 @@ async function sendNdrRumor(peer, kind, content, tags, onRumor) {
   return event;
 }
 
+// 'verified' | 'failed' | 'checking' | 'unchecked' | 'none' for the claimed address.
+export function nip05State(pk) {
+  const address = profiles.value[pk]?.nip05;
+  if (!address) return { state: 'none', address: '' };
+  const known = nip05Verified.value[pk];
+  if (known === address) return { state: 'verified', address };
+  if (known === '') return { state: 'failed', address };
+  return { state: nip05Checking.has(`${pk}:${address}`) ? 'checking' : 'unchecked', address };
+}
+
 // ---------- Direct messages ----------
 
 const seenWraps = new Set();
-const deleted = new Map(); // message id -> deleter pubkey
-const isDeleted = (message) => deleted.get(message.id) === message.pubkey || (ndrDeletions.get(`${message.id}:${message.pubkey}`) ?? -1) >= message.created_at;
+// Deletion requests seen, keyed by message id -> the pubkeys that asked. A deletion only
+// counts when the asker is the message's author, so a stranger's kind 5 for someone
+// else's id can never hide (or later resurrect) that message.
+const deleted = new Map();
+const isDeleted = (id, author) => deleted.get(id)?.has(author) ?? false;
+const markDeleted = (id, author) => (deleted.get(id) ?? deleted.set(id, new Set()).get(id)).add(author);
+// Tombstone rows live under their own key so they can never overwrite a message row.
+const tombstone = (account, id, author) => ({ account, id: `del:${id}:${author}`, target: id, deletedBy: author });
+const isMessageDeleted = (m) => isDeleted(m.id, m.pubkey) || (ndrDeletions.get(`${m.id}:${m.pubkey}`) ?? -1) >= m.created_at;
 let queue = Promise.resolve();
 let pendingRows = [];
 let flushTimer;
@@ -856,7 +911,7 @@ function collapseEdits(thread, onMerged) {
     const target = editTarget(m);
     if (!target || m.prev?.includes(target) || thread.some((x) => x.id === target)) return m;
     const gone = removedById.get(target);
-    if (deleted.get(target) !== m.pubkey && !(gone && gone.pubkey === m.pubkey)) return m;
+    if (!isDeleted(target, m.pubkey) && !(gone && gone.pubkey === m.pubkey)) return m;
     const merged = { ...m, prev: nostr.uniq([...(gone?.prev ?? []), target, ...(m.prev ?? [])]), reply: m.reply ?? gone?.reply };
     onMerged?.(merged);
     return merged;
@@ -895,7 +950,7 @@ function addMessages(list) {
   const touched = new Set();
   for (const m of list) {
     scheduleNdrExpiry(m);
-    if (ndrExpiresAt(m) <= nostr.now() || isDeleted(m)) continue;
+    if (m.protocol === 'ndr' && m.kind !== 14 || ndrExpiresAt(m) <= nostr.now() || isMessageDeleted(m)) continue;
     if (isBlocked(m.pubkey) || isBlocked(m.peer) || m.created_at <= (clearedAt.value[m.peer] ?? 0)) continue;
     const thread = next[m.peer] ?? [];
     if (thread.some((x) => knownIds(x).includes(m.id))) continue;
@@ -922,7 +977,7 @@ function addReactions(list) {
   const next = { ...reactions.value };
   let changed = false;
   for (const r of list) {
-    if (deleted.get(r.id) === r.pubkey) continue;
+    if (isDeleted(r.id, r.pubkey)) continue;
     const current = next[r.target] ?? [];
     if (current.some((x) => x.id === r.id)) continue;
     next[r.target] = [...current, { id: r.id, pubkey: r.pubkey, emoji: r.emoji }];
@@ -933,7 +988,7 @@ function addReactions(list) {
 
 // Apply deletion requests; only the original author can delete.
 function applyDeletions(ids, author) {
-  for (const id of ids) deleted.set(id, author);
+  for (const id of ids) markDeleted(id, author);
   const gone = new Set(ids);
   const next = {};
   for (const [target, list] of Object.entries(reactions.value))
@@ -992,13 +1047,13 @@ async function handleWrap(wrap) {
   if (peer && rumor.kind === 5) {
     const ids = rumor.tags.filter((t) => t[0] === 'e').map((t) => t[1]);
     applyDeletions(ids, rumor.pubkey);
-    for (const id of ids) queueSave({ account: signer.pubkey, id, deletedBy: rumor.pubkey });
+    for (const id of ids) queueSave(tombstone(signer.pubkey, id, rumor.pubkey));
   } else if (peer && rumor.kind === 7 && reactionTarget(rumor)) {
     const r = { account: signer.pubkey, id: rumor.id, peer, pubkey: rumor.pubkey, kind: 7, target: reactionTarget(rumor), emoji: nostr.normalizeEmoji(rumor.content), created_at: rumor.created_at };
     batchIncoming({ reaction: r });
     queueSave(r);
   } else if (peer && (rumor.kind === 14 || rumor.kind === 15) && rumor.content) {
-    if (deleted.get(rumor.id) !== rumor.pubkey) {
+    if (!isDeleted(rumor.id, rumor.pubkey)) {
       const reply = rumor.tags.find((t) => t[0] === 'e' && t[3] === 'reply')?.[1];
       const edited = nostr.isEdited(rumor.tags);
       const m = {
@@ -1034,7 +1089,7 @@ function flushIncoming() {
   incomingTimer = undefined;
   const { messages, reactions: rs } = incoming;
   incoming = { messages: [], reactions: [] };
-  const live = messages.filter((m) => deleted.get(m.id) !== m.pubkey);
+  const live = messages.filter((m) => !isDeleted(m.id, m.pubkey));
   // A newly received conversation stays Auto, even when its first message used
   // NIP-17. Persist that preference before caching it so reload is not migration.
   for (const message of live) if (message.account === me.value?.pubkey && directProtocols.value[message.peer] === undefined)
@@ -1069,7 +1124,7 @@ async function startInbox() {
   const saved = [];
   for (const r of rows) {
     if (r.deletedId) ndrDeletions.set(`${r.deletedId}:${r.deletedBy}`, r.created_at ?? Infinity);
-    else if (r.deletedBy) deleted.set(r.id, r.deletedBy);
+    else if (r.deletedBy) markDeleted(r.target ?? r.id, r.deletedBy);
     else if (r.kind === 1009) rememberNdrEdit(r);
     else if (r.kind === 7) saved.push(r);
     else messages.push(r);
@@ -1077,7 +1132,7 @@ async function startInbox() {
   if (me.value !== signer) return; // switched account while loading
   preserveCachedProtocols(messages);
   resolveHistory?.();
-  addMessages(messages.filter((m) => !isDeleted(m)));
+  addMessages(messages.filter((m) => !isMessageDeleted(m)));
   addReactions(saved);
   for (const m of messages) if (m.status === 'pending' && m.tags) resumePending(m);
   requestProfiles(Object.keys(dms.value));
@@ -1173,8 +1228,9 @@ async function track(id, sending, retry, onSent) {
     onSent?.();
   } catch (e) {
     retries.set(id, { retry, onSent });
-    setStatus(id, 'failed');
-    notify(`Not sent: ${e.message}`);
+    // partial: it reached shared relays but not the recipient's own; still worth a retry.
+    setStatus(id, e.partial ? 'partial' : 'failed');
+    notify(e.partial ? e.message : `Not sent: ${e.message}`);
   }
 }
 export function retrySend(id) {
@@ -1248,7 +1304,7 @@ export async function sendDirectMessage(peer, text, reply, edit, extraTags = [])
   const retry = () =>
     nostr.sendRumor(signer, peer, 14, text, rumor.tags, inboxOf(peer), inboxRelays.value ?? [], rumor.created_at);
   track(rumor.id, sending, retry, () => markSent(saved));
-  addContact(peer).catch((e) => notify(`Could not update contact list: ${e.message}`));
+  if (peer !== signer.pubkey) addContact(peer).catch((e) => notify(`Could not update contact list: ${e.message}`));
 }
 
 async function markNdrQueued(message) {
@@ -1284,8 +1340,11 @@ async function sendNdrMessage(peer, text, reply, extraTags) {
 // Edit our kind 0. Fields: name, about, picture, website, nip05.
 export async function saveProfile(fields, { fresh = false } = {}) {
   const signer = me.value;
-  // A brand-new key has no profile yet, so skip the relay lookup.
+  // A brand-new key has no profile yet, so skip the lookup. Otherwise never publish over a
+  // profile we could not read: that would wipe fields other clients set (lud16, banner, ...).
   const previous = fresh ? null : await nostr.fetchOwnProfile(signer.pubkey);
+  if (!fresh && !previous.event && Object.keys(profiles.value[signer.pubkey] ?? {}).length)
+    throw new Error("Couldn't read your current profile from the network. Try again in a moment.");
   const { event, data } = await nostr.publishProfile(signer, fields, previous, inboxRelays.value ?? []);
   const p = {
     pubkey: signer.pubkey,
@@ -1397,7 +1456,7 @@ function addRoomMessages(address, events, { fromCache = false } = {}) {
   const current = roomState.value[address]?.messages ?? [];
   const ids = new Set(current.flatMap(knownIds));
   const fresh = events.filter(
-    (e) => !ids.has(e.id) && deleted.get(e.id) !== e.pubkey && nostr.validRoomMessage(e, address),
+    (e) => !ids.has(e.id) && !isDeleted(e.id, e.pubkey) && nostr.validRoomMessage(e, address),
   );
   if (!fresh.length) return;
   setRoom(address, {
@@ -1441,16 +1500,20 @@ export async function openRoom(pointer) {
     .then((cached) => me.value === owner && addRoomMessages(address, cached, { fromCache: true }))
     .catch(() => {});
   let room;
+  let stale = '';
   try {
     room = await nostr.fetchRoom(pointer);
   } catch (e) {
-    if (me.value === owner) setRoom(address, { loading: false, error: e.message });
-    return;
+    if (me.value !== owner) return;
+    // Keep the remembered (signed) definition and still go live; just say it couldn't refresh.
+    room = roomState.value[address]?.room;
+    if (!room) return setRoom(address, { loading: false, error: e.message });
+    stale = e.message;
   }
   if (me.value !== owner) return; // switched account while loading
   // A newer room definition may block people whose messages are already loaded.
   const hidden = (pk) => nostr.roomPolicy(room, pk) === 'blocked' || isBlocked(pk);
-  setRoom(address, { room, loading: false, messages: (roomState.value[address]?.messages ?? []).filter((m) => !hidden(m.pubkey)) });
+  setRoom(address, { room, loading: false, stale, messages: (roomState.value[address]?.messages ?? []).filter((m) => !hidden(m.pubkey)) });
   if (joinedRooms.value.some((r) => r.address === address)) {
     // Refresh name/picture without moving the room in the list.
     const entry = roomEntry(room);
@@ -1488,9 +1551,15 @@ function roomActivity(address, event) {
     applyDeletions(event.tags.filter((t) => t[0] === 'e').map((t) => t[1]), event.pubkey);
 }
 
+function dropRoomMessage(address, id) {
+  const state = roomState.value[address];
+  if (state) setRoom(address, { messages: state.messages.filter((m) => m.id !== id) });
+  db.deleteRoomMessages([id]).catch(() => {});
+}
+
 // Undo a local deletion (used when publishing it failed).
 function undoDeletions(ids, author, restore) {
-  for (const id of ids) if (deleted.get(id) === author) deleted.delete(id);
+  for (const id of ids) deleted.get(id)?.delete(author);
   restore();
 }
 
@@ -1527,7 +1596,7 @@ export async function toggleReaction(context, message, emoji) {
     : nostr.sendRumor(signer, peer, kind, content, [['p', peer], ...tags], inboxOf(peer), inboxRelays.value ?? [], nostr.now(), onRumor);
   if (mine.length) {
     applyDeletions(ids, signer.pubkey);
-    for (const id of ids) queueSave({ account: signer.pubkey, id, deletedBy: signer.pubkey });
+    for (const id of ids) queueSave(tombstone(signer.pubkey, id, signer.pubkey));
     send(5, '', [...ids.map((id) => ['e', id]), ['k', '7']]).catch(
       fail('Removing reaction', () =>
         undoDeletions(ids, signer.pubkey, () => {
@@ -1546,7 +1615,7 @@ export async function toggleReaction(context, message, emoji) {
       fail('Reaction', () => {
         if (!added) return; // NDR activation can fail before an optimistic rumor exists.
         applyDeletions([added.id], signer.pubkey);
-        queueSave({ account: signer.pubkey, id: added.id, deletedBy: signer.pubkey });
+        queueSave(tombstone(signer.pubkey, added.id, signer.pubkey));
       }),
     );
   }
@@ -1586,7 +1655,7 @@ export async function loadOlderRoomMessages(address) {
   // Reactions and deletions for the older messages too, or deleted ones would reappear.
   const ids = nostr.uniq(events.map((e) => e.id));
   for (let i = 0; i < ids.length; i += 100) {
-    const activity = await nostr.pool.querySync(relays, { kinds: [5, 7], '#e': ids.slice(i, i + 100) }).catch(() => []);
+    const activity = await nostr.relayQuery(relays, { kinds: [5, 7], '#e': ids.slice(i, i + 100) }).catch(() => []);
     for (const e of activity) roomActivity(address, e);
   }
   if (finished) setRoom(address, { exhausted: true });
@@ -1624,6 +1693,7 @@ export async function sendRoomMessage(address, text, reply, extraTags = []) {
     onSigned(e);
   }, extraTags);
   // Signing is the only wait (instant for local keys). A signing error rejects here.
+  sending.catch(() => {}); // publish failures are reported by track()
   const event = await Promise.race([signed, sending.then(() => signed)]);
   const relays = nostr.uniq([...room.relays, ...nostr.APP_RELAYS]);
   track(event.id, sending, () => nostr.publish(relays, event, me.value));
@@ -1668,7 +1738,7 @@ export async function deleteMessage(context, message, { onlyCurrent = false, bac
   } else {
     const peer = context.peer;
     applyDeletions(ids, signer.pubkey);
-    for (const id of ids) queueSave({ account: signer.pubkey, id, deletedBy: signer.pubkey });
+    for (const id of ids) queueSave(tombstone(signer.pubkey, id, signer.pubkey));
     publishing = nostr.sendRumor(signer, peer, 5, '', [['p', peer], ...ids.map((id) => ['e', id]), ['k', String(message.kind ?? 14)]], inboxOf(peer), inboxRelays.value ?? []);
   }
   if (!background) return publishing;
@@ -1690,13 +1760,24 @@ export async function editMessage(context, message, text) {
   }
   if (context.room) {
     const room = roomState.value[context.room].room;
+    const relays = nostr.roomRelays(room);
     // signRoomMessage copies the edited message's q and imeta tags (Anagram's edit format).
     const replacement = await nostr.signRoomMessage(signer, room, text, null, message);
-    const deletion = deleteMessage(context, message, { onlyCurrent: true, background: false });
+    const deletion = await nostr.signRoomDeletion(signer, room, [message.id], 9);
+    applyDeletions([message.id], signer.pubkey);
     addRoomMessages(context.room, [replacement]);
-    const relays = nostr.roomRelays(room);
-    const sending = deletion.then(() => nostr.publish(relays, replacement, signer));
-    track(replacement.id, sending, () => nostr.publish(relays, replacement, signer));
+    setStatus(replacement.id, 'sending');
+    const publishReplacement = () => nostr.publish(relays, replacement, signer);
+    try {
+      await nostr.publish(relays, deletion, signer);
+    } catch (e) {
+      // Nothing changed on the relays, so undo the edit here too; the old text stays.
+      dropRoomMessage(context.room, replacement.id);
+      setStatus(replacement.id, null);
+      undoDeletions([message.id], signer.pubkey, () => addRoomMessages(context.room, [message]));
+      throw new Error(`Edit failed: ${e.message}`);
+    }
+    track(replacement.id, publishReplacement(), publishReplacement);
     return;
   }
   deleteMessage(context, message, { onlyCurrent: true, background: false }).catch((e) => notify(`Edit failed: ${e.message}`));

@@ -183,7 +183,11 @@ const FORMAT_TAGS = { bold: 'strong', italic: 'em', underline: 'u', strike: 's' 
 function Spoiler({ children }) {
   const [shown, setShown] = useState(false);
   return html`<span class=${`spoiler${shown ? ' shown' : ''}`} title=${shown ? '' : 'Tap to reveal'} onClick=${(e) => {
-    if (!shown) e.stopPropagation();
+    if (!shown) {
+      // The first tap only reveals; a link hidden inside must not navigate.
+      e.stopPropagation();
+      e.preventDefault();
+    }
     setShown(true);
   }}>${children}</span>`;
 }
@@ -222,6 +226,11 @@ function PlainText({ content, links = true }) {
 
 const IMAGE_RE = /\.(?:png|jpe?g|gif|webp|avif|svg)(?:[?#]|$)/i;
 const VIDEO_RE = /\.(?:mp4|webm|mov|m4v)(?:[?#]|$)/i;
+const AUDIO_RE = /\.(?:mp3|m4a|ogg|oga|opus|wav|flac|aac|weba)(?:[?#]|$)/i;
+// The imeta mime type decides (audio/webm is audio, not video); the extension is the fallback.
+const mediaKind = (url, mime = '') =>
+  mime.startsWith('audio/') ? 'audio' : mime.startsWith('video/') ? 'video' : mime.startsWith('image/') ? 'image'
+  : AUDIO_RE.test(url) ? 'audio' : VIDEO_RE.test(url) ? 'video' : IMAGE_RE.test(url) ? 'image' : null;
 const viewer = signal(null); // full-screen media url
 const infoOpen = signal(false); // chat info panel
 const forwarding = signal(null); // message being forwarded
@@ -284,15 +293,20 @@ function mediaOf(message) {
   if (!mediaCache.has(message)) mediaCache.set(message, extractMedia(message));
   return mediaCache.get(message);
 }
+// -> [{ url, kind: 'image'|'video'|'audio' }], imeta first (its mime type is authoritative).
 function extractMedia(message) {
-  const urls = new Set((message.content.match(URL_RE) ?? []).filter((u) => IMAGE_RE.test(u) || VIDEO_RE.test(u)));
+  const items = new Map();
   for (const t of message.tags ?? [])
     if (t[0] === 'imeta') {
       const url = t.find((v) => v.startsWith('url '))?.slice(4);
-      const mime = t.find((v) => v.startsWith('m '))?.slice(2) ?? '';
-      if (url?.startsWith('https://') && (/^(image|video)\//.test(mime) || IMAGE_RE.test(url) || VIDEO_RE.test(url))) urls.add(url);
+      const kind = url?.startsWith('https://') && mediaKind(url, t.find((v) => v.startsWith('m '))?.slice(2) ?? '');
+      if (kind) items.set(url, { url, kind });
     }
-  return [...urls].filter((u) => u.startsWith('https://')).slice(0, 10);
+  for (const url of message.content.match(URL_RE) ?? []) {
+    const kind = !items.has(url) && mediaKind(url);
+    if (kind) items.set(url, { url, kind });
+  }
+  return [...items.values()].slice(0, 10);
 }
 
 function Media({ message, auto }) {
@@ -303,13 +317,17 @@ function Media({ message, auto }) {
     return html`<button class="show-media" onClick=${() => setShown(true)}>
       🖼 Show ${urls.length > 1 ? `${urls.length} media` : 'media'} <small>(reveals your IP to the host)</small>
     </button>`;
-  return html`<div class=${`media n${Math.min(urls.length, 3)}`}>
-    ${urls.map((url) =>
-      VIDEO_RE.test(url)
-        ? html`<video src=${url} controls preload="metadata" playsinline />`
-        : html`<img src=${url} loading="lazy" referrerpolicy="no-referrer" alt="" onClick=${() => (viewer.value = url)} />`,
-    )}
-  </div>`;
+  const visual = urls.filter((m) => m.kind !== 'audio');
+  const audio = urls.filter((m) => m.kind === 'audio');
+  return html`${visual.length > 0 &&
+    html`<div class=${`media n${Math.min(visual.length, 3)}`}>
+      ${visual.map(({ url, kind }) =>
+        kind === 'video'
+          ? html`<video src=${url} controls preload="metadata" playsinline />`
+          : html`<img src=${url} loading="lazy" referrerpolicy="no-referrer" alt="" onClick=${() => (viewer.value = url)} />`,
+      )}
+    </div>`}
+    ${audio.map(({ url }) => html`<audio class="audio" src=${url} controls preload="none" />`)}`;
 }
 
 function Viewer() {
@@ -780,7 +798,7 @@ function MessageMenu({ menu, onClose, onReply, onReact, onEdit, onDelete, onMore
       removeEventListener('resize', onClose);
     };
   }, []);
-  useEffect(() => ref.current.querySelector('button:not(:disabled)')?.focus(), []);
+  useEffect(() => ref.current.querySelector('[role=menuitem]:not(:disabled)')?.focus(), []);
   useLayoutEffect(() => {
     // Keep the menu on screen.
     const el = ref.current;
@@ -840,6 +858,8 @@ function Tick({ id }) {
   if (status === 'sending') return html`<span class="tick" title="Sending">🕓</span>`;
   if (status === 'failed')
     return html`<button class="tick failed" title="Not sent — tap to retry" onClick=${() => store.retrySend(id)}>⚠</button>`;
+  if (status === 'partial')
+    return html`<button class="tick failed" title="Reached shared relays only, not the recipient's inbox relays — tap to retry" onClick=${() => store.retrySend(id)}>⚠</button>`;
   return html`<span class="tick" title="Accepted by a relay">✓</span>`;
 }
 
@@ -1064,12 +1084,74 @@ function MessageList({ messages, policy = () => 'trusted', badge = () => '', med
   </div>`;
 }
 
+// Voice notes: MediaRecorder on the microphone; the browser picks the container
+// (audio/webm;codecs=opus in Chrome/Firefox, audio/mp4 in Safari). Stopping resolves
+// with the recorded file, or null when cancelled or too short.
+const VOICE_MIME = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus'];
+function useRecorder() {
+  const [recording, setRecording] = useState(false);
+  const [seconds, setSeconds] = useState(0);
+  const state = useRef(null); // { recorder, chunks, stream, startedAt, timer, done }
+  const cleanup = () => {
+    const s = state.current;
+    if (!s) return;
+    clearInterval(s.timer);
+    s.stream.getTracks().forEach((t) => t.stop());
+    state.current = null;
+    setRecording(false);
+    setSeconds(0);
+  };
+  const start = async () => {
+    if (state.current || typeof MediaRecorder === 'undefined') return false;
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const mimeType = VOICE_MIME.find((m) => MediaRecorder.isTypeSupported(m)) ?? '';
+    const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+    const s = { recorder, chunks: [], stream, startedAt: Date.now(), timer: 0, done: null };
+    recorder.ondataavailable = (e) => e.data.size && s.chunks.push(e.data);
+    recorder.onstop = () => {
+      const type = (recorder.mimeType || mimeType || 'audio/webm').split(';')[0];
+      const ext = type.includes('mp4') ? 'm4a' : type.includes('ogg') ? 'ogg' : 'webm';
+      const file = new File(s.chunks, `voice-${new Date(s.startedAt).toISOString().replace(/[:.]/g, '-')}.${ext}`, { type });
+      const long = Date.now() - s.startedAt >= 700 && file.size > 0;
+      s.done?.(long ? file : null);
+      cleanup();
+    };
+    s.timer = setInterval(() => setSeconds(Math.floor((Date.now() - s.startedAt) / 1000)), 250);
+    state.current = s;
+    recorder.start(250);
+    setRecording(true);
+    return true;
+  };
+  const stop = ({ cancel = false } = {}) =>
+    new Promise((resolve) => {
+      const s = state.current;
+      if (!s) return resolve(null);
+      s.done = cancel ? () => resolve(null) : resolve;
+      // If the recorder never reports stopping (seen with dead audio sources), settle anyway.
+      const fallback = setTimeout(() => state.current === s && s.recorder.onstop(), 3000);
+      const finish = s.recorder.onstop;
+      s.recorder.onstop = () => {
+        clearTimeout(fallback);
+        s.recorder.onstop = () => {};
+        finish();
+      };
+      s.recorder.state === 'inactive' ? s.recorder.onstop() : s.recorder.stop();
+    });
+  useEffect(() => () => state.current && stop({ cancel: true }), []);
+  return { recording, seconds, start, stop };
+}
+
+const canRecordVoice = () => typeof MediaRecorder !== 'undefined' && !!navigator.mediaDevices?.getUserMedia;
+
 function Composer({ onSend, placeholder, replyTo, onCancelReply, editing, onEdit, onCancelEdit, draftKey, canUpload = true, mentionables = [] }) {
   const [text, setTextState] = useState(() => store.drafts.value[draftKey] ?? '');
   // Keep the per-chat draft in step with what is typed (not while editing a sent message).
   // Drafts reach the store after a pause in typing, so each keystroke doesn't re-render the sidebar.
   const draftTimer = useRef();
   const pendingDraft = useRef(null);
+  // Resize whenever the text changes from code too (send clears it, drafts restore it);
+  // field-sizing handles this natively where supported.
+  useEffect(() => autosize(input.current), [text]);
   const setText = (value) => {
     setTextState(value);
     if (editing) return;
@@ -1146,6 +1228,30 @@ function Composer({ onSend, placeholder, replyTo, onCancelReply, editing, onEdit
     }
     input.current?.focus();
   };
+  const voice = useRecorder();
+  const startVoice = async () => {
+    if (!canUpload) return store.notify('Only trusted members can post media in this room.');
+    try {
+      await voice.start();
+    } catch (e) {
+      store.notify(e.name === 'NotAllowedError' ? 'Microphone access was refused.' : `Could not record: ${e.message}`);
+    }
+  };
+  // Stop, upload and send as a media message: the URL is the text, the imeta tag the attachment.
+  const sendVoice = () =>
+    run(async () => {
+      const file = await voice.stop();
+      if (!file) return store.notify('Voice note too short.');
+      setUploading((n) => n + 1);
+      try {
+        const tag = await store.uploadMedia(file);
+        await onSend(tag[1].slice(4), [tag]);
+      } catch (e) {
+        store.notify(`Voice note failed: ${e.message}`);
+      } finally {
+        setUploading((n) => n - 1);
+      }
+    });
   const attachmentsFor = (value) => {
     const tokens = new Set(value.split(/\s+/));
     return [...uploads.current].filter(([url]) => tokens.has(url)).map(([, tag]) => tag);
@@ -1273,8 +1379,18 @@ function Composer({ onSend, placeholder, replyTo, onCancelReply, editing, onEdit
           else if (e.key === 'ArrowUp' && !text && onEdit) onEdit(null);
         }}
       />
-      <button class="primary" disabled=${busy || !text.trim()} onClick=${send}>${busy ? '…' : editing ? 'Save' : 'Send'}</button>
+      ${!editing && !text.trim() && canRecordVoice()
+        ? html`<button class="primary mic" disabled=${busy || voice.recording} title="Record a voice note" aria-label="Record a voice note" onClick=${startVoice}>
+            ${busy ? '…' : '🎤'}
+          </button>`
+        : html`<button class="primary" disabled=${busy || !text.trim()} onClick=${send}>${busy ? '…' : editing ? 'Save' : 'Send'}</button>`}
     </div>
+    ${voice.recording &&
+    html`<div class="recording" role="status">
+      <span class="rec-dot" aria-hidden="true" /> Recording ${String(Math.floor(voice.seconds / 60))}:${String(voice.seconds % 60).padStart(2, '0')}
+      <button class="link" onClick=${() => voice.stop({ cancel: true })}>Cancel</button>
+      <button class="primary" onClick=${sendVoice}>Send</button>
+    </div>`}
   </footer>`;
 }
 
@@ -1338,7 +1454,8 @@ function SharedMedia({ messages, allowed }) {
   const urls = messages
     .filter((m) => allowed(m.pubkey))
     .flatMap(mediaOf)
-    .filter((u) => IMAGE_RE.test(u) || !VIDEO_RE.test(u))
+    .filter((m) => m.kind === 'image')
+    .map((m) => m.url)
     .reverse()
     .slice(0, 30);
   if (!urls.length) return null;
@@ -1407,13 +1524,27 @@ function DidIdentity({ pubkey }) {
   </section>`;
 }
 
+// NIP-05 under a person's name: verified ✓, or the claimed address with a Verify tap
+// (checking it contacts their domain), or a failed mark.
+function Nip05Line({ pubkey }) {
+  const verified = store.verifiedNip05(pubkey); // auto-verifies people you already deal with
+  const { state, address } = store.nip05State(pubkey);
+  if (state === 'none') return null;
+  if (verified) return html`<small class="muted" title="Verified NIP-05 address">✓ ${address}</small>`;
+  if (state === 'failed') return html`<small class="muted nip05-failed" title="This address does not point to this key">✗ ${address}</small>`;
+  return html`<small class="muted nip05-unchecked">
+    ${address}
+    ${state === 'checking' ? html` · checking…` : html` · <button class="link" title="Checks with ${address.split('@')[1]} (they will see your IP)" onClick=${() => store.verifyNip05Now(pubkey)}>verify</button>`}
+  </small>`;
+}
+
 function PersonInfo({ pubkey, messages }) {
   const encryption = useAction();
   const p = profiles.value[pubkey] ?? {};
   return html`<div class="hero">
       <${Avatar} pubkey=${pubkey} size=${96} />
       <h3>${pubkey === me.value.pubkey ? 'Note to self' : store.displayName(pubkey)}</h3>
-      ${store.verifiedNip05(pubkey) && html`<small class="muted" title="Verified NIP-05 address">✓ ${store.verifiedNip05(pubkey)}</small>`}
+      <${Nip05Line} pubkey=${pubkey} />
     </div>
     ${p.about && html`<section><p class="about">${p.about}</p></section>`}
     <section>
@@ -1626,7 +1757,7 @@ function RoomChat({ id }) {
       <${RoomAvatar} room=${room} size=${32} />
       <button class="title" title="Room info" onClick=${() => (infoOpen.value = !infoOpen.value)}>
         <b>${room.name}</b>
-        <small>${room.about || `by ${store.displayName(room.owner)}`}</small>
+        <small>${room.about || `by ${store.displayName(room.owner)}`}${state.stale && html` · <span title=${state.stale}>couldn't refresh room info</span>`}</small>
       </button>
 <button class="icon" title="Search (Ctrl+F)" aria-label="Search this chat" onClick=${() => (chatSearch.value = !chatSearch.value)}>🔍</button>
       <button class="wide-only" onClick=${() => copy(`${location.origin}${location.pathname}#/room/${nostr.encodeRoomLink(room)}`, 'Room link copied')}>Share</button>
@@ -1866,7 +1997,16 @@ function Settings() {
       </div>
       <${ProfileSettings} />
       <${MediaServerSettings} />
+      <${BlockedSettings} />
       <${NotificationSettings} />
+      <div class="card">
+        <h3>Privacy</h3>
+        <p class="muted small">
+          Messages are end-to-end encrypted. Relays, the nostr.social directory (profiles and search), the media server and the hosts of
+          pictures you open can see your IP address. Media from strangers and NIP-05 checks for strangers wait for your tap.
+          <a href="https://github.com/melvincarvalho/anagram#privacy" target="_blank" rel="noopener noreferrer">Full details ↗</a>
+        </p>
+      </div>
       <div class="card">
         <button class="danger" onClick=${store.logout}>Sign out of this account</button>
       </div>
@@ -1928,6 +2068,23 @@ function MediaServerSettings() {
     ${save.error && html`<p class="error">${save.error}</p>`}
     <button disabled=${save.busy}>Save</button>
   </form>`;
+}
+
+function BlockedSettings() {
+  const list = store.blocked.value;
+  useEffect(() => store.requestProfiles(list), [list.length]);
+  return html`<div class="card">
+    <h3>Blocked</h3>
+    ${list.length === 0 && html`<p class="muted small">You haven't blocked anyone.</p>`}
+    ${list.map(
+      (pk) => html`<div class="item blocked-row" key=${pk}>
+        <${Avatar} pubkey=${pk} size=${32} />
+        <span class="label"><b>${store.displayName(pk)}</b><small class="mono">${nostr.shortKey(pk)}</small></span>
+        <button onClick=${() => store.toggleBlock(pk).catch(fail('Unblock'))}>Unblock</button>
+      </div>`,
+    )}
+    <p class="muted small">Blocks are kept in your encrypted mute list, shared with Anagram.</p>
+  </div>`;
 }
 
 function NotificationSettings() {
@@ -2111,6 +2268,7 @@ function App() {
   useEffect(() => {
     document.title = unread ? `(${unread}) nostr.chat` : 'nostr.chat';
   }, [unread]);
+  if (!me.value && store.restoring.value) return html`<p class="boot muted">Loading…</p>`;
   if (!me.value || store.addingAccount.value) return html`<${Login} />`;
   const r = route.value;
   const view =
@@ -2134,8 +2292,21 @@ function App() {
 }
 
 const root = document.getElementById('app');
-render(html`<p class="boot muted">Loading…</p>`, root);
-store.restoreSession().finally(() => render(html`<${App} />`, root));
+// A failed relay AUTH exchange (our signer failing, or the relay refusing the answer, e.g.
+// "relay needs serviceUrl to be configured") is rethrown by nostr-tools with nothing to
+// catch it. Log it once and keep it out of the console; publishes that needed AUTH still
+// fail normally through their own promises.
+let authRejectionLogged = false;
+addEventListener('unhandledrejection', (e) => {
+  const reason = e.reason;
+  if (!(reason?.relayAuth || /\bauth\b/i.test(String(reason?.message ?? '')))) return;
+  if (!authRejectionLogged && !reason?.relayAuth) console.warn(`[nostr] relay AUTH failed: ${reason.message}`);
+  authRejectionLogged = true;
+  e.preventDefault();
+});
+
+render(html`<${App} />`, root);
+store.restoreSession();
 
 if ('serviceWorker' in navigator) {
   // When an updated worker takes over an already-controlled page, reload once to run the new code.

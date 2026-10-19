@@ -20,7 +20,11 @@ self.addEventListener('fetch', (e) => {
     e.respondWith(
       fetch(e.request.url, { cache: 'no-cache', credentials: 'same-origin' })
         .then((res) => {
-          if (res.ok) caches.open(CACHE).then((c) => c.put(e.request, res.clone()));
+          // Clone now: once the page starts reading the body it can no longer be cloned.
+          if (res.ok) {
+            const copy = res.clone();
+            caches.open(CACHE).then((c) => c.put(e.request, copy)).catch(() => {});
+          }
           return res;
         })
         .catch(() => caches.match(e.request)),

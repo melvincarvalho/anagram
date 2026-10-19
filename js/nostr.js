@@ -30,13 +30,19 @@ const hexToBytes = (h) => Uint8Array.from(h.match(/../g), (x) => parseInt(x, 16)
 
 export const pool = new SimplePool({ enableReconnect: true });
 
+// Relay reads always have a deadline; a relay that never answers must not stall the app.
+const RELAY_WAIT = 6000;
+const withWait = (params) => ({ maxWait: RELAY_WAIT, ...(params ?? {}) });
+export const relayGet = (relays, filter, params) => pool.get(relays, filter, withWait(params));
+export const relayQuery = (relays, filter, params) => pool.querySync(relays, filter, withWait(params));
+
 export const uniq = (list) => [...new Set(list.filter(Boolean))];
 export const now = () => Math.floor(Date.now() / 1000);
 
 export function normalizeRelay(url) {
   try {
     const u = new URL(url.trim());
-    if (!['ws:', 'wss:'].includes(u.protocol) || u.username || u.password) return '';
+    if (u.protocol !== 'wss:' || u.username || u.password) return '';
     return u.href.replace(/\/$/, '');
   } catch {
     return '';
@@ -144,7 +150,7 @@ export const did = (hex) => `did:nostr:${hex}`;
 // /.well-known/did/nostr/<hex>.json); /did:nostr:<hex> is not a route there.
 export const profileUrl = (hex) => `https://nostr.social/${hex}`;
 // Shareable chat link: https://nostr.chat/did:nostr:<hex> (404.html routes it into the app).
-export const chatLink = (hex) => `${location.origin}${location.pathname.replace(/[^/]*$/, '')}${did(hex)}`;
+export const chatLink = (hex) => `${location.origin}${location.pathname.replace(/[^/]*$/, '')}#/dm/${did(hex)}`;
 export const didDocumentUrl = (hex) => `https://nostr.social/.well-known/did/nostr/${hex}.json`;
 
 // Resolve a did:nostr DID document over HTTP (did-nostr.com, served by nostr.social).
@@ -232,7 +238,7 @@ export async function verifyNip05(pubkey, address) {
 }
 
 export async function fetchInboxRelays(pubkey) {
-  const event = await pool.get(uniq([...APP_RELAYS, ...INDEXERS]), {
+  const event = await relayGet(uniq([...APP_RELAYS, ...INDEXERS]), {
     kinds: [10050],
     authors: [pubkey],
   });
@@ -250,9 +256,15 @@ export async function publishInboxRelays(signer, relays) {
 }
 
 // Our own kind 0, raw, so edits keep fields other clients set (lud16, banner, ...).
+// Our own kind 0 from relays and from nostr.social (signed; verified); the newest wins.
+// Returns event: null only if neither source had one.
 export async function fetchOwnProfile(pubkey) {
-  const events = await pool.querySync(uniq([...APP_RELAYS, ...INDEXERS]), { kinds: [0], authors: [pubkey] }, { maxWait: 3000 });
-  const event = events.sort((a, b) => b.created_at - a.created_at)[0] ?? null;
+  const [relay, directory] = await Promise.allSettled([
+    relayQuery(uniq([...APP_RELAYS, ...INDEXERS]), { kinds: [0], authors: [pubkey] }),
+    directoryGet(`/api/profile/${pubkey}`).then((raw) => verifiedFromDirectory(raw, 0)),
+  ]);
+  const candidates = [...(relay.value ?? []), directory.value].filter((e) => e && e.pubkey === pubkey);
+  const event = candidates.sort((a, b) => b.created_at - a.created_at)[0] ?? null;
   let data = {};
   try {
     data = event ? JSON.parse(event.content) : {};
@@ -280,7 +292,7 @@ export async function publishProfile(signer, fields, previous, relays = []) {
 
 export async function fetchProfiles(pubkeys) {
   if (!pubkeys.length) return [];
-  const events = await pool.querySync(uniq([...APP_RELAYS, ...INDEXERS]), {
+  const events = await relayQuery(uniq([...APP_RELAYS, ...INDEXERS]), {
     kinds: [0],
     authors: pubkeys,
   });
@@ -337,7 +349,7 @@ export async function fetchDirectoryProfile(hex) {
 // derived (unsigned) list is a fast fallback.
 export async function fetchFollows(hex) {
   const [relay, directory] = await Promise.allSettled([
-    pool.querySync(uniq([...APP_RELAYS, ...INDEXERS]), { kinds: [3], authors: [hex] }, { maxWait: 4000 }),
+    relayQuery(uniq([...APP_RELAYS, ...INDEXERS]), { kinds: [3], authors: [hex] }, { maxWait: 4000 }),
     directoryGet(`/api/follows/${hex}`),
   ]);
   const signed = (relay.value ?? []).filter((e) => e.pubkey === hex).sort((a, b) => b.created_at - a.created_at)[0];
@@ -360,13 +372,22 @@ export async function searchDirectory(q, limit = 20) {
 
 // Publish to all relays and resolve once at least one accepts.
 // Publish to all relays; resolve as soon as the first one accepts (the rest carry on).
-export async function publish(relays, event, signer) {
+// Publish to all relays; resolve as soon as one accepts (the rest carry on). With
+// `require`, success means one of THOSE relays accepted: if only others did, the error
+// carries `partial: true` (the event is out there, but not where the recipient reads).
+export async function publish(relays, event, signer, { require } = {}) {
+  relays = uniq(relays);
   const onauth = signer ? (t) => signer.sign(t) : undefined;
+  const attempts = pool.publish(relays, event, { onauth }).map((p, i) => p.then(() => relays[i]));
+  const needed = require?.length ? attempts.filter((_, i) => require.includes(relays[i])) : attempts;
   try {
-    await Promise.any(pool.publish(relays, event, { onauth }));
+    await Promise.any(needed.length ? needed : attempts);
   } catch (e) {
     const reasons = (e.errors ?? []).map((r) => r?.message ?? String(r));
-    throw new Error(reasons.join('; ') || 'No relay accepted the event.');
+    const elsewhere = needed !== attempts && (await Promise.any(attempts).then(() => true, () => false));
+    const error = new Error(elsewhere ? "Delivered to shared relays only; the recipient's inbox relays did not accept it." : reasons.join('; ') || 'No relay accepted the event.');
+    error.partial = elsewhere;
+    throw error;
   }
   return event;
 }
@@ -411,8 +432,9 @@ export async function sendRumor(signer, recipient, kind, content, tags, recipien
     giftWrap(signer, rumor, recipient),
     recipient === signer.pubkey ? null : giftWrap(signer, rumor, signer.pubkey),
   ]);
-  // The recipient's copy is what matters; our own copy only restores history.
-  await publish(uniq([...recipientRelays, ...APP_RELAYS]), theirs, signer);
+  // The recipient's copy is what matters: it must land on one of THEIR inbox relays
+  // (when they have published any); our own copy only restores history.
+  await publish(uniq([...recipientRelays, ...APP_RELAYS]), theirs, signer, { require: recipientRelays });
   if (mine) publish(uniq([...ownRelays, ...APP_RELAYS]), mine, signer).catch(() => {});
   return rumor;
 }
@@ -550,7 +572,7 @@ export function roomPolicy(room, pubkey) {
 }
 
 export async function fetchRoom(pointer) {
-  const events = await pool.querySync(uniq([...pointer.relays, ...APP_RELAYS]), {
+  const events = await relayQuery(uniq([...pointer.relays, ...APP_RELAYS]), {
     kinds: [ROOM_KIND],
     authors: [pointer.owner],
     '#d': [pointer.slug],
@@ -656,13 +678,13 @@ export function starterRoom() {
 }
 
 export async function fetchEvent(relays, id) {
-  return pool.get(relays, { ids: [id] });
+  return relayGet(relays, { ids: [id] });
 }
 
 // ---------- Private contact list (Anagram: kind 30000, d=contacts, NIP-44 to self) ----------
 
 export async function fetchContactList(signer, relays) {
-  const event = await pool.get(relays, { kinds: [30000], authors: [signer.pubkey], '#d': ['contacts'] });
+  const event = await relayGet(relays, { kinds: [30000], authors: [signer.pubkey], '#d': ['contacts'] });
   if (!event) return { event: null, pubkeys: [] };
   const tags = event.content.trim() ? JSON.parse(await signer.decrypt(signer.pubkey, event.content)) : [];
   const pubkeys = uniq(
@@ -676,7 +698,7 @@ export async function fetchContactList(signer, relays) {
 // ---------- Mute list (Anagram: kind 10000, private ['p'] muted / ['bp'] blocked, NIP-44 to self) ----------
 
 export async function fetchMuteList(signer, relays) {
-  const event = await pool.get(relays, { kinds: [10000], authors: [signer.pubkey] });
+  const event = await relayGet(relays, { kinds: [10000], authors: [signer.pubkey] });
   if (!event) return { event: null, entries: [] };
   let entries = [];
   if (event.content.trim()) {
@@ -799,8 +821,18 @@ export async function uploadBlossom(signer, file, server = DEFAULT_BLOSSOM) {
   return ['imeta', `url ${blob.url}`, `m ${blob.type || file.type}`, `size ${blob.size ?? file.size}`, `x ${blob.sha256 || sha256}`];
 }
 
+// Answer relay AUTH challenges with the account's signer. nostr-tools rethrows a failed
+// challenge answer with nothing to catch it, so the error is tagged and logged once here
+// and app.js swallows the tagged rejection (publishes that needed AUTH still fail normally).
+let authWarned = false;
 export function enableAuth(signer) {
-  pool.automaticallyAuth = () => (t) => signer.sign(t);
+  pool.automaticallyAuth = (relay) => (t) =>
+    signer.sign(t).catch((e) => {
+      if (!authWarned) console.warn(`[nostr] could not answer AUTH for ${relay.url}: ${e.message}`);
+      authWarned = true;
+      e.relayAuth = true;
+      throw e;
+    });
 }
 
 // Registration must distinguish an empty roster from unavailable relays. Only

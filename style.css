@@ -1426,3 +1426,47 @@ mark {
 .sidebar h2 .mark-all + .add {
   margin-left: 8px;
 }
+
+.blocked-row {
+  padding: 6px 0;
+}
+.blocked-row .label {
+  flex: 1;
+}
+
+.audio {
+  display: block;
+  width: min(100%, 320px);
+  margin: 4px 0;
+}
+.nip05-unchecked,
+.nip05-failed {
+  opacity: 0.8;
+}
+.nip05-unchecked button.link {
+  font-size: inherit;
+}
+
+/* Voice notes */
+.composer .recording {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 2px 0;
+  font-size: 14px;
+}
+.composer .recording .link {
+  margin-left: auto;
+}
+.rec-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #e5484d;
+  animation: rec-blink 1s infinite;
+}
+@keyframes rec-blink {
+  50% {
+    opacity: 0.25;
+  }
+}

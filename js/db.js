@@ -17,10 +17,27 @@ function open() {
         db.createObjectStore('roomMessages', { keyPath: 'id' }).createIndex('room', ['room', 'created_at']);
       if (!db.objectStoreNames.contains('ndr')) db.createObjectStore('ndr', { keyPath: ['account', 'key'] });
     };
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
+    // Another tab still holds an older version open; its upgrade can't proceed until it closes.
+    req.onblocked = () => blockedListeners.forEach((fn) => fn());
+    req.onsuccess = () => {
+      const db = req.result;
+      // A newer version is opening in another tab: close so it can upgrade, then reload into it.
+      db.onversionchange = () => {
+        db.close();
+        opening = undefined;
+        location.reload();
+      };
+      resolve(db);
+    };
+    req.onerror = () => {
+      opening = undefined;
+      reject(req.error);
+    };
   }));
 }
+
+const blockedListeners = new Set();
+export const onOpenBlocked = (fn) => blockedListeners.add(fn);
 
 async function run(store, mode, fn) {
   const db = await open();

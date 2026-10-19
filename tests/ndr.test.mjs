@@ -143,7 +143,9 @@ test('closing during signer approval cannot persist or publish late authorizatio
   };
   owner.client = createNdrClient(owner.options);
   const starting = owner.client.start();
-  await until(() => asked);
+  // Registration performs bounded empty-roster discovery before requesting the
+  // signer. Leave room beyond that deadline so this tests cancellation, not timing.
+  await until(() => asked, 16000);
   await owner.client.close();
   const count = owner.storage.rows.size;
   approve();
