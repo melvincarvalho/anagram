@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>nostr.chat</title>
+    <meta name="referrer" content="no-referrer" />
+    <!-- Share links are previewed from this page, so it carries the social card too. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="nostr.chat" />
+    <meta property="og:title" content="Message me on nostr.chat" />
+    <meta property="og:description" content="Private, end-to-end encrypted chat on Nostr. No phone number, no account server." />
+    <meta property="og:image" content="https://nostr.chat/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Message me on nostr.chat" />
+    <meta name="twitter:image" content="https://nostr.chat/og-image.png" />
+    <!-- GitHub Pages serves this for unknown paths. Share links like /did:nostr:<hex>
+         (also /<hex> and /npub1…) are turned into the app's chat route. -->
+    <script>
+      (function () {
+        var m = location.pathname.match(/^(.*\/)(did:nostr:[0-9a-f]{64}|[0-9a-f]{64}|npub1[02-9ac-hj-np-z]{58})\/?$/i);
+        location.replace(m ? m[1] + '#/dm/' + m[2] : '/');
+      })();
+    </script>
+  </head>
+  <body>
+    <p>Opening nostr.chat…</p>
+  </body>
+</html>

@@ -141,6 +141,8 @@ export const did = (hex) => `did:nostr:${hex}`;
 // nostr.social serves did:nostr profile pages at /<hex> (the DID document is at
 // /.well-known/did/nostr/<hex>.json); /did:nostr:<hex> is not a route there.
 export const profileUrl = (hex) => `https://nostr.social/${hex}`;
+// Shareable chat link: https://nostr.chat/did:nostr:<hex> (404.html routes it into the app).
+export const chatLink = (hex) => `${location.origin}${location.pathname.replace(/[^/]*$/, '')}${did(hex)}`;
 export const didDocumentUrl = (hex) => `https://nostr.social/.well-known/did/nostr/${hex}.json`;
 
 // Resolve a did:nostr DID document over HTTP (did-nostr.com, served by nostr.social).

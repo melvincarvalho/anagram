@@ -386,6 +386,19 @@ function RoomAvatar({ room, size = 36 }) {
     : html`<span class="avatar room" style=${`width:${size}px;height:${size}px`}>#</span>`;
 }
 
+// Native share sheet where available (phones), otherwise copy the link.
+async function shareLink(url, title) {
+  if (navigator.share) {
+    try {
+      await navigator.share({ title, url });
+      return;
+    } catch (e) {
+      if (e.name === 'AbortError') return;
+    }
+  }
+  copy(url, 'Link copied');
+}
+
 async function copy(text, label = 'Copied') {
   try {
     await navigator.clipboard.writeText(text);
@@ -1315,6 +1328,7 @@ function DidIdentity({ pubkey }) {
       ${links.length > 0 && html`<${Field} label="Also known as" value=${links.map((u) => html`<a href=${u} target="_blank" rel="noopener noreferrer">${u.replace(/^https:\/\//, '')}</a> `)} />`}
       ${relays.length > 0 && html`<${Field} label="Relays" value=${relays.map((r) => r.replace(/^wss:\/\//, '')).join(', ')} />`}`}
     <div class="buttons">
+      <button onClick=${() => shareLink(nostr.chatLink(pubkey), `${store.displayName(pubkey)} on nostr.chat`)}>Share contact</button>
       <a class="button" href=${nostr.profileUrl(pubkey)} target="_blank" rel="noopener">nostr.social ↗</a>
       <a class="button" href=${nostr.didDocumentUrl(pubkey)} target="_blank" rel="noopener">DID document ↗</a>
     </div>
@@ -1678,6 +1692,7 @@ function Settings() {
         <div class="buttons">
           <button onClick=${() => copy(nostr.did(signer.pubkey), 'DID copied')}>Copy DID</button>
           <button onClick=${() => copy(nostr.npub(signer.pubkey), 'npub copied')}>Copy npub</button>
+          <button class="primary" onClick=${() => shareLink(nostr.chatLink(signer.pubkey), 'Message me on nostr.chat')}>Share my link</button>
           <a class="button" href=${nostr.profileUrl(signer.pubkey)} target="_blank" rel="noopener">nostr.social ↗</a>
           <a class="button" href=${nostr.didDocumentUrl(signer.pubkey)} target="_blank" rel="noopener">DID document ↗</a>
         </div>
