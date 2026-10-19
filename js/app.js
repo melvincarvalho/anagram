@@ -230,8 +230,9 @@ const sameRun = (a, b) => a && b && a.pubkey === b.pubkey && dayKey(a.created_at
 const react = (context) => (message, emoji) =>
   store.toggleReaction(context, message, emoji).catch((e) => store.notify(`Reaction failed: ${e.message}`));
 
-function MessageMenu({ menu, onClose, onReply, onReact }) {
+function MessageMenu({ menu, onClose, onReply, onReact, onEdit, onDelete }) {
   const ref = useRef();
+  const [confirming, setConfirming] = useState(false);
   useEffect(() => {
     const close = (e) => !ref.current?.contains(e.target) && onClose();
     const key = (e) => e.key === 'Escape' && onClose();
@@ -265,6 +266,12 @@ function MessageMenu({ menu, onClose, onReply, onReact }) {
     <button role="menuitem" onClick=${act(() => copy(m.content, 'Text copied'))}>⧉ Copy text</button>
     <button role="menuitem" onClick=${act(() => copy(nostr.did(m.pubkey), 'DID copied'))}>⧉ Copy author DID</button>
     <button role="menuitem" onClick=${act(() => window.open(nostr.profileUrl(m.pubkey), '_blank', 'noopener'))}>👤 View profile</button>
+    ${m.pubkey === me.value.pubkey && onEdit && html`<button role="menuitem" onClick=${act(() => onEdit(m))}>✎ Edit</button>`}
+    ${m.pubkey === me.value.pubkey &&
+    onDelete &&
+    (confirming
+      ? html`<button role="menuitem" class="danger" onClick=${act(() => onDelete(m))}>🗑 Tap again to delete for everyone</button>`
+      : html`<button role="menuitem" class="danger" onClick=${() => setConfirming(true)}>🗑 Delete</button>`)}
   </div>`;
 }
 
@@ -285,7 +292,7 @@ function Reactions({ message, onReact }) {
   </div>`;
 }
 
-function MessageList({ messages, policy = () => 'trusted', badge = () => '', onReply, onReact, footer, header }) {
+function MessageList({ messages, policy = () => 'trusted', badge = () => '', onReply, onReact, onEdit, onDelete, footer, header }) {
   const ref = useRef();
   const stick = useRef(true);
   const press = useRef();
@@ -348,34 +355,51 @@ function MessageList({ messages, policy = () => 'trusted', badge = () => '', onR
             html`<button class="quote" onClick=${() => jumpTo(quote.id)}>
               <b>${store.displayName(quote.pubkey)}</b>${previewText(quote.content).slice(0, 140)}
             </button>`}
-            <div class="body"><${Text} content=${m.content} links=${policy(m.pubkey) === 'trusted'} /><span class="meta">${clock(m.created_at)}</span></div>
+            <div class="body"><${Text} content=${m.content} links=${policy(m.pubkey) === 'trusted'} /><span class="meta">${(m.edited ?? nostr.isEdited(m.tags ?? [])) ? 'edited ' : ''}${clock(m.created_at)}</span></div>
             <${Reactions} message=${m} onReact=${onReact} />
           </div>
         </div>`;
     })}
     ${footer}
-    ${menu && html`<${MessageMenu} menu=${menu} onReply=${onReply} onReact=${onReact} onClose=${() => setMenu(null)} />`}
+    ${menu && html`<${MessageMenu} menu=${menu} onReply=${onReply} onReact=${onReact} onEdit=${onEdit} onDelete=${onDelete} onClose=${() => setMenu(null)} />`}
   </div>`;
 }
 
-function Composer({ onSend, placeholder, replyTo, onCancelReply }) {
+function Composer({ onSend, placeholder, replyTo, onCancelReply, editing, onEdit, onCancelEdit }) {
   const [text, setText] = useState('');
+  const input = useRef();
   const { busy, error, run } = useAction();
+  useEffect(() => {
+    if (editing) setText(editing.content);
+    if (editing || replyTo) input.current?.focus();
+  }, [editing?.id, replyTo?.id]);
+  const cancel = () => {
+    if (editing) {
+      onCancelEdit();
+      setText('');
+    } else onCancelReply?.();
+  };
   const send = () => {
     const value = text.trim();
     if (!value || busy) return;
+    if (editing && value === editing.content.trim()) return cancel();
     run(async () => {
-      await onSend(value);
+      await (editing ? onEdit(editing, value) : onSend(value));
       setText('');
     });
   };
+  const context = editing ?? replyTo;
   return html`<footer class="composer">
-    ${replyTo &&
-    html`<div class="replying">Replying to ${store.displayName(replyTo.pubkey)}: ${previewText(replyTo.content).slice(0, 80)}
-      <button class="link" onClick=${onCancelReply}>✕</button></div>`}
+    ${context &&
+    html`<div class="replying">
+      <span class="what">${editing ? '✎ Edit message' : `↩ Reply to ${store.displayName(replyTo.pubkey)}`}</span>
+      <span class="snippet">${previewText(context.content).slice(0, 80)}</span>
+      <button class="link" title="Cancel" onClick=${cancel}>✕</button>
+    </div>`}
     ${error && html`<p class="error">${error}</p>`}
     <div class="row">
       <textarea
+        ref=${input}
         rows="1"
         placeholder=${placeholder}
         value=${text}
@@ -384,12 +408,52 @@ function Composer({ onSend, placeholder, replyTo, onCancelReply }) {
           if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             send();
-          }
+          } else if (e.key === 'Escape' && context) cancel();
+          else if (e.key === 'ArrowUp' && !text && onEdit) onEdit(null);
         }}
       />
-      <button class="primary" disabled=${busy || !text.trim()} onClick=${send}>${busy ? '…' : 'Send'}</button>
+      <button class="primary" disabled=${busy || !text.trim()} onClick=${send}>${busy ? '…' : editing ? 'Save' : 'Send'}</button>
     </div>
   </footer>`;
+}
+
+// Reply / edit / delete / react state shared by DM and room views.
+function useChatActions(context, messages) {
+  const [replyTo, setReplyTo] = useState(null);
+  const [editing, setEditing] = useState(null);
+  const fail = (what) => (e) => store.notify(`${what} failed: ${e.message}`);
+  const startEdit = (m) => {
+    setReplyTo(null);
+    setEditing(m);
+  };
+  return {
+    list: {
+      onReply: (m) => {
+        setEditing(null);
+        setReplyTo(m);
+      },
+      onReact: react(context),
+      onEdit: startEdit,
+      onDelete: (m) => store.deleteMessage(context, m).catch(fail('Delete')),
+    },
+    composer: {
+      replyTo,
+      onCancelReply: () => setReplyTo(null),
+      editing,
+      onCancelEdit: () => setEditing(null),
+      // Telegram: arrow-up in an empty composer edits your last message.
+      onEdit: async (m, text) => {
+        if (!m) {
+          const last = [...messages].reverse().find((x) => x.pubkey === me.value.pubkey);
+          if (last) startEdit(last);
+          return;
+        }
+        await store.editMessage(context, m, text);
+        setEditing(null);
+      },
+    },
+    clearReply: () => setReplyTo(null),
+  };
 }
 
 // ---------- Views ----------
@@ -397,10 +461,10 @@ function Composer({ onSend, placeholder, replyTo, onCancelReply }) {
 function DirectChat({ id }) {
   const peer = nostr.decodePubkey(id);
   const older = useAction();
-  const [replyTo, setReplyTo] = useState(null);
+  const messages = (peer && dms.value[peer]) || [];
+  const actions = useChatActions({ peer }, messages);
   useEffect(() => peer && store.requestProfiles([peer]), [peer]);
   if (!peer) return html`<section class="main empty"><p class="error">Invalid contact.</p></section>`;
-  const messages = dms.value[peer] ?? [];
   return html`<section class="main">
     <header class="bar">
       <a class="back" href="#">‹</a>
@@ -413,8 +477,7 @@ function DirectChat({ id }) {
       </div>
     </header>
     <${MessageList}
-      onReply=${setReplyTo}
-      onReact=${react({ peer })}
+      ...${actions.list}
       messages=${messages}
       header=${html`<div class="older">
         <button class="link" disabled=${older.busy} onClick=${() => older.run(store.loadOlderDirectMessages)}>
@@ -423,12 +486,11 @@ function DirectChat({ id }) {
       </div>`}
     />
     <${Composer}
+      ...${actions.composer}
       placeholder="Encrypted message"
-      replyTo=${replyTo}
-      onCancelReply=${() => setReplyTo(null)}
       onSend=${async (text) => {
-        await store.sendDirectMessage(peer, text, replyTo);
-        setReplyTo(null);
+        await store.sendDirectMessage(peer, text, actions.composer.replyTo);
+        actions.clearReply();
       }}
     />
   </section>`;
@@ -442,13 +504,13 @@ function RoomChat({ id }) {
   } catch (e) {
     invalid = e.message;
   }
-  const [replyTo, setReplyTo] = useState(null);
   const older = useAction();
+  const state = (pointer && roomState.value[pointer.address]) || { messages: [], loading: true };
+  const actions = useChatActions({ room: pointer?.address }, state.messages);
   useEffect(() => {
     if (pointer) store.openRoom(pointer);
   }, [pointer?.address]);
   if (!pointer) return html`<section class="main empty"><p class="error">${invalid}</p></section>`;
-  const state = roomState.value[pointer.address] ?? { messages: [], loading: true };
   const room = state.room;
   const joined = joinedRooms.value.some((r) => r.address === pointer.address);
   if (!room)
@@ -478,8 +540,7 @@ function RoomChat({ id }) {
       messages=${state.messages}
       policy=${policy}
       badge=${(pk) => (pk === room.owner ? 'owner' : '')}
-      onReply=${setReplyTo}
-      onReact=${react({ room: room.address })}
+      ...${actions.list}
       header=${html`<div class="older">
         ${state.exhausted
           ? html`<span class="muted small">Start of room history</span>`
@@ -489,13 +550,12 @@ function RoomChat({ id }) {
       </div>`}
     />
     <${Composer}
+      ...${actions.composer}
       placeholder="Public message — anyone can read this"
-      replyTo=${replyTo}
-      onCancelReply=${() => setReplyTo(null)}
       onSend=${async (text) => {
-        await store.sendRoomMessage(room.address, text, replyTo);
+        await store.sendRoomMessage(room.address, text, actions.composer.replyTo);
         if (!joined) store.joinRoom(room);
-        setReplyTo(null);
+        actions.clearReply();
       }}
     />
   </section>`;

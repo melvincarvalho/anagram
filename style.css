@@ -674,3 +674,25 @@ button.link {
 .menu .quick button:hover {
   transform: scale(1.2);
 }
+
+.replying {
+  align-items: center;
+  border-left: 3px solid var(--accent);
+  padding: 2px 0 2px 10px;
+  margin-bottom: 8px;
+}
+.replying .what {
+  flex: none;
+  color: var(--accent);
+  font-weight: 600;
+}
+.replying .snippet {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.menu button.danger {
+  color: var(--danger);
+}

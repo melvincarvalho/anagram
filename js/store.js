@@ -234,6 +234,7 @@ async function handleWrap(wrap) {
   } else if (peer && (rumor.kind === 14 || rumor.kind === 15) && rumor.content) {
     if (deleted.get(rumor.id) !== rumor.pubkey) {
       const reply = rumor.tags.find((t) => t[0] === 'e' && t[3] === 'reply')?.[1];
+      const edited = nostr.isEdited(rumor.tags);
       const m = {
         account: signer.pubkey,
         id: rumor.id,
@@ -243,6 +244,7 @@ async function handleWrap(wrap) {
         kind: rumor.kind,
         content: rumor.content,
         reply,
+        edited,
       };
       addMessages([m]);
       queueSave(m);
@@ -312,7 +314,7 @@ export async function loadOlderDirectMessages() {
 
 const theirInbox = new Map();
 
-export async function sendDirectMessage(peer, text, reply) {
+export async function sendDirectMessage(peer, text, reply, edit) {
   const signer = me.value;
   if (!theirInbox.has(peer)) theirInbox.set(peer, await nostr.fetchInboxRelays(peer).catch(() => []));
   const rumor = await nostr.sendDirectMessage(
@@ -321,9 +323,20 @@ export async function sendDirectMessage(peer, text, reply) {
     text,
     theirInbox.get(peer),
     inboxRelays.value ?? [],
-    reply?.id,
+    edit ? edit.reply : reply?.id,
+    edit,
   );
-  const m = { account: signer.pubkey, id: rumor.id, peer, pubkey: signer.pubkey, created_at: rumor.created_at, kind: 14, content: text, reply: reply?.id };
+  const m = {
+    account: signer.pubkey,
+    id: rumor.id,
+    peer,
+    pubkey: signer.pubkey,
+    created_at: rumor.created_at,
+    kind: 14,
+    content: text,
+    reply: edit ? edit.reply : reply?.id,
+    edited: !!edit,
+  };
   addMessages([m]);
   queueSave(m);
   addContact(peer).catch((e) => notify(`Could not update contact list: ${e.message}`));
@@ -527,4 +540,39 @@ export async function sendRoomMessage(address, text, reply) {
   const room = roomState.value[address].room;
   const event = await nostr.sendRoomMessage(me.value, room, text, reply);
   addRoomMessages(address, [event]);
+}
+
+// Delete our own message: NIP-09 request, honoured by Anagram and most clients.
+export async function deleteMessage(context, message) {
+  const signer = me.value;
+  if (message.pubkey !== signer.pubkey) throw new Error('You can only delete your own messages.');
+  if (context.room) {
+    await nostr.sendRoomDeletion(signer, roomState.value[context.room].room, [message.id], 9);
+  } else {
+    const peer = context.peer;
+    if (!theirInbox.has(peer)) theirInbox.set(peer, await nostr.fetchInboxRelays(peer).catch(() => []));
+    await nostr.sendRumor(
+      signer,
+      peer,
+      5,
+      '',
+      [['p', peer], ['e', message.id], ['k', String(message.kind ?? 14)]],
+      theirInbox.get(peer),
+      inboxRelays.value ?? [],
+    );
+    queueSave({ account: signer.pubkey, id: message.id, deletedBy: signer.pubkey });
+  }
+  applyDeletions([message.id], signer.pubkey);
+}
+
+// Anagram's edit flow: delete the old version, then send a replacement at the same timestamp.
+export async function editMessage(context, message, text) {
+  await deleteMessage(context, message);
+  if (context.room) {
+    const room = roomState.value[context.room].room;
+    const event = await nostr.sendRoomMessage(me.value, room, text, null, message);
+    addRoomMessages(context.room, [event]);
+  } else {
+    await sendDirectMessage(context.peer, text, null, message);
+  }
 }

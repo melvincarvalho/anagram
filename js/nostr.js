@@ -255,8 +255,8 @@ async function giftWrap(signer, rumor, recipient) {
 }
 
 // Wrap any rumor kind (14 message, 7 reaction, 5 deletion) to the recipient and to ourselves.
-export async function sendRumor(signer, recipient, kind, content, tags, recipientRelays, ownRelays) {
-  const rumor = { pubkey: signer.pubkey, created_at: now(), kind, tags, content };
+export async function sendRumor(signer, recipient, kind, content, tags, recipientRelays, ownRelays, createdAt = now()) {
+  const rumor = { pubkey: signer.pubkey, created_at: createdAt, kind, tags, content };
   rumor.id = getEventHash(rumor);
   const [theirs, mine] = await Promise.all([
     giftWrap(signer, rumor, recipient),
@@ -268,9 +268,17 @@ export async function sendRumor(signer, recipient, kind, content, tags, recipien
   return rumor;
 }
 
-export function sendDirectMessage(signer, recipient, text, recipientRelays, ownRelays, replyId) {
-  const tags = [['p', recipient], ...(replyId ? [['e', replyId, '', 'reply']] : [])];
-  return sendRumor(signer, recipient, 14, text, tags, recipientRelays, ownRelays);
+// Anagram's edit link: replacement messages carry ['e', previousId, '', 'edit'].
+export const editTag = (previousId) => ['e', previousId, '', 'edit'];
+export const isEdited = (tags) => tags.some((t) => t[0] === 'e' && t[3] === 'edit');
+
+export function sendDirectMessage(signer, recipient, text, recipientRelays, ownRelays, replyId, edit) {
+  const tags = [
+    ['p', recipient],
+    ...(replyId ? [['e', replyId, '', 'reply']] : []),
+    ...(edit ? [editTag(edit.id)] : []),
+  ];
+  return sendRumor(signer, recipient, 14, text, tags, recipientRelays, ownRelays, edit?.created_at);
 }
 
 // NIP-25 shorthand: '+' or empty is a like, '-' a dislike.
@@ -416,14 +424,16 @@ export function validRoomMessage(event, address) {
   );
 }
 
-export async function sendRoomMessage(signer, room, text, reply) {
+export async function sendRoomMessage(signer, room, text, reply, edit) {
   const event = await signer.sign({
     kind: 9,
-    created_at: now(),
+    // Edits keep the original timestamp so the message stays in place.
+    created_at: edit?.created_at ?? now(),
     content: text,
     tags: [
       ['a', room.address],
-      ...(reply ? [['q', reply.id, room.relays[0] ?? '', reply.pubkey]] : []),
+      ...(edit ? [editTag(edit.id), ...edit.tags.filter((t) => t[0] === 'q')] : []),
+      ...(reply && !edit ? [['q', reply.id, room.relays[0] ?? '', reply.pubkey]] : []),
     ],
   });
   return publish(uniq([...room.relays, ...APP_RELAYS]), event, signer);
