@@ -735,13 +735,12 @@ window.addEventListener('online', () => ndrClient?.retry().catch(() => {}));
 
 export async function setDirectProtocol(peer, protocol) {
   if (!['auto', 'nip17', 'ndr'].includes(protocol)) throw new Error('Unknown message encryption');
-  const signer = me.value;
-  if (protocol === 'ndr') await startNdr();
-  if (me.value !== signer) return;
+  // A failed device registration must not undo the user's encryption choice.
   saveDirectPreference(peer, protocol);
   if (protocol === 'ndr') chooseAutoNdr(peer);
   protocolChecks.delete(peer);
   if (directChatPeer === peer) stopDiscovery();
+  if (protocol === 'ndr') await startNdr();
   if (protocol === 'auto') await prepareDirectProtocol(peer);
 }
 

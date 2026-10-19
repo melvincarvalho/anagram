@@ -23,7 +23,7 @@ Object.defineProperty(globalThis, 'navigator', { value: { locks: { request: (_na
 await mkdir('work', { recursive: true });
 await build({
   stdin: {
-    contents: `export * as store from './js/store.js'; export * as nostr from './js/nostr.js'; export * as db from './js/db.js'; export { clients } from './js/ndr.js';`,
+    contents: `export * as store from './js/store.js'; export * as nostr from './js/nostr.js'; export * as db from './js/db.js'; export { clients, failStart } from './js/ndr.js';`,
     resolveDir: process.cwd(),
   },
   outfile: 'work/store-test.mjs', bundle: true, format: 'esm', platform: 'browser',
@@ -34,16 +34,18 @@ await build({
       import { AppKeys } from 'nostr-double-ratchet';
       export const hasNdrDevices = (event) => AppKeys.fromEvent(event).getAllDevices().length > 0;
       export const clients = [];
+      let startupError;
+      export const failStart = (error) => { startupError = error; };
       export function createNdrClient(options) {
         const client = { options, sent: [], closed: false,
-          async start() {}, async retry() {}, async close() { this.closed = true; },
+          async start() { if (startupError) throw startupError; }, async retry() {}, async close() { this.closed = true; },
           async send(peer, event) { this.sent.push({ peer, event }); }
         }; clients.push(client); return client;
       }
     `, resolveDir: process.cwd() }));
   } }],
 });
-const { store, nostr, clients, db } = await import('../work/store-test.mjs');
+const { store, nostr, clients, db, failStart } = await import('../work/store-test.mjs');
 nostr.pool.get = async () => null;
 nostr.pool.querySync = async () => [];
 nostr.pool.subscribe = (_relays, _filter, callbacks) => { queueMicrotask(() => callbacks.oneose?.()); return { close() {} }; };
@@ -254,6 +256,32 @@ test('Auto discovery and NDR fetch, subscription and publishing share Iris relay
     close();
   } finally {
     Object.assign(nostr.pool, original);
+    await store.logout();
+  }
+});
+
+test('explicit NDR remains selected after registration failure and retries without NIP-17', async () => {
+  const alice = nostr.newKeySigner(), bob = nostr.newKeySigner();
+  localStorage.setItem(`lite:rooms:${alice.pubkey}`, '[]');
+  await store.login(alice, false);
+  const originalPublish = nostr.pool.publish;
+  let publications = 0;
+  nostr.pool.publish = () => { publications++; return [Promise.resolve()]; };
+  failStart(new Error('Device registration conflicted. Try again.'));
+  try {
+    await assert.rejects(store.setDirectProtocol(bob.pubkey, 'ndr'), /registration conflicted/);
+    assert.equal(store.directPreference(bob.pubkey), 'ndr');
+    assert.equal(store.directProtocol(bob.pubkey), 'ndr');
+    await assert.rejects(store.sendDirectMessage(bob.pubkey, 'Keep my selected encryption'), /registration conflicted/);
+    assert.equal(publications, 0);
+    failStart(undefined);
+    await store.sendDirectMessage(bob.pubkey, 'Retry after confirmation');
+    assert.equal(clients.at(-1).sent.at(-1).event.content, 'Retry after confirmation');
+    assert.equal(store.directPreference(bob.pubkey), 'ndr');
+    assert.equal(publications, 0);
+  } finally {
+    failStart(undefined);
+    nostr.pool.publish = originalPublish;
     await store.logout();
   }
 });
