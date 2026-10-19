@@ -390,8 +390,8 @@ export function requestProfiles(pubkeys) {
     const keys = [...pendingProfiles];
     pendingProfiles.clear();
     keys.forEach((k) => requested.add(k));
-    // HTTP DID documents give a quick name/avatar for unknown people while relays answer.
-    for (const k of keys) if (!profiles.value[k]) resolveDid(k);
+    // nostr.social answers in ~100 ms with the signed kind 0; relays follow as a fallback.
+    for (const k of keys) if (!profiles.value[k]) fetchDirectoryProfile(k);
     for (let i = 0; i < keys.length; i += 100) {
       const found = await nostr.fetchProfiles(keys.slice(i, i + 100)).catch(() => []);
       // Also refresh rows cached before newer fields (about, website) existed.
@@ -416,30 +416,46 @@ const didInFlight = new Map();
 let didActive = 0;
 const didWaiting = [];
 
-// Resolve (cached per session, at most 6 requests at a time).
+// Directory profile: a verified signed kind 0, stored like any relay profile.
+function fetchDirectoryProfile(pk) {
+  return queued(() => nostr.fetchDirectoryProfile(pk))
+    .then((p) => {
+      if (!p) return;
+      const cached = profiles.value[pk];
+      if (cached && cached.created_at >= p.created_at && cached.source !== 'did') return;
+      profiles.value = { ...profiles.value, [pk]: p };
+      db.saveProfiles([p]).catch(() => {});
+    })
+    .catch(() => {});
+}
+
+// HTTP requests to nostr.social run at most 6 at a time.
+function queued(fn) {
+  const ready = new Promise((resolve) => didWaiting.push(resolve));
+  pumpDid();
+  return ready
+    .then(fn)
+    .finally(() => {
+      didActive--;
+      pumpDid();
+    });
+}
+
+// Resolve a DID document (cached per session).
 export function resolveDid(pk) {
   if (didInFlight.has(pk)) return didInFlight.get(pk);
-  const job = new Promise((resolve) => didWaiting.push(resolve))
-    .then(() => nostr.resolveDid(pk))
+  const job = queued(() => nostr.resolveDid(pk))
     .then(
       (r) => {
         didDocs.value = { ...didDocs.value, [pk]: r };
-        // A fast first paint for people we have nothing on; signed relay profiles replace it.
-        if (!profiles.value[pk] && (r.profile.name || r.profile.picture))
-          profiles.value = { ...profiles.value, [pk]: r.profile };
         return r;
       },
       (e) => {
         didDocs.value = { ...didDocs.value, [pk]: { error: e.message } };
         return null;
       },
-    )
-    .finally(() => {
-      didActive--;
-      pumpDid();
-    });
+    );
   didInFlight.set(pk, job);
-  pumpDid();
   return job;
 }
 function pumpDid() {

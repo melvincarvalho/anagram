@@ -275,24 +275,61 @@ export async function fetchProfiles(pubkeys) {
   for (const e of events)
     if (!newest.has(e.pubkey) || newest.get(e.pubkey).created_at < e.created_at)
       newest.set(e.pubkey, e);
-  return [...newest.values()].flatMap((e) => {
-    try {
-      const m = JSON.parse(e.content);
-      return [
-        {
-          pubkey: e.pubkey,
-          created_at: e.created_at,
-          name: String(m.display_name || m.name || '').slice(0, 80),
-          picture: /^https:\/\//.test(m.picture ?? '') ? m.picture : '',
-          nip05: typeof m.nip05 === 'string' ? m.nip05.slice(0, 120) : '',
-          about: typeof m.about === 'string' ? m.about.slice(0, 600) : '',
-          website: /^https:\/\//.test(m.website ?? '') ? m.website.slice(0, 200) : '',
-        },
-      ];
-    } catch {
-      return [];
-    }
-  });
+  return [...newest.values()].map(parseProfile).filter(Boolean);
+}
+
+// A kind 0 event (already signature-checked) -> the profile fields we display.
+export function parseProfile(e) {
+  try {
+    const m = JSON.parse(e.content);
+    return {
+      pubkey: e.pubkey,
+      created_at: e.created_at,
+      name: String(m.display_name || m.name || '').slice(0, 80),
+      picture: /^https:\/\//.test(m.picture ?? '') ? m.picture : '',
+      nip05: typeof m.nip05 === 'string' ? m.nip05.slice(0, 120) : '',
+      about: typeof m.about === 'string' ? m.about.slice(0, 600) : '',
+      website: /^https:\/\//.test(m.website ?? '') ? m.website.slice(0, 200) : '',
+    };
+  } catch {
+    return null;
+  }
+}
+
+// ---------- nostr.social (beacon: github.com/JavaScriptSolidServer/beacon) ----------
+// The directory serves raw signed events, so we verify them here and then trust them
+// exactly like relay data.
+export const DIRECTORY = 'https://nostr.social';
+
+// Keep only the signed fields of a stored event and check the signature.
+export function verifiedFromDirectory(raw, kind) {
+  if (!raw || typeof raw !== 'object') return null;
+  const event = { id: raw.id, pubkey: raw.pubkey, created_at: raw.created_at, kind: raw.kind, tags: raw.tags, content: raw.content, sig: raw.sig };
+  return event.kind === kind && verifyEvent(event) ? event : null;
+}
+
+async function directoryGet(path) {
+  const res = await fetch(`${DIRECTORY}${path}`, { referrerPolicy: 'no-referrer', signal: AbortSignal.timeout(6000) });
+  if (!res.ok) throw new Error(`nostr.social ${res.status}`);
+  return res.json();
+}
+
+export async function fetchDirectoryProfile(hex) {
+  if (!HEX.test(hex)) return null;
+  const event = verifiedFromDirectory(await directoryGet(`/api/profile/${hex}`), 0);
+  return event && event.pubkey === hex ? parseProfile(event) : null;
+}
+
+// People search (full text over profiles, ranked by followers); every hit is verified.
+export async function searchDirectory(q, limit = 20) {
+  const hits = await directoryGet(`/api/search?q=${encodeURIComponent(q)}&limit=${limit}`);
+  return (Array.isArray(hits) ? hits : [])
+    .map((raw) => {
+      const event = verifiedFromDirectory(raw, 0);
+      const p = event && parseProfile(event);
+      return p && { ...p, followers: Number(raw._counts?.followers) || 0 };
+    })
+    .filter(Boolean);
 }
 
 // Publish to all relays and resolve once at least one accepts.
