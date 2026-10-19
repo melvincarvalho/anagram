@@ -534,3 +534,12 @@ button.link {
 .bar .title a.name:hover {
   text-decoration: underline;
 }
+
+.mention {
+  font-weight: 600;
+  text-decoration: none;
+}
+.msg.mine .mention {
+  color: inherit;
+  text-decoration: underline;
+}

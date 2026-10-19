@@ -254,12 +254,12 @@ async function giftWrap(signer, rumor, recipient) {
   );
 }
 
-export async function sendDirectMessage(signer, recipient, text, recipientRelays, ownRelays) {
+export async function sendDirectMessage(signer, recipient, text, recipientRelays, ownRelays, replyId) {
   const rumor = {
     pubkey: signer.pubkey,
     created_at: now(),
     kind: 14,
-    tags: [['p', recipient]],
+    tags: [['p', recipient], ...(replyId ? [['e', replyId, '', 'reply']] : [])],
     content: text,
   };
   rumor.id = getEventHash(rumor);

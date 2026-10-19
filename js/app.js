@@ -21,13 +21,39 @@ function Avatar({ pubkey, size = 36 }) {
 
 const URL_RE = /(https?:\/\/[^\s<>"']+[^\s<>"'.,;:!?)\]])/g;
 
+// Profile references: nostr:npub…/nprofile… (NIP-27) and did:nostr:<hex>.
+const MENTION_RE = /((?:nostr:)?(?:npub1|nprofile1)[02-9ac-hj-np-z]{20,}|did:nostr:[a-f0-9]{64})/g;
+
+function Mention({ pubkey }) {
+  useEffect(() => store.requestProfiles([pubkey]), [pubkey]);
+  return html`<a class="mention" href=${nostr.profileUrl(pubkey)} target="_blank" rel="noopener" title=${nostr.did(pubkey)}>@${store.displayName(pubkey)}</a>`;
+}
+
+function Mentions({ text }) {
+  return text.split(MENTION_RE).map((part, i) => {
+    if (i % 2 === 0) return part;
+    const pubkey = nostr.decodePubkey(part);
+    return pubkey ? html`<${Mention} pubkey=${pubkey} />` : part;
+  });
+}
+
 function Text({ content, links = true }) {
-  if (!links) return html`<span>${content.replace(URL_RE, '[link removed]')}</span>`;
-  return content
-    .split(URL_RE)
-    .map((part, i) =>
-      i % 2 ? html`<a href=${part} target="_blank" rel="noopener noreferrer nofollow">${part}</a>` : part,
-    );
+  const parts = content.split(URL_RE);
+  return parts.map((part, i) =>
+    i % 2 === 0
+      ? html`<${Mentions} text=${part} />`
+      : links
+        ? html`<a href=${part} target="_blank" rel="noopener noreferrer nofollow">${part}</a>`
+        : '[link removed]',
+  );
+}
+
+// Plain-text preview for sidebars and quotes: mentions become @names.
+function previewText(content) {
+  return content.replace(MENTION_RE, (m) => {
+    const pk = nostr.decodePubkey(m);
+    return pk ? `@${store.displayName(pk)}` : m;
+  });
 }
 
 const time = (ts) => {
@@ -176,7 +202,7 @@ function Sidebar() {
           <${RoomAvatar} room=${room} />
           <span class="label">
             <span class="line"><b>${room.name}</b>${last && html`<time>${shortTime(last.created_at)}</time>`}</span>
-            <small>${last ? `${store.displayName(last.pubkey)}: ${last.content.slice(0, 80)}` : 'Public room'}</small>
+            <small>${last ? `${store.displayName(last.pubkey)}: ${previewText(last.content).slice(0, 80)}` : 'Public room'}</small>
           </span>
         </a>`;
       })}
@@ -191,7 +217,7 @@ function Sidebar() {
               <b>${peer === me.value.pubkey ? 'Note to self' : store.displayName(peer)}</b>
               ${last && html`<time>${shortTime(last.created_at)}</time>`}
             </span>
-            <small>${last ? `${last.pubkey === me.value.pubkey ? 'You: ' : ''}${last.content.slice(0, 80)}` : 'No messages yet'}</small>
+            <small>${last ? `${last.pubkey === me.value.pubkey ? 'You: ' : ''}${previewText(last.content).slice(0, 80)}` : 'No messages yet'}</small>
           </span>
         </a>`;
       })}
@@ -228,7 +254,7 @@ function MessageList({ messages, policy = () => 'trusted', badge = () => '', onR
           ${!grouped && !mine && html`<${Avatar} pubkey=${m.pubkey} size=${28} />`}
           <div class="bubble">
             ${!grouped && !mine && html`<div class="who">${store.displayName(m.pubkey)}${tag && html`<span class="badge">${tag}</span>`}</div>`}
-            ${quote && html`<div class="quote"><b>${store.displayName(quote.pubkey)}</b> ${quote.content.slice(0, 140)}</div>`}
+            ${quote && html`<div class="quote"><b>${store.displayName(quote.pubkey)}</b> ${previewText(quote.content).slice(0, 140)}</div>`}
             <div class="body"><${Text} content=${m.content} links=${policy(m.pubkey) === 'trusted'} /></div>
             <div class="meta">
               ${time(m.created_at)}
@@ -254,7 +280,7 @@ function Composer({ onSend, placeholder, replyTo, onCancelReply }) {
   };
   return html`<footer class="composer">
     ${replyTo &&
-    html`<div class="replying">Replying to ${store.displayName(replyTo.pubkey)}: ${replyTo.content.slice(0, 80)}
+    html`<div class="replying">Replying to ${store.displayName(replyTo.pubkey)}: ${previewText(replyTo.content).slice(0, 80)}
       <button class="link" onClick=${onCancelReply}>✕</button></div>`}
     ${error && html`<p class="error">${error}</p>`}
     <div class="row">
@@ -280,6 +306,7 @@ function Composer({ onSend, placeholder, replyTo, onCancelReply }) {
 function DirectChat({ id }) {
   const peer = nostr.decodePubkey(id);
   const older = useAction();
+  const [replyTo, setReplyTo] = useState(null);
   useEffect(() => peer && store.requestProfiles([peer]), [peer]);
   if (!peer) return html`<section class="main empty"><p class="error">Invalid contact.</p></section>`;
   const messages = dms.value[peer] ?? [];
@@ -295,6 +322,7 @@ function DirectChat({ id }) {
       </div>
     </header>
     <${MessageList}
+      onReply=${setReplyTo}
       messages=${messages}
       header=${html`<div class="older">
         <button class="link" disabled=${older.busy} onClick=${() => older.run(store.loadOlderDirectMessages)}>
@@ -302,7 +330,15 @@ function DirectChat({ id }) {
         </button>
       </div>`}
     />
-    <${Composer} placeholder="Encrypted message" onSend=${(text) => store.sendDirectMessage(peer, text)} />
+    <${Composer}
+      placeholder="Encrypted message"
+      replyTo=${replyTo}
+      onCancelReply=${() => setReplyTo(null)}
+      onSend=${async (text) => {
+        await store.sendDirectMessage(peer, text, replyTo);
+        setReplyTo(null);
+      }}
+    />
   </section>`;
 }
 

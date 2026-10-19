@@ -273,7 +273,7 @@ export async function loadOlderDirectMessages() {
 
 const theirInbox = new Map();
 
-export async function sendDirectMessage(peer, text) {
+export async function sendDirectMessage(peer, text, reply) {
   const signer = me.value;
   if (!theirInbox.has(peer)) theirInbox.set(peer, await nostr.fetchInboxRelays(peer).catch(() => []));
   const rumor = await nostr.sendDirectMessage(
@@ -282,8 +282,9 @@ export async function sendDirectMessage(peer, text) {
     text,
     theirInbox.get(peer),
     inboxRelays.value ?? [],
+    reply?.id,
   );
-  const m = { account: signer.pubkey, id: rumor.id, peer, pubkey: signer.pubkey, created_at: rumor.created_at, kind: 14, content: text };
+  const m = { account: signer.pubkey, id: rumor.id, peer, pubkey: signer.pubkey, created_at: rumor.created_at, kind: 14, content: text, reply: reply?.id };
   addMessages([m]);
   queueSave(m);
   addContact(peer).catch((e) => notify(`Could not update contact list: ${e.message}`));
