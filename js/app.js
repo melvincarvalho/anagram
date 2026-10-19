@@ -1082,6 +1082,65 @@ function MessageList({ messages, policy = () => 'trusted', badge = () => '', med
   </div>`;
 }
 
+// Voice notes: MediaRecorder on the microphone; the browser picks the container
+// (audio/webm;codecs=opus in Chrome/Firefox, audio/mp4 in Safari). Stopping resolves
+// with the recorded file, or null when cancelled or too short.
+const VOICE_MIME = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus'];
+function useRecorder() {
+  const [recording, setRecording] = useState(false);
+  const [seconds, setSeconds] = useState(0);
+  const state = useRef(null); // { recorder, chunks, stream, startedAt, timer, done }
+  const cleanup = () => {
+    const s = state.current;
+    if (!s) return;
+    clearInterval(s.timer);
+    s.stream.getTracks().forEach((t) => t.stop());
+    state.current = null;
+    setRecording(false);
+    setSeconds(0);
+  };
+  const start = async () => {
+    if (state.current || typeof MediaRecorder === 'undefined') return false;
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const mimeType = VOICE_MIME.find((m) => MediaRecorder.isTypeSupported(m)) ?? '';
+    const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+    const s = { recorder, chunks: [], stream, startedAt: Date.now(), timer: 0, done: null };
+    recorder.ondataavailable = (e) => e.data.size && s.chunks.push(e.data);
+    recorder.onstop = () => {
+      const type = (recorder.mimeType || mimeType || 'audio/webm').split(';')[0];
+      const ext = type.includes('mp4') ? 'm4a' : type.includes('ogg') ? 'ogg' : 'webm';
+      const file = new File(s.chunks, `voice-${new Date(s.startedAt).toISOString().replace(/[:.]/g, '-')}.${ext}`, { type });
+      const long = Date.now() - s.startedAt >= 700 && file.size > 0;
+      s.done?.(long ? file : null);
+      cleanup();
+    };
+    s.timer = setInterval(() => setSeconds(Math.floor((Date.now() - s.startedAt) / 1000)), 250);
+    state.current = s;
+    recorder.start(250);
+    setRecording(true);
+    return true;
+  };
+  const stop = ({ cancel = false } = {}) =>
+    new Promise((resolve) => {
+      const s = state.current;
+      if (!s) return resolve(null);
+      s.done = cancel ? () => resolve(null) : resolve;
+      // If the recorder never reports stopping (seen with dead audio sources), settle anyway.
+      const fallback = setTimeout(() => state.current === s && s.recorder.onstop(), 3000);
+      const finish = s.recorder.onstop;
+      s.recorder.onstop = () => {
+        clearTimeout(fallback);
+        s.recorder.onstop = () => {};
+        finish();
+      };
+      s.recorder.state === 'inactive' ? s.recorder.onstop() : s.recorder.stop();
+    });
+  useEffect(() => () => state.current && stop({ cancel: true }), []);
+  return { recording, seconds, start, stop };
+}
+
+const canRecordVoice = () => typeof MediaRecorder !== 'undefined' && !!navigator.mediaDevices?.getUserMedia;
+
 function Composer({ onSend, placeholder, replyTo, onCancelReply, editing, onEdit, onCancelEdit, draftKey, canUpload = true, mentionables = [] }) {
   const [text, setTextState] = useState(() => store.drafts.value[draftKey] ?? '');
   // Keep the per-chat draft in step with what is typed (not while editing a sent message).
@@ -1167,6 +1226,30 @@ function Composer({ onSend, placeholder, replyTo, onCancelReply, editing, onEdit
     }
     input.current?.focus();
   };
+  const voice = useRecorder();
+  const startVoice = async () => {
+    if (!canUpload) return store.notify('Only trusted members can post media in this room.');
+    try {
+      await voice.start();
+    } catch (e) {
+      store.notify(e.name === 'NotAllowedError' ? 'Microphone access was refused.' : `Could not record: ${e.message}`);
+    }
+  };
+  // Stop, upload and send as a media message: the URL is the text, the imeta tag the attachment.
+  const sendVoice = () =>
+    run(async () => {
+      const file = await voice.stop();
+      if (!file) return store.notify('Voice note too short.');
+      setUploading((n) => n + 1);
+      try {
+        const tag = await store.uploadMedia(file);
+        await onSend(tag[1].slice(4), [tag]);
+      } catch (e) {
+        store.notify(`Voice note failed: ${e.message}`);
+      } finally {
+        setUploading((n) => n - 1);
+      }
+    });
   const attachmentsFor = (value) => {
     const tokens = new Set(value.split(/\s+/));
     return [...uploads.current].filter(([url]) => tokens.has(url)).map(([, tag]) => tag);
@@ -1294,8 +1377,18 @@ function Composer({ onSend, placeholder, replyTo, onCancelReply, editing, onEdit
           else if (e.key === 'ArrowUp' && !text && onEdit) onEdit(null);
         }}
       />
-      <button class="primary" disabled=${busy || !text.trim()} onClick=${send}>${busy ? '…' : editing ? 'Save' : 'Send'}</button>
+      ${!editing && !text.trim() && canRecordVoice()
+        ? html`<button class="primary mic" disabled=${busy || voice.recording} title="Record a voice note" aria-label="Record a voice note" onClick=${startVoice}>
+            ${busy ? '…' : '🎤'}
+          </button>`
+        : html`<button class="primary" disabled=${busy || !text.trim()} onClick=${send}>${busy ? '…' : editing ? 'Save' : 'Send'}</button>`}
     </div>
+    ${voice.recording &&
+    html`<div class="recording" role="status">
+      <span class="rec-dot" aria-hidden="true" /> Recording ${String(Math.floor(voice.seconds / 60))}:${String(voice.seconds % 60).padStart(2, '0')}
+      <button class="link" onClick=${() => voice.stop({ cancel: true })}>Cancel</button>
+      <button class="primary" onClick=${sendVoice}>Send</button>
+    </div>`}
   </footer>`;
 }
 
