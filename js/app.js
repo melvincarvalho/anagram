@@ -56,14 +56,11 @@ function previewText(content) {
   });
 }
 
-const time = (ts) => {
-  const d = new Date(ts * 1000);
-  return d.toDateString() === new Date().toDateString()
-    ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    : d.toLocaleDateString([], { month: 'short', day: 'numeric' }) +
-        ' ' +
-        d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-};
+// Telegram gives each sender a stable name colour.
+const NAME_COLORS = ['#e17076', '#7bc862', '#e5a64e', '#65aadd', '#a695e7', '#ee7aae', '#6ec9cb', '#faa774'];
+const nameColor = (pk) => NAME_COLORS[parseInt(pk.slice(-2), 16) % NAME_COLORS.length];
+
+const clock = (ts) => new Date(ts * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
 function useAction() {
   const [busy, setBusy] = useState(false);
@@ -227,9 +224,47 @@ function Sidebar() {
 
 // ---------- Messages ----------
 
+const sameRun = (a, b) => a && b && a.pubkey === b.pubkey && dayKey(a.created_at) === dayKey(b.created_at) && Math.abs(b.created_at - a.created_at) < 300;
+
+function MessageMenu({ menu, onClose, onReply }) {
+  const ref = useRef();
+  useEffect(() => {
+    const close = (e) => !ref.current?.contains(e.target) && onClose();
+    const key = (e) => e.key === 'Escape' && onClose();
+    addEventListener('pointerdown', close, true);
+    addEventListener('keydown', key);
+    addEventListener('resize', onClose);
+    return () => {
+      removeEventListener('pointerdown', close, true);
+      removeEventListener('keydown', key);
+      removeEventListener('resize', onClose);
+    };
+  }, []);
+  useLayoutEffect(() => {
+    // Keep the menu on screen.
+    const el = ref.current;
+    const r = el.getBoundingClientRect();
+    el.style.left = `${Math.max(8, Math.min(menu.x, innerWidth - r.width - 8))}px`;
+    el.style.top = `${Math.max(8, Math.min(menu.y, innerHeight - r.height - 8))}px`;
+  }, [menu]);
+  const m = menu.message;
+  const act = (fn) => () => {
+    fn();
+    onClose();
+  };
+  return html`<div class="menu" ref=${ref} role="menu">
+    ${onReply && html`<button role="menuitem" onClick=${act(() => onReply(m))}>↩ Reply</button>`}
+    <button role="menuitem" onClick=${act(() => copy(m.content, 'Text copied'))}>⧉ Copy text</button>
+    <button role="menuitem" onClick=${act(() => copy(nostr.did(m.pubkey), 'DID copied'))}>⧉ Copy author DID</button>
+    <button role="menuitem" onClick=${act(() => window.open(nostr.profileUrl(m.pubkey), '_blank', 'noopener'))}>👤 View profile</button>
+  </div>`;
+}
+
 function MessageList({ messages, policy = () => 'trusted', badge = () => '', onReply, footer, header }) {
   const ref = useRef();
   const stick = useRef(true);
+  const press = useRef();
+  const [menu, setMenu] = useState(null);
   const byId = Object.fromEntries(messages.map((m) => [m.id, m]));
   useLayoutEffect(() => {
     if (stick.current) ref.current.scrollTop = ref.current.scrollHeight;
@@ -237,33 +272,63 @@ function MessageList({ messages, policy = () => 'trusted', badge = () => '', onR
   const onScroll = () => {
     const el = ref.current;
     stick.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+    if (menu) setMenu(null);
   };
+  const jumpTo = (id) => {
+    const el = ref.current.querySelector(`[data-id="${id}"]`);
+    if (!el) return;
+    el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    el.classList.remove('flash');
+    void el.offsetWidth;
+    el.classList.add('flash');
+  };
+  const openMenu = (message, x, y) => setMenu({ message, x, y });
+  // Long-press opens the menu on touch screens.
+  const touchStart = (m) => (e) => {
+    const t = e.touches[0];
+    press.current = setTimeout(() => openMenu(m, t.clientX, t.clientY), 450);
+  };
+  const touchEnd = () => clearTimeout(press.current);
   const visible = messages.filter((m) => policy(m.pubkey) !== 'blocked');
   return html`<div class="messages" ref=${ref} onScroll=${onScroll}>
     ${header}
     ${visible.map((m, i) => {
       const mine = m.pubkey === me.value.pubkey;
       const prev = visible[i - 1];
+      const next = visible[i + 1];
       const newDay = !prev || dayKey(prev.created_at) !== dayKey(m.created_at);
-      const grouped = !newDay && prev.pubkey === m.pubkey && m.created_at - prev.created_at < 300;
+      const first = !sameRun(prev, m);
+      const last = !sameRun(m, next);
       const quoteId = m.reply ?? m.tags?.find((t) => t[0] === 'q')?.[1];
       const quote = quoteId && byId[quoteId];
       const tag = badge(m.pubkey);
       return html`${newDay && html`<div class="day" key=${'d' + m.id}><span>${dayLabel(m.created_at)}</span></div>`}
-        <div class=${`msg${mine ? ' mine' : ''}${grouped ? ' grouped' : ''}`} key=${m.id}>
-          ${!grouped && !mine && html`<${Avatar} pubkey=${m.pubkey} size=${28} />`}
+        <div
+          class=${`msg${mine ? ' mine' : ''}${first ? ' first' : ''}${last ? ' last' : ''}`}
+          key=${m.id}
+          data-id=${m.id}
+          onContextMenu=${(e) => {
+            e.preventDefault();
+            openMenu(m, e.clientX, e.clientY);
+          }}
+          onDblClick=${() => onReply?.(m)}
+          onTouchStart=${touchStart(m)}
+          onTouchEnd=${touchEnd}
+          onTouchMove=${touchEnd}
+        >
+          <div class="slot">${last && !mine && html`<${Avatar} pubkey=${m.pubkey} size=${32} />`}</div>
           <div class="bubble">
-            ${!grouped && !mine && html`<div class="who">${store.displayName(m.pubkey)}${tag && html`<span class="badge">${tag}</span>`}</div>`}
-            ${quote && html`<div class="quote"><b>${store.displayName(quote.pubkey)}</b> ${previewText(quote.content).slice(0, 140)}</div>`}
-            <div class="body"><${Text} content=${m.content} links=${policy(m.pubkey) === 'trusted'} /></div>
-            <div class="meta">
-              ${time(m.created_at)}
-              ${onReply && html` · <button class="link" onClick=${() => onReply(m)}>Reply</button>`}
-            </div>
+            ${first && !mine && html`<div class="who" style=${`--name-color:${nameColor(m.pubkey)}`}>${store.displayName(m.pubkey)}${tag && html`<span class="badge">${tag}</span>`}</div>`}
+            ${quote &&
+            html`<button class="quote" onClick=${() => jumpTo(quote.id)}>
+              <b>${store.displayName(quote.pubkey)}</b>${previewText(quote.content).slice(0, 140)}
+            </button>`}
+            <div class="body"><${Text} content=${m.content} links=${policy(m.pubkey) === 'trusted'} /><span class="meta">${clock(m.created_at)}</span></div>
           </div>
         </div>`;
     })}
     ${footer}
+    ${menu && html`<${MessageMenu} menu=${menu} onReply=${onReply} onClose=${() => setMenu(null)} />`}
   </div>`;
 }
 

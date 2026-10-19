@@ -8,7 +8,8 @@
   --accent-text: #ffffff;
   --mine: #5b5bd6;
   --mine-text: #ffffff;
-  --theirs: #eceef2;
+  --theirs: #ffffff;
+  --chat-bg: #e7ebf0;
   --danger: #d33c3c;
   --radius: 14px;
   color-scheme: light;
@@ -23,6 +24,7 @@
     --accent: #7c7cf0;
     --mine: #5555c8;
     --theirs: #22262d;
+    --chat-bg: #0f1114;
     color-scheme: dark;
   }
 }
@@ -322,66 +324,157 @@ button.link {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  background: var(--chat-bg);
 }
 .older {
   text-align: center;
   padding: 8px 0 16px;
 }
+/* Telegram-style: avatar and tail on the last message of a run. */
 .msg {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   align-items: flex-end;
-  max-width: 78%;
-  margin-top: 10px;
+  max-width: min(78%, 640px);
+  margin-top: 1px;
 }
-.msg.grouped {
-  margin-top: 0;
-  padding-left: 36px;
+.msg.first {
+  margin-top: 8px;
 }
 .msg.mine {
   align-self: flex-end;
-  padding-left: 0;
+  flex-direction: row-reverse;
+}
+.msg .slot {
+  flex: none;
+  width: 32px;
+}
+.msg.mine .slot {
+  display: none;
 }
 .bubble {
-  padding: 8px 12px;
-  border-radius: var(--radius);
+  position: relative;
+  padding: 6px 10px 6px 10px;
+  border-radius: 14px;
   background: var(--theirs);
   min-width: 0;
+  box-shadow: 0 1px 1px rgb(0 0 0 / 0.08);
+  cursor: default;
+  user-select: text;
+}
+.msg:not(.mine) .bubble {
+  border-bottom-left-radius: 6px;
+  border-top-left-radius: 6px;
 }
 .msg.mine .bubble {
   background: var(--mine);
   color: var(--mine-text);
+  border-bottom-right-radius: 6px;
+  border-top-right-radius: 6px;
 }
-.msg.mine .bubble a,
-.msg.mine .meta button.link {
+.msg.first:not(.mine) .bubble {
+  border-top-left-radius: 14px;
+}
+.msg.first.mine .bubble {
+  border-top-right-radius: 14px;
+}
+.msg.last:not(.mine) .bubble {
+  border-bottom-left-radius: 0;
+}
+.msg.last.mine .bubble {
+  border-bottom-right-radius: 0;
+}
+.msg.last .bubble::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  width: 10px;
+  height: 14px;
+  background: inherit;
+}
+.msg.last:not(.mine) .bubble::after {
+  left: -9px;
+  clip-path: path('M10 0 V14 H0 C5 12 10 7 10 0 Z');
+}
+.msg.last.mine .bubble::after {
+  right: -9px;
+  clip-path: path('M0 0 V14 H10 C5 12 0 7 0 0 Z');
+}
+.msg.flash .bubble {
+  animation: flash 1.2s ease;
+}
+@keyframes flash {
+  30% {
+    box-shadow: 0 0 0 3px var(--accent);
+  }
+}
+.msg.mine .bubble a {
   color: inherit;
 }
 .who {
   font-size: 13px;
   font-weight: 600;
-  color: var(--accent);
+  color: var(--name-color, var(--accent));
 }
 .body {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
 .quote {
+  display: block;
+  width: 100%;
+  font: inherit;
   font-size: 13px;
-  padding: 4px 8px;
+  text-align: left;
+  padding: 3px 8px;
   margin: 2px 0 4px;
-  border-left: 3px solid var(--accent);
-  opacity: 0.8;
+  border: 0;
+  border-left: 3px solid currentColor;
+  border-radius: 4px;
+  background: rgb(127 127 127 / 0.12);
+  color: inherit;
+  cursor: pointer;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.meta {
-  font-size: 11px;
-  opacity: 0.65;
-  margin-top: 2px;
+.quote b {
+  display: block;
+  color: var(--accent);
 }
-.meta button.link {
+.msg.mine .quote b {
+  color: inherit;
+}
+/* Time floats inside the bubble, after the text like Telegram. */
+.meta {
+  float: right;
+  position: relative;
+  top: 6px;
+  margin-left: 10px;
   font-size: 11px;
+  opacity: 0.6;
+  white-space: nowrap;
+}
+.menu {
+  position: fixed;
+  z-index: 20;
+  min-width: 180px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.18);
+}
+.menu button {
+  display: block;
+  width: 100%;
+  border: 0;
+  border-radius: 6px;
+  text-align: left;
+  background: none;
+}
+.menu button:hover {
+  background: var(--bg);
 }
 .composer {
   padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
