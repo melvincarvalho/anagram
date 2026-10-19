@@ -12,4 +12,4 @@ A no-build Preact client for private Nostr DMs and public chat rooms, wire-compa
 
 Serve the folder with any static server, e.g. `python3 -m http.server`, and open it. Preact, signals, htm and nostr-tools are vendored as pinned ES modules in `vendor/` (see its README) and wired up by the import map in `index.html`, so no third-party code runs and the CSP allows only same-origin scripts. The `gh-pages` branch is the site.
 
-Not included yet: calls, private groups, reactions, edits/deletes, media uploads.
+Not included yet: calls, private groups (NIP-171), media uploads, push notifications when the tab is closed.
