@@ -1384,3 +1384,45 @@ mark {
 .mentions-popup small {
   color: var(--muted);
 }
+
+.pinned {
+  cursor: pointer;
+}
+.pinned:hover {
+  background: var(--bg);
+}
+
+/* Big emoji (1-3 emoji, nothing else) */
+.msg.big-emoji .bubble {
+  background: none;
+  box-shadow: none;
+  padding: 0 4px;
+  color: var(--text);
+}
+.msg.big-emoji .bubble::after {
+  display: none;
+}
+.msg.big-emoji .body {
+  font-size: 2.6em;
+  line-height: 1.15;
+}
+.msg.big-emoji .meta {
+  font-size: 11px;
+  top: 0;
+  color: var(--muted);
+}
+.msg.mine.big-emoji .bubble {
+  color: var(--text);
+}
+.unread.at {
+  min-width: 20px;
+}
+.sidebar h2 .mark-all {
+  margin-left: auto;
+  font-size: 11px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.sidebar h2 .mark-all + .add {
+  margin-left: 8px;
+}

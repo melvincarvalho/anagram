@@ -200,6 +200,11 @@ function renderParts(parts, links) {
   });
 }
 
+// One to three emoji and nothing else are shown large (Telegram); pattern from Anagram's singleEmoji.ts.
+const EMOJI_UNIT = '(?:\\p{Extended_Pictographic}(?:\\uFE0F|\\p{Emoji_Modifier})?(?:\\u200D\\p{Extended_Pictographic}(?:\\uFE0F|\\p{Emoji_Modifier})?)*|\\p{Regional_Indicator}{2}|[0-9#*]\\uFE0F?\\u20E3)';
+const BIG_EMOJI_RE = new RegExp(`^(?:${EMOJI_UNIT}\\s*){1,3}$`, 'u');
+const isBigEmoji = (text) => text.length <= 40 && BIG_EMOJI_RE.test(text.trim());
+
 function Text({ content, links = true }) {
   return renderParts(formatted(content), links);
 }
@@ -489,6 +494,7 @@ function RoomItem({ room, active, onMenu }) {
       <span class="line">
         ${draftPreview(room.address, active) ??
         html`<small>${last ? `${store.displayName(last.pubkey)}: ${previewText(last.content).slice(0, 80)}` : 'Public room'}</small>`}
+        ${store.unreadMentions(room.address, messages) > 0 && html`<span class="unread at" title="You were mentioned">@</span>`}
         <${Unread} count=${store.unreadCount(room.address, messages)} muted=${store.isMuted(room.address)} />
       </span>
     </span>
@@ -532,7 +538,7 @@ function ChatMenu({ menu, onClose }) {
     onClose();
   };
   const messages = menu.chat.room ? roomState.value[key]?.messages ?? [] : dms.value[key] ?? [];
-  return html`<div class="menu" ref=${ref} role="menu" style=${`left:${Math.min(menu.x, innerWidth - 200)}px;top:${Math.min(menu.y, innerHeight - 140)}px`}>
+  return html`<div class="menu" ref=${ref} role="menu" onKeyDown=${menuKeys} style=${`left:${Math.min(menu.x, innerWidth - 200)}px;top:${Math.min(menu.y, innerHeight - 140)}px`}>
     <button role="menuitem" onClick=${act(() => store.togglePinned(key))}>📌 ${store.isPinned(key) ? 'Unpin' : 'Pin'}</button>
     <button role="menuitem" onClick=${act(() => store.toggleMuted(key))}>${store.isMuted(key) ? '🔔 Unmute' : '🔕 Mute'}</button>
     ${store.unreadCount(key, messages) > 0 &&
@@ -561,7 +567,7 @@ function AccountMenu({ onClose }) {
     onClose();
     fn();
   };
-  return html`<div class="menu accounts" ref=${ref} role="menu">
+  return html`<div class="menu accounts" ref=${ref} role="menu" onKeyDown=${menuKeys}>
     ${list.map(
       (a) => html`<button role="menuitem" class=${a.pubkey === me.value.pubkey ? 'current' : ''}
         onClick=${act(() => store.switchAccount(a.pubkey).catch((e) => store.notify(`Could not switch: ${e.message}`)))}>
@@ -624,7 +630,9 @@ function Sidebar() {
     <nav>
       ${q.length >= 2 && html`<${MessageResults} q=${q} />`}
       ${pinned.length > 0 && html`<h2>Pinned</h2>${pinned}`}
-      <h2>${pinned.length ? 'All chats' : 'Chats'} ${syncing.value && html`<span class="spinner" title="Syncing" />`} <a class="add" href="#/new" title="New chat or room">+</a></h2>
+      <h2>${pinned.length ? 'All chats' : 'Chats'} ${syncing.value && html`<span class="spinner" title="Syncing" />`}
+        ${store.totalUnread.value > 0 && html`<button class="link mark-all" title="Mark all chats as read" onClick=${store.markAllRead}>✓ Mark all read</button>`}
+        <a class="add" href="#/new" title="New chat or room">+</a></h2>
       ${rows.length === 0 && !pinned.length && html`<p class="muted small pad">${q ? 'No matches.' : 'No conversations yet.'}</p>`}
       ${rows.map(({ room, chat }) =>
         room
@@ -748,6 +756,15 @@ function EmojiPanel({ onPick, onClose, style = '' }) {
   </div>`;
 }
 
+// Arrow keys move between a menu's items (focus stays inside the menu).
+function menuKeys(e) {
+  if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+  e.preventDefault();
+  const items = [...e.currentTarget.querySelectorAll('button:not(:disabled)')];
+  const at = items.indexOf(document.activeElement);
+  items[(at + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length]?.focus();
+}
+
 function MessageMenu({ menu, onClose, onReply, onReact, onEdit, onDelete, onMoreReactions }) {
   const ref = useRef();
   const [confirming, setConfirming] = useState(false);
@@ -763,6 +780,7 @@ function MessageMenu({ menu, onClose, onReply, onReact, onEdit, onDelete, onMore
       removeEventListener('resize', onClose);
     };
   }, []);
+  useEffect(() => ref.current.querySelector('button:not(:disabled)')?.focus(), []);
   useLayoutEffect(() => {
     // Keep the menu on screen.
     const el = ref.current;
@@ -775,7 +793,7 @@ function MessageMenu({ menu, onClose, onReply, onReact, onEdit, onDelete, onMore
     fn();
     onClose();
   };
-  return html`<div class="menu" ref=${ref} role="menu">
+  return html`<div class="menu" ref=${ref} role="menu" onKeyDown=${menuKeys}>
     ${onReact &&
     html`<div class="quick">
       ${QUICK_REACTIONS.map((e) => html`<button title=${`React ${e}`} onClick=${act(() => onReact(m, e))}>${e}</button>`)}
@@ -825,7 +843,7 @@ function Tick({ id }) {
   return html`<span class="tick" title="Accepted by a relay">✓</span>`;
 }
 
-function MessageList({ messages, policy = () => 'trusted', badge = () => '', mediaAuto = () => true, onReply, onReact, onEdit, onDelete, footer, header, unreadAfter = Infinity, onReachTop }) {
+function MessageList({ messages, policy = () => 'trusted', badge = () => '', mediaAuto = () => true, onReply, onReact, onEdit, onDelete, footer, header, unreadAfter = Infinity, onReachTop, lookupQuote, jumpOlder }) {
   const ref = useRef();
   const stick = useRef(true);
   const touch = useRef(null);
@@ -976,7 +994,7 @@ function MessageList({ messages, policy = () => 'trusted', badge = () => '', med
   // New messages from others since you scrolled up (older pages loading above don't count).
   const awayIndex = away === null ? -1 : messages.findIndex((m) => m.id === away);
   const below = awayIndex < 0 ? 0 : messages.slice(awayIndex + 1).filter((m) => m.pubkey !== me.value.pubkey).length;
-  return html`<div class="thread"><div class="messages" ref=${ref} onScroll=${onScroll}><div class="messages-inner" ref=${inner}>
+  return html`<div class="thread"><div class="messages" ref=${ref} onScroll=${onScroll} role="log" aria-live="polite" aria-label="Messages" tabindex="0"><div class="messages-inner" ref=${inner}>
     ${header}
     ${visible.map((m, i) => {
       const mine = m.pubkey === me.value.pubkey;
@@ -986,13 +1004,13 @@ function MessageList({ messages, policy = () => 'trusted', badge = () => '', med
       const first = !sameRun(prev, m);
       const last = !sameRun(m, next);
       const quoteId = m.reply ?? m.tags?.find((t) => t[0] === 'q')?.[1];
-      const quote = quoteId && byId[quoteId];
+      const quote = quoteId && (byId[quoteId] ?? lookupQuote?.(quoteId));
       const tag = badge(m.pubkey);
       // Keyed per message, so loading older pages adds nodes instead of rewriting every row.
       return html`<${Fragment} key=${m.id}>${newDay && html`<div class="day"><span>${dayLabel(m.created_at)}</span></div>`}${m === firstUnread &&
         html`<div class="unread-divider"><span>Unread messages</span></div>`}
         <div
-          class=${`msg${mine ? ' mine' : ''}${first ? ' first' : ''}${last ? ' last' : ''}`}
+          class=${`msg${mine ? ' mine' : ''}${first ? ' first' : ''}${last ? ' last' : ''}${isBigEmoji(m.content) && !quote && m.kind !== 15 ? ' big-emoji' : ''}`}
           data-id=${m.id}
           onContextMenu=${(e) => {
             e.preventDefault();
@@ -1008,7 +1026,7 @@ function MessageList({ messages, policy = () => 'trusted', badge = () => '', med
           <div class="bubble">
             ${first && !mine && html`<div class="who" style=${`--name-color:${nameColor(m.pubkey)}`}>${store.displayName(m.pubkey)}${tag && html`<span class="badge">${tag}</span>`}</div>`}
             ${quote &&
-            html`<button class="quote" onClick=${() => (focusMessage.value = quote.id)}>
+            html`<button class="quote" onClick=${() => (byId[quote.id] || !jumpOlder ? (focusMessage.value = quote.id) : jumpOlder(quote.id))}>
               <b>${store.displayName(quote.pubkey)}</b>${previewText(quote.content).slice(0, 140)}
             </button>`}
             ${policy(m.pubkey) === 'trusted' && html`<${Media} message=${m} auto=${mine || mediaAuto(m.pubkey)} />`}
@@ -1206,9 +1224,9 @@ function Composer({ onSend, placeholder, replyTo, onCancelReply, editing, onEdit
     </div>`}
     ${error && html`<p class="error">${error}</p>`}
     <div class="row">
-      <button class="icon emoji-toggle" title="Emoji" onClick=${() => setEmojiOpen(!emojiOpen)}>🙂</button>
+      <button class="icon emoji-toggle" title="Emoji" aria-label="Emoji" onClick=${() => setEmojiOpen(!emojiOpen)}>🙂</button>
       ${!editing &&
-      html`<button class="icon" title="Attach photo, video or audio" disabled=${uploading > 0} onClick=${() => fileInput.current.click()}>
+      html`<button class="icon" title="Attach photo, video or audio" aria-label="Attach file" disabled=${uploading > 0} onClick=${() => fileInput.current.click()}>
           ${uploading ? '⏳' : '📎'}
         </button>
         <input ref=${fileInput} type="file" accept="image/*,video/*,audio/*" multiple hidden onChange=${(e) => {
@@ -1217,6 +1235,7 @@ function Composer({ onSend, placeholder, replyTo, onCancelReply, editing, onEdit
         }} />`}
       <textarea
         ref=${input}
+        aria-label=${placeholder}
         rows="1"
         placeholder=${placeholder}
         value=${text}
@@ -1537,7 +1556,7 @@ function DirectChat({ id }) {
         <b>${peer === me.value.pubkey ? 'Note to self' : store.displayName(peer)}</b>
         <small class="mono">${store.protocolChecking.value === peer ? 'Checking encryption…' : store.directProtocol(peer) === 'ndr' ? 'Double ratchet' : 'NIP-17'} · ${store.verifiedNip05(peer) ? `✓ ${store.verifiedNip05(peer)}` : nostr.shortKey(peer)}</small>
       </button>
-      <button class="icon" title="Search (Ctrl+F)" onClick=${() => (chatSearch.value = !chatSearch.value)}>🔍</button>
+      <button class="icon" title="Search (Ctrl+F)" aria-label="Search this chat" onClick=${() => (chatSearch.value = !chatSearch.value)}>🔍</button>
     </header>
     ${chatSearch.value && html`<${ChatSearch} messages=${messages} onClose=${() => (chatSearch.value = false)} />`}
     <${InfoPanel}><${PersonInfo} pubkey=${peer} messages=${messages} /></${InfoPanel}>
@@ -1595,6 +1614,12 @@ function RoomChat({ id }) {
       ${state.error ? html`<p class="error">${state.error}</p>` : html`<p class="muted">Loading room…</p>`}
     </section>`;
   const policy = (pk) => nostr.roomPolicy(room, pk);
+  // Load older pages until the message is present, then scroll to it.
+  const jumpOlder = (id) =>
+    older.run(async () => {
+      if (await store.loadUntil(room.address, id)) focusMessage.value = id;
+      else store.notify('That message is too far back to load.');
+    });
   return html`<section class="main">
     <header class="bar">
       <a class="back" href="#">‹</a>
@@ -1603,7 +1628,7 @@ function RoomChat({ id }) {
         <b>${room.name}</b>
         <small>${room.about || `by ${store.displayName(room.owner)}`}</small>
       </button>
-<button class="icon" title="Search (Ctrl+F)" onClick=${() => (chatSearch.value = !chatSearch.value)}>🔍</button>
+<button class="icon" title="Search (Ctrl+F)" aria-label="Search this chat" onClick=${() => (chatSearch.value = !chatSearch.value)}>🔍</button>
       <button class="wide-only" onClick=${() => copy(`${location.origin}${location.pathname}#/room/${nostr.encodeRoomLink(room)}`, 'Room link copied')}>Share</button>
       ${joined
         ? html`<button class="wide-only" onClick=${() => store.leaveRoom(room.address)}>Leave</button>`
@@ -1613,7 +1638,7 @@ function RoomChat({ id }) {
     <${InfoPanel}><${RoomInfo} room=${room} messages=${state.messages} /></${InfoPanel}>
     ${state.pinnedEvent &&
     policy(state.pinnedEvent.pubkey) !== 'blocked' &&
-    html`<div class="pinned" title="Pinned message">
+    html`<div class="pinned" role="button" title="Jump to pinned message" onClick=${() => jumpOlder(state.pinnedEvent.id)}>
       <b>Pinned</b> <span><${Text} content=${state.pinnedEvent.content} links=${policy(state.pinnedEvent.pubkey) === 'trusted'} /></span>
     </div>`}
     <${MessageList}
@@ -1622,6 +1647,12 @@ function RoomChat({ id }) {
       badge=${(pk) => (pk === room.owner ? 'owner' : '')}
       unreadAfter=${unreadAfter}
       onReachTop=${() => !older.busy && !state.exhausted && older.run(() => store.loadOlderRoomMessages(room.address))}
+      lookupQuote=${(id) => {
+        const q = store.quotes.value[id];
+        if (q === undefined) store.fetchQuote(room.address, id);
+        return q ?? null;
+      }}
+      jumpOlder=${jumpOlder}
       ...${actions.list}
       header=${html`<div class="older">
         ${state.exhausted
@@ -2017,10 +2048,29 @@ function App() {
     chatSearch.value = false;
   }, [routeKey]);
   useEffect(() => {
+    const inChat = () => ['dm', 'room'].includes(route.value.kind);
+    const typing = (el) => el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName));
     const key = (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'f' && ['dm', 'room'].includes(route.value.kind)) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'f' && inChat()) {
         e.preventDefault();
         chatSearch.value = true;
+      } else if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        // Jump to the chat list search.
+        e.preventDefault();
+        document.querySelector('.sidebar .search input')?.focus();
+      } else if (e.altKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+        // Previous / next chat in sidebar order (Telegram desktop).
+        e.preventDefault();
+        const links = [...document.querySelectorAll('.sidebar nav a.item')].map((a) => a.getAttribute('href'));
+        const at = links.indexOf(location.hash);
+        const next = links[at < 0 ? 0 : at + (e.key === 'ArrowDown' ? 1 : -1)];
+        if (next) store.go(next);
+      } else if (e.key === 'Escape' && !typing(document.activeElement)) {
+        if (infoOpen.value) infoOpen.value = false;
+        else if (chatSearch.value) chatSearch.value = false;
+      } else if (inChat() && !typing(document.activeElement) && e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        // Start typing anywhere in a chat: the keystroke goes to the composer.
+        document.querySelector('.composer textarea')?.focus();
       }
     };
     addEventListener('keydown', key);

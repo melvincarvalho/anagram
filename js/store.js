@@ -341,6 +341,26 @@ export function unreadCount(key, messages) {
   return n;
 }
 
+// Unread messages in a chat that @mention you or reply to you (for the @ badge).
+export function unreadMentions(key, messages) {
+  const since = readPoint(key);
+  let n = 0;
+  for (let i = messages.length - 1; i >= 0 && messages[i].created_at > since; i--)
+    if (messages[i].pubkey !== me.value?.pubkey && mentionsMe(messages[i])) n++;
+  return n;
+}
+
+export function markAllRead() {
+  const next = { ...readMarks.value };
+  for (const [peer, thread] of Object.entries(dms.value)) if (thread.length) next[peer] = thread.at(-1).created_at;
+  for (const room of joinedRooms.value) {
+    const last = roomState.value[room.address]?.messages.at(-1);
+    if (last) next[room.address] = last.created_at;
+  }
+  readMarks.value = next;
+  storage.set(`lite:read:${me.value.pubkey}`, next);
+}
+
 export const totalUnread = computed(() => {
   if (!me.value) return 0;
   let n = 0;
@@ -364,7 +384,7 @@ export function setNotifySettings(patch) {
 }
 
 // True when a room message @mentions us or replies to one of our messages.
-function mentionsMe(event) {
+export function mentionsMe(event) {
   const pk = me.value?.pubkey;
   if (!pk) return false;
   if (event.tags.some((t) => (t[0] === 'p' || t[0] === 'q') && (t[1] === pk || t[3] === pk))) return true;
@@ -1528,6 +1548,27 @@ export async function toggleReaction(context, message, emoji) {
       }),
     );
   }
+}
+
+// Reply targets that aren't loaded yet: fetch just that message so the quote can show.
+export const quotes = signal({}); // id -> event | null (not found)
+const quoteFetches = new Set();
+export function fetchQuote(address, id) {
+  if (quoteFetches.has(id)) return;
+  quoteFetches.add(id);
+  const room = roomState.value[address]?.room;
+  if (!room) return;
+  nostr
+    .fetchEvent(nostr.roomRelays(room), id)
+    .then((e) => (quotes.value = { ...quotes.value, [id]: e && nostr.validRoomMessage(e, address) ? e : null }))
+    .catch(() => {});
+}
+
+// Page back through a room's history until a message is loaded (for jumping to it).
+export async function loadUntil(address, id, maxPages = 10) {
+  const has = () => roomState.value[address]?.messages.some((m) => m.id === id || m.prev?.includes(id));
+  for (let i = 0; i < maxPages && !has() && !roomState.value[address]?.exhausted; i++) await loadOlderRoomMessages(address);
+  return has();
 }
 
 const roomPaging = new Map(); // address -> { cursors, done }
