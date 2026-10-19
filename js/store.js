@@ -619,7 +619,7 @@ export async function prepareDirectProtocol(peer) {
   const watcher = watchNdrCapability({
     peer,
     subscribe: (filter, callbacks) => {
-      const sub = nostr.pool.subscribe(nostr.uniq([...(inboxRelays.value ?? []), ...nostr.APP_RELAYS]), filter, callbacks);
+      const sub = nostr.pool.subscribe(nostr.uniq([...(inboxRelays.value ?? []), ...nostr.NDR_RELAYS]), filter, callbacks);
       return () => sub.close();
     },
     onCapability: (supported) => {
@@ -673,7 +673,7 @@ function startNdr() {
   const signer = me.value;
   const generation = ndrGeneration;
   const active = () => me.value === signer && generation === ndrGeneration;
-  const relays = () => nostr.uniq([...(inboxRelays.value ?? []), ...nostr.APP_RELAYS]);
+  const relays = () => nostr.uniq([...(inboxRelays.value ?? []), ...nostr.NDR_RELAYS]);
   ndrStarting = (async () => {
     const release = await lockNdr(signer.pubkey);
     if (!active()) { release(); throw new Error('Account changed'); }

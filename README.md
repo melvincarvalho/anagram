@@ -22,7 +22,8 @@ Auto checks the open conversation's owner-signed device roster (kind 37368), wit
 at most ten historical roster events per relay and a three-second initial wait.
 An absent or unavailable roster uses NIP-17; the subscription stays live while that
 Auto chat is open and rechecks on reopening, so later support upgrades future
-messages. Sending does not poll relays. Once Auto selects double ratchet it never
+messages. Sending does not poll relays. NDR discovery and session traffic also use
+`wss://relay.snort.social`, shared with Iris; ordinary NIP-17 and room defaults are unchanged. Once Auto selects double ratchet it never
 automatically downgrades, including after failure or disabling the preference.
 Existing NIP-17 conversations upgrade only after choosing Auto or Double ratchet.
 The header's tooltip shows the current transport; a message's menu shows its own transport.

@@ -219,3 +219,41 @@ test('existing NIP-17 history stays selected, settings and Auto selection persis
   assert.equal(store.directProtocol(bob.pubkey), 'nip17');
   await store.logout();
 });
+
+test('Auto discovery and NDR fetch, subscription and publishing share Iris relay coverage', async () => {
+  const alice = nostr.newKeySigner(), bob = nostr.newKeySigner();
+  localStorage.setItem(`lite:rooms:${alice.pubkey}`, '[]');
+  await store.login(alice, false);
+  const original = { subscribe: nostr.pool.subscribe, ensureRelay: nostr.pool.ensureRelay, publish: nostr.pool.publish };
+  const subscriptions = [], fetched = [], published = [];
+  nostr.pool.subscribe = (relays, filter, callbacks) => {
+    subscriptions.push({ relays, filter });
+    queueMicrotask(() => callbacks.oneose?.());
+    return { close() {} };
+  };
+  nostr.pool.ensureRelay = async (url) => {
+    fetched.push(url);
+    return { subscribe(_filters, callbacks) { queueMicrotask(() => callbacks.oneose()); return { close() {} }; } };
+  };
+  nostr.pool.publish = (relays) => { published.push(relays); return [Promise.resolve()]; };
+  try {
+    assert.ok(!nostr.APP_RELAYS.includes('wss://relay.snort.social'));
+    store.openDirectChat(bob.pubkey);
+    await store.prepareDirectProtocol(bob.pubkey);
+    await store.setDirectProtocol(bob.pubkey, 'ndr');
+    const options = clients.at(-1).options;
+    const close = options.subscribe({ kinds: [1060], limit: 200 }, () => {});
+    await options.fetch({ kinds: [37368], authors: [alice.pubkey], limit: 10 });
+    await options.publish(await alice.sign({ kind: 1060, content: 'ciphertext', tags: [], created_at: nostr.now() }));
+    for (const kind of [37368, 1060]) {
+      const actual = subscriptions.find((entry) => entry.filter.kinds.includes(kind));
+      assert.deepEqual(actual.relays, nostr.NDR_RELAYS);
+    }
+    assert.deepEqual(fetched, nostr.NDR_RELAYS);
+    assert.ok(published.some((relays) => JSON.stringify(relays) === JSON.stringify(nostr.NDR_RELAYS)));
+    close();
+  } finally {
+    Object.assign(nostr.pool, original);
+    await store.logout();
+  }
+});

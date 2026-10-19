@@ -20,6 +20,8 @@ export const APP_RELAYS = [
   'wss://nostr.bitcoiner.social',
   'wss://nos.lol',
 ];
+// Shared with Iris for device discovery and ratcheted messages only.
+export const NDR_RELAYS = [...APP_RELAYS, 'wss://relay.snort.social'];
 export const INDEXERS = ['wss://purplepag.es', 'wss://indexer.coracle.social', 'wss://relay.nos.social'];
 export const ROOM_KIND = 34550;
 const HEX = /^[a-f0-9]{64}$/;
