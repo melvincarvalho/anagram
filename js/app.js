@@ -53,6 +53,7 @@ function Text({ content, links = true }) {
 const IMAGE_RE = /\.(?:png|jpe?g|gif|webp|avif|svg)(?:[?#]|$)/i;
 const VIDEO_RE = /\.(?:mp4|webm|mov|m4v)(?:[?#]|$)/i;
 const viewer = signal(null); // full-screen media url
+const infoOpen = signal(false); // chat info panel
 
 // Media URLs from the text plus NIP-92 imeta attachments.
 function mediaOf(message) {
@@ -527,6 +528,91 @@ function useChatActions(context, messages) {
   };
 }
 
+// ---------- Chat info panel ----------
+
+function SharedMedia({ messages, allowed }) {
+  const urls = messages
+    .filter((m) => allowed(m.pubkey))
+    .flatMap(mediaOf)
+    .filter((u) => IMAGE_RE.test(u) || !VIDEO_RE.test(u))
+    .reverse()
+    .slice(0, 30);
+  if (!urls.length) return null;
+  return html`<section>
+    <h4>Shared media</h4>
+    <div class="shared">
+      ${urls.map((u) => html`<img src=${u} loading="lazy" referrerpolicy="no-referrer" alt="" onClick=${() => (viewer.value = u)} />`)}
+    </div>
+  </section>`;
+}
+
+function Field({ label, value, onCopy, href }) {
+  return html`<div class="field">
+    <small>${label}</small>
+    ${href
+      ? html`<a href=${href} target="_blank" rel="noopener noreferrer">${value}</a>`
+      : html`<span class=${onCopy ? 'copyable mono' : ''} title=${onCopy ? 'Copy' : ''} onClick=${onCopy}>${value}</span>`}
+  </div>`;
+}
+
+function PersonInfo({ pubkey, messages }) {
+  const p = profiles.value[pubkey] ?? {};
+  return html`<div class="hero">
+      <${Avatar} pubkey=${pubkey} size=${96} />
+      <h3>${pubkey === me.value.pubkey ? 'Note to self' : store.displayName(pubkey)}</h3>
+      ${p.nip05 && html`<small class="muted">${p.nip05}</small>`}
+    </div>
+    ${p.about && html`<section><p class="about">${p.about}</p></section>`}
+    <section>
+      <${Field} label="DID" value=${nostr.did(pubkey)} onCopy=${() => copy(nostr.did(pubkey), 'DID copied')} />
+      <${Field} label="npub" value=${nostr.shortKey(pubkey)} onCopy=${() => copy(nostr.npub(pubkey), 'npub copied')} />
+      ${p.website && html`<${Field} label="Website" value=${p.website.replace(/^https:\/\//, '')} href=${p.website} />`}
+      <${Field} label="Profile" value="nostr.social ↗" href=${nostr.profileUrl(pubkey)} />
+    </section>
+    <${SharedMedia} messages=${messages} allowed=${() => true} />`;
+}
+
+function RoomInfo({ room, messages }) {
+  const authors = [...new Set(messages.map((m) => m.pubkey))].filter((pk) => nostr.roomPolicy(room, pk) !== 'blocked');
+  const order = { owner: 0, trusted: 1, plain: 2 };
+  const role = (pk) => (pk === room.owner ? 'owner' : nostr.roomPolicy(room, pk));
+  authors.sort((a, b) => order[role(a)] - order[role(b)] || store.displayName(a).localeCompare(store.displayName(b)));
+  const link = `${location.origin}${location.pathname}#/room/${nostr.encodeRoomLink(room)}`;
+  return html`<div class="hero">
+      <${RoomAvatar} room=${room} size=${96} />
+      <h3>${room.name}</h3>
+      <small class="muted">Public room · ${authors.length} recent ${authors.length === 1 ? 'poster' : 'posters'}</small>
+    </div>
+    ${room.about && html`<section><p class="about">${room.about}</p></section>`}
+    <section>
+      <${Field} label="Invite link" value="Copy link" onCopy=${() => copy(link, 'Room link copied')} />
+      <${Field} label="Owner" value=${store.displayName(room.owner)} href=${nostr.profileUrl(room.owner)} />
+      <${Field} label="Relays" value=${room.relays.map((r) => r.replace(/^wss:\/\//, '')).join(', ')} />
+    </section>
+    <${SharedMedia} messages=${messages} allowed=${(pk) => nostr.roomPolicy(room, pk) === 'trusted'} />
+    <section>
+      <h4>Members</h4>
+      ${authors.map(
+        (pk) => html`<a class="item" href=${`#/dm/${nostr.did(pk)}`}>
+          <${Avatar} pubkey=${pk} size=${32} />
+          <span class="label"><b>${store.displayName(pk)}</b></span>
+          ${role(pk) !== 'plain' && html`<span class="badge">${role(pk)}</span>`}
+        </a>`,
+      )}
+    </section>`;
+}
+
+function InfoPanel({ children }) {
+  if (!infoOpen.value) return null;
+  return html`<aside class="info">
+    <header class="bar">
+      <div class="title"><b>Info</b></div>
+      <button class="link close" title="Close" onClick=${() => (infoOpen.value = false)}>✕</button>
+    </header>
+    <div class="info-body">${children}</div>
+  </aside>`;
+}
+
 // ---------- Views ----------
 
 function DirectChat({ id }) {
@@ -541,13 +627,12 @@ function DirectChat({ id }) {
     <header class="bar">
       <a class="back" href="#">‹</a>
       <${Avatar} pubkey=${peer} size=${32} />
-      <div class="title">
-        <a class="name" href=${nostr.profileUrl(peer)} target="_blank" rel="noopener" title="View profile on nostr.social">
-          ${peer === me.value.pubkey ? 'Note to self' : store.displayName(peer)}
-        </a>
-        <small class="mono" title=${nostr.did(peer)} onClick=${() => copy(nostr.did(peer), 'DID copied')}>${nostr.shortKey(peer)}</small>
-      </div>
+      <button class="title" title="Chat info" onClick=${() => (infoOpen.value = !infoOpen.value)}>
+        <b>${peer === me.value.pubkey ? 'Note to self' : store.displayName(peer)}</b>
+        <small class="mono">${profiles.value[peer]?.nip05 || nostr.shortKey(peer)}</small>
+      </button>
     </header>
+    <${InfoPanel}><${PersonInfo} pubkey=${peer} messages=${messages} /></${InfoPanel}>
     <${MessageList}
       ...${actions.list}
       mediaAuto=${(pk) => store.contacts.value.includes(pk)}
@@ -596,15 +681,16 @@ function RoomChat({ id }) {
     <header class="bar">
       <a class="back" href="#">‹</a>
       <${RoomAvatar} room=${room} size=${32} />
-      <div class="title">
+      <button class="title" title="Room info" onClick=${() => (infoOpen.value = !infoOpen.value)}>
         <b>${room.name}</b>
         <small>${room.about || `by ${store.displayName(room.owner)}`}</small>
-      </div>
+      </button>
       <button onClick=${() => copy(`${location.origin}${location.pathname}#/room/${nostr.encodeRoomLink(room)}`, 'Room link copied')}>Share</button>
       ${joined
         ? html`<button onClick=${() => store.leaveRoom(room.address)}>Leave</button>`
         : html`<button class="primary" onClick=${() => store.joinRoom(room)}>Join</button>`}
     </header>
+    <${InfoPanel}><${RoomInfo} room=${room} messages=${state.messages} /></${InfoPanel}>
     ${state.pinnedEvent &&
     policy(state.pinnedEvent.pubkey) !== 'blocked' &&
     html`<div class="pinned" title="Pinned message">
@@ -741,6 +827,10 @@ function Home() {
 
 function App() {
   const unread = store.totalUnread.value;
+  const routeKey = `${route.value.kind}:${route.value.id ?? ''}`;
+  useEffect(() => {
+    infoOpen.value = false;
+  }, [routeKey]);
   useEffect(() => {
     document.title = unread ? `(${unread}) Anagram lite` : 'Anagram lite';
   }, [unread]);

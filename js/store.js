@@ -150,7 +150,11 @@ export function requestProfiles(pubkeys) {
     keys.forEach((k) => requested.add(k));
     for (let i = 0; i < keys.length; i += 100) {
       const found = await nostr.fetchProfiles(keys.slice(i, i + 100)).catch(() => []);
-      const fresh = found.filter((p) => (profiles.value[p.pubkey]?.created_at ?? 0) < p.created_at);
+      // Also refresh rows cached before newer fields (about, website) existed.
+      const fresh = found.filter((p) => {
+        const cached = profiles.value[p.pubkey];
+        return !cached || cached.created_at < p.created_at || !('about' in cached);
+      });
       if (!fresh.length) continue;
       profiles.value = { ...profiles.value, ...Object.fromEntries(fresh.map((p) => [p.pubkey, p])) };
       db.saveProfiles(fresh).catch(() => {});

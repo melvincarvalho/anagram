@@ -212,7 +212,9 @@ export async function fetchProfiles(pubkeys) {
           created_at: e.created_at,
           name: String(m.display_name || m.name || '').slice(0, 80),
           picture: /^https:\/\//.test(m.picture ?? '') ? m.picture : '',
-          nip05: typeof m.nip05 === 'string' ? m.nip05 : '',
+          nip05: typeof m.nip05 === 'string' ? m.nip05.slice(0, 120) : '',
+          about: typeof m.about === 'string' ? m.about.slice(0, 600) : '',
+          website: /^https:\/\//.test(m.website ?? '') ? m.website.slice(0, 200) : '',
         },
       ];
     } catch {
