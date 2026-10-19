@@ -44,11 +44,13 @@ concurrent writes to the device’s keys. Keep this browser’s data to retain i
 sessions and history. Signing out removes its local keys, history and outbox;
 clearing browser storage cannot recover old ratchet history from the account key.
 Other clients’ device registrations are preserved when registering this browser.
+The shared runtime sends new messages to the account’s other authorized devices,
+including messages addressed to yourself. This does not import older history.
 Relay backfill is bounded to 200 matching events per subscription; this is not a
 full history import.
 
-Private groups, device-history synchronization, typing/read receipts and Iris’s
-separate encrypted-file transfer format are outside this integration.
+Private groups, importing older history from another device, typing/read receipts
+and Iris’s separate encrypted-file transfer format are outside this integration.
 
 Maintainers can run `npm ci && npm test` for protocol, persistence and transport
 selection tests. `npm run vendor:ndr` reproducibly refreshes the optional pinned
