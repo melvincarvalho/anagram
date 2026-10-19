@@ -1293,6 +1293,34 @@ function ChatToggles({ chatKey }) {
   </section>`;
 }
 
+// The person's did:nostr identity, resolved from nostr.social (did-nostr.com).
+function DidIdentity({ pubkey }) {
+  const entry = store.didDocs.value[pubkey];
+  useEffect(() => {
+    store.resolveDid(pubkey);
+  }, [pubkey]);
+  const count = (n) => (n == null ? '—' : n >= 10000 ? `${Math.round(n / 1000)}k` : n.toLocaleString());
+  const links = (entry?.alsoKnownAs ?? []).filter((u) => /^https:\/\//.test(u));
+  const relays = (entry?.service ?? []).map((s) => (typeof s.serviceEndpoint === 'string' ? s.serviceEndpoint : '')).filter(Boolean);
+  return html`<section class="did">
+    <h4>did:nostr identity</h4>
+    ${!entry && html`<p class="muted small">Resolving…</p>`}
+    ${entry?.error && html`<p class="muted small">Not resolved: ${entry.error}</p>`}
+    ${entry?.doc &&
+    html`<div class="did-stats">
+        <span><b>${count(entry.following)}</b> following</span>
+        <span><b>${count(entry.followers)}</b> followers</span>
+        <span title="The DID document's key matches this account">${entry.keyMatches ? '🔑 key matches' : '⚠ key mismatch'}</span>
+      </div>
+      ${links.length > 0 && html`<${Field} label="Also known as" value=${links.map((u) => html`<a href=${u} target="_blank" rel="noopener noreferrer">${u.replace(/^https:\/\//, '')}</a> `)} />`}
+      ${relays.length > 0 && html`<${Field} label="Relays" value=${relays.map((r) => r.replace(/^wss:\/\//, '')).join(', ')} />`}`}
+    <div class="buttons">
+      <a class="button" href=${nostr.profileUrl(pubkey)} target="_blank" rel="noopener">nostr.social ↗</a>
+      <a class="button" href=${nostr.didDocumentUrl(pubkey)} target="_blank" rel="noopener">DID document ↗</a>
+    </div>
+  </section>`;
+}
+
 function PersonInfo({ pubkey, messages }) {
   const p = profiles.value[pubkey] ?? {};
   return html`<div class="hero">
@@ -1305,8 +1333,8 @@ function PersonInfo({ pubkey, messages }) {
       <${Field} label="DID" value=${nostr.did(pubkey)} onCopy=${() => copy(nostr.did(pubkey), 'DID copied')} />
       <${Field} label="npub" value=${nostr.shortKey(pubkey)} onCopy=${() => copy(nostr.npub(pubkey), 'npub copied')} />
       ${p.website && html`<${Field} label="Website" value=${p.website.replace(/^https:\/\//, '')} href=${p.website} />`}
-      <${Field} label="Profile" value="nostr.social ↗" href=${nostr.profileUrl(pubkey)} />
     </section>
+    <${DidIdentity} pubkey=${pubkey} />
     <${ChatToggles} chatKey=${pubkey} />
     ${pubkey !== me.value.pubkey &&
     html`<section class="actions">
@@ -1646,10 +1674,12 @@ function Settings() {
       <div class="card">
         <h3>Account</h3>
         <p class="mono wrap">${nostr.did(signer.pubkey)}</p>
+        <p class="muted small">Your identity is this did:nostr. Anyone can resolve it at nostr.social.</p>
         <div class="buttons">
           <button onClick=${() => copy(nostr.did(signer.pubkey), 'DID copied')}>Copy DID</button>
           <button onClick=${() => copy(nostr.npub(signer.pubkey), 'npub copied')}>Copy npub</button>
-          <a class="button" href=${nostr.profileUrl(signer.pubkey)} target="_blank" rel="noopener">View profile</a>
+          <a class="button" href=${nostr.profileUrl(signer.pubkey)} target="_blank" rel="noopener">nostr.social ↗</a>
+          <a class="button" href=${nostr.didDocumentUrl(signer.pubkey)} target="_blank" rel="noopener">DID document ↗</a>
         </div>
         <p class="muted small">Signed in with ${signer.type === 'nsec' ? 'a private key' : signer.type === 'bunker' ? 'a remote signer' : 'a browser extension'}.</p>
         ${signer.type === 'nsec' &&

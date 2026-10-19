@@ -1314,3 +1314,18 @@ mark {
 .people-list > p {
   margin: 6px 20px;
 }
+
+.did-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin: 2px 0 8px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.did-stats b {
+  color: var(--text);
+}
+.info section.did .buttons {
+  margin-top: 6px;
+}

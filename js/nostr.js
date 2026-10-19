@@ -147,7 +147,8 @@ export const didDocumentUrl = (hex) => `https://nostr.social/.well-known/did/nos
 // Server-provided and unsigned: treat its profile as a display hint; signed kind 0 wins.
 export async function resolveDid(hex) {
   if (!HEX.test(hex)) throw new Error('Not a did:nostr key.');
-  const res = await fetch(didDocumentUrl(hex), {
+  // /api/did is the same conformant document plus graph counts (beacon).
+  const res = await fetch(`${DIRECTORY}/api/did/${hex}`, {
     headers: { Accept: 'application/did+json, application/json' },
     referrerPolicy: 'no-referrer',
     signal: AbortSignal.timeout(5000),
@@ -173,6 +174,9 @@ export async function resolveDid(hex) {
       .map((d) => (typeof d === 'string' ? decodePubkey(d) : null))
       .filter(Boolean),
     alsoKnownAs: Array.isArray(doc.alsoKnownAs) ? doc.alsoKnownAs.filter((x) => typeof x === 'string').slice(0, 20) : [],
+    followers: Number.isSafeInteger(doc.followersCount) ? doc.followersCount : null,
+    following: Number.isSafeInteger(doc.followingCount) ? doc.followingCount : null,
+    keyMatches: (doc.verificationMethod ?? []).some((v) => typeof v.publicKeyMultibase === 'string' && v.publicKeyMultibase.endsWith(hex)),
     service: Array.isArray(doc.service) ? doc.service.slice(0, 20) : [],
   };
 }
