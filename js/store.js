@@ -1300,6 +1300,35 @@ export function joinRoom(room) {
   remember(room);
 }
 
+// ---------- Room owner tools ----------
+
+// Re-sign the definition with changes and apply it locally (newest definition wins).
+export async function updateRoom(address, changes) {
+  const room = roomState.value[address]?.room;
+  if (!room) throw new Error('Room not loaded.');
+  const next = await nostr.updateRoom(me.value, room, changes);
+  const hidden = (pk) => nostr.roomPolicy(next, pk) === 'blocked' || isBlocked(pk);
+  const patch = { room: next, messages: (roomState.value[address]?.messages ?? []).filter((m) => !hidden(m.pubkey)) };
+  if (changes.pinned !== undefined)
+    patch.pinnedEvent = changes.pinned ? (roomState.value[address].messages.find((m) => m.id === changes.pinned) ?? roomState.value[address].pinnedEvent ?? null) : null;
+  setRoom(address, patch);
+  if (joinedRooms.value.some((r) => r.address === address)) saveJoined(joinedRooms.value.map((r) => (r.address === address ? roomEntry(next) : r)));
+  return next;
+}
+
+// 'trusted' | 'blocked' | 'plain' for a member; blocking wins over trust (Anagram).
+export function setMemberPolicy(address, pubkey, policy) {
+  const room = roomState.value[address]?.room;
+  if (!room) throw new Error('Room not loaded.');
+  const trusted = room.trusted.filter((k) => k !== pubkey);
+  const blocked = room.blocked.filter((k) => k !== pubkey);
+  if (policy === 'trusted') trusted.push(pubkey);
+  if (policy === 'blocked') blocked.push(pubkey);
+  return updateRoom(address, { trusted, blocked });
+}
+
+export const pinMessage = (address, id) => updateRoom(address, { pinned: id ?? '' });
+
 export function leaveRoom(address) {
   saveJoined(joinedRooms.value.filter((r) => r.address !== address));
   for (const key of [address, `${address}:activity`]) {

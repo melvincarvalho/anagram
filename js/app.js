@@ -783,7 +783,7 @@ function menuKeys(e) {
   items[(at + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length]?.focus();
 }
 
-function MessageMenu({ menu, onClose, onReply, onReact, onEdit, onDelete, onMoreReactions }) {
+function MessageMenu({ menu, onClose, onReply, onReact, onEdit, onDelete, onMoreReactions, onPin, pinnedId }) {
   const ref = useRef();
   const [confirming, setConfirming] = useState(false);
   useEffect(() => {
@@ -823,6 +823,7 @@ function MessageMenu({ menu, onClose, onReply, onReact, onEdit, onDelete, onMore
     <button role="menuitem" onClick=${act(() => copy(nostr.did(m.pubkey), 'DID copied'))}>⧉ Copy author DID</button>
     <button role="menuitem" onClick=${act(() => window.open(nostr.profileUrl(m.pubkey), '_blank', 'noopener'))}>👤 View profile</button>
     ${m.pubkey === me.value.pubkey && onEdit && html`<button role="menuitem" onClick=${act(() => onEdit(m))}>✎ Edit</button>`}
+    ${onPin && html`<button role="menuitem" onClick=${act(() => onPin(pinnedId === m.id ? null : m))}>📌 ${pinnedId === m.id ? 'Unpin' : 'Pin'}</button>`}
     ${m.pubkey !== me.value.pubkey &&
     html`<${ConfirmButton} role="menuitem" label=${`⛔ Block ${store.displayName(m.pubkey)}`} confirm="Tap again to block" onConfirm=${act(() => store.toggleBlock(m.pubkey).catch(fail('Block')))} />`}
     ${m.pubkey === me.value.pubkey &&
@@ -861,7 +862,7 @@ function Tick({ id }) {
   return html`<span class="tick" title="Accepted by a relay">✓</span>`;
 }
 
-function MessageList({ messages, policy = () => 'trusted', badge = () => '', mediaAuto = () => true, onReply, onReact, onEdit, onDelete, footer, header, unreadAfter = Infinity, onReachTop, lookupQuote, jumpOlder }) {
+function MessageList({ messages, policy = () => 'trusted', badge = () => '', mediaAuto = () => true, onReply, onReact, onEdit, onDelete, footer, header, unreadAfter = Infinity, onReachTop, lookupQuote, jumpOlder, onPin, pinnedId }) {
   const ref = useRef();
   const stick = useRef(true);
   const touch = useRef(null);
@@ -1062,6 +1063,8 @@ function MessageList({ messages, policy = () => 'trusted', badge = () => '', med
       onReact=${onReact}
       onEdit=${onEdit}
       onDelete=${onDelete}
+      onPin=${onPin}
+      pinnedId=${pinnedId}
       onMoreReactions=${(message, x, y) => setReactPicker({ message, x, y })}
       onClose=${() => setMenu(null)}
     />`}
@@ -1475,9 +1478,9 @@ function Field({ label, value, onCopy, href }) {
 }
 
 // A destructive action that asks for a second tap instead of a browser dialog.
-function ConfirmButton({ label, confirm, onConfirm, className = 'danger', role }) {
+function ConfirmButton({ label, confirm, onConfirm, className = 'danger', role, disabled }) {
   const [armed, setArmed] = useState(false);
-  return html`<button role=${role} class=${className} onClick=${(e) => {
+  return html`<button role=${role} class=${className} disabled=${disabled} onClick=${(e) => {
     e.stopPropagation();
     if (armed) onConfirm();
     else setArmed(true);
@@ -1564,9 +1567,65 @@ function PersonInfo({ pubkey, messages }) {
     <${SharedMedia} messages=${messages} allowed=${() => true} />`;
 }
 
+// Owner-only: edit the room's name, description and picture (re-signs the definition).
+function RoomEditor({ room }) {
+  const [form, setForm] = useState({ name: room.name, about: room.about, picture: room.picture });
+  const [open, setOpen] = useState(false);
+  const save = useAction();
+  const upload = useAction();
+  const fileInput = useRef();
+  if (!open) return html`<section><button class="wide" onClick=${() => setOpen(true)}>Edit room</button></section>`;
+  const changed = form.name !== room.name || form.about !== room.about || form.picture !== room.picture;
+  return html`<section class="room-editor">
+    <h4>Edit room</h4>
+    <label>Name <input value=${form.name} maxlength="100" onInput=${(e) => setForm({ ...form, name: e.target.value })} /></label>
+    <label>Description <textarea rows="3" maxlength="2000" value=${form.about} onInput=${(e) => setForm({ ...form, about: e.target.value })} /></label>
+    <div class="row">
+      ${form.picture ? html`<img class="avatar" src=${form.picture} width="40" height="40" referrerpolicy="no-referrer" alt="" />` : html`<${RoomAvatar} room=${room} size=${40} />`}
+      <button type="button" disabled=${upload.busy} onClick=${() => fileInput.current.click()}>${upload.busy ? 'Uploading…' : 'Upload picture'}</button>
+      ${form.picture && html`<button type="button" class="link" onClick=${() => setForm({ ...form, picture: '' })}>Remove</button>`}
+      <input ref=${fileInput} type="file" accept="image/*" hidden onChange=${(e) => {
+        const file = e.target.files[0];
+        e.target.value = '';
+        if (file) upload.run(async () => setForm({ ...form, picture: (await store.uploadMedia(file))[1].slice(4) }));
+      }} />
+    </div>
+    ${(save.error || upload.error) && html`<p class="error">${save.error || upload.error}</p>`}
+    <div class="row">
+      <button class="primary" disabled=${save.busy || !changed || !form.name.trim()} onClick=${() => save.run(async () => {
+        await store.updateRoom(room.address, form);
+        store.notify('Room updated');
+        setOpen(false);
+      })}>${save.busy ? 'Saving…' : 'Save'}</button>
+      <button class="link" onClick=${() => setOpen(false)}>Cancel</button>
+    </div>
+    <p class="muted small">Changes are signed with your key and sent to the room's relays; Anagram sees them too.</p>
+  </section>`;
+}
+
+// Owner-only: a member's posting policy. Trusted members may post links and media; blocked
+// members are hidden for everyone using an Anagram-compatible client.
+function MemberPolicy({ room, pubkey }) {
+  const current = nostr.roomPolicy(room, pubkey);
+  const [busy, setBusy] = useState(false);
+  const set = (policy) => {
+    setBusy(true);
+    store
+      .setMemberPolicy(room.address, pubkey, policy)
+      .catch((e) => store.notify(`Could not update member: ${e.message}`))
+      .finally(() => setBusy(false));
+  };
+  return html`<span class="member-policy">
+    ${current !== 'trusted' && html`<button class="link" disabled=${busy} title="Allow links and media" onClick=${() => set('trusted')}>Trust</button>`}
+    ${current !== 'plain' && html`<button class="link" disabled=${busy} title="Plain text only" onClick=${() => set('plain')}>${current === 'blocked' ? 'Unblock' : 'Untrust'}</button>`}
+    ${current !== 'blocked' && html`<${ConfirmButton} className="link danger-text" disabled=${busy} label="Block" confirm="Confirm block" onConfirm=${() => set('blocked')} />`}
+  </span>`;
+}
+
 function RoomInfo({ room, messages }) {
-  const authors = [...new Set(messages.map((m) => m.pubkey))].filter((pk) => nostr.roomPolicy(room, pk) !== 'blocked');
-  const order = { owner: 0, trusted: 1, plain: 2 };
+  const isOwner = room.owner === me.value.pubkey;
+  const authors = [...new Set([...messages.map((m) => m.pubkey), ...(isOwner ? [...room.trusted, ...room.blocked] : [])])].filter((pk) => isOwner || nostr.roomPolicy(room, pk) !== 'blocked');
+  const order = { owner: 0, trusted: 1, plain: 2, blocked: 3 };
   const role = (pk) => (pk === room.owner ? 'owner' : nostr.roomPolicy(room, pk));
   authors.sort((a, b) => order[role(a)] - order[role(b)] || store.displayName(a).localeCompare(store.displayName(b)));
   const link = `${location.origin}${location.pathname}#/room/${nostr.encodeRoomLink(room)}`;
@@ -1582,17 +1641,19 @@ function RoomInfo({ room, messages }) {
       <${Field} label="Relays" value=${room.relays.map((r) => r.replace(/^wss:\/\//, '')).join(', ')} />
     </section>
     <${ChatToggles} chatKey=${room.address} />
+    ${isOwner && html`<${RoomEditor} room=${room} key=${room.event.id} />`}
     <${SharedMedia} messages=${messages} allowed=${(pk) => nostr.roomPolicy(room, pk) === 'trusted'} />
     ${joinedRooms.value.some((r) => r.address === room.address) &&
     html`<section><button class="danger wide" onClick=${() => store.leaveRoom(room.address)}>Leave room</button></section>`}
     <section>
       <h4>Members</h4>
       ${authors.map(
-        (pk) => html`<a class="item" href=${`#/dm/${nostr.did(pk)}`}>
-          <${Avatar} pubkey=${pk} size=${32} />
-          <span class="label"><b>${store.displayName(pk)}</b></span>
-          ${role(pk) !== 'plain' && html`<span class="badge">${role(pk)}</span>`}
-        </a>`,
+        (pk) => html`<div class="item member" key=${pk}>
+          <a class="who-link" href=${`#/dm/${nostr.did(pk)}`}><${Avatar} pubkey=${pk} size=${32} /></a>
+          <a class="label who-link" href=${`#/dm/${nostr.did(pk)}`}><b>${store.displayName(pk)}</b></a>
+          ${role(pk) !== 'plain' && html`<span class=${`badge ${role(pk)}`}>${role(pk)}</span>`}
+          ${isOwner && pk !== room.owner && html`<${MemberPolicy} room=${room} pubkey=${pk} />`}
+        </div>`,
       )}
     </section>`;
 }
@@ -1729,6 +1790,8 @@ function RoomChat({ id }) {
       ${state.error ? html`<p class="error">${state.error}</p>` : html`<p class="muted">Loading room…</p>`}
     </section>`;
   const policy = (pk) => nostr.roomPolicy(room, pk);
+  const isOwner = room.owner === me.value.pubkey;
+  const fail = (what) => (e) => store.notify(`${what} failed: ${e.message}`);
   // Load older pages until the message is present, then scroll to it.
   const jumpOlder = (id) =>
     older.run(async () => {
@@ -1755,6 +1818,7 @@ function RoomChat({ id }) {
     policy(state.pinnedEvent.pubkey) !== 'blocked' &&
     html`<div class="pinned" role="button" title="Jump to pinned message" onClick=${() => jumpOlder(state.pinnedEvent.id)}>
       <b>Pinned</b> <span><${Text} content=${state.pinnedEvent.content} links=${policy(state.pinnedEvent.pubkey) === 'trusted'} /></span>
+      ${isOwner && html`<button class="link" title="Unpin" aria-label="Unpin" onClick=${(e) => { e.stopPropagation(); store.pinMessage(room.address, null).catch(fail('Unpin')); }}>✕</button>`}
     </div>`}
     <${MessageList}
       messages=${state.messages}
@@ -1768,6 +1832,8 @@ function RoomChat({ id }) {
         return q ?? null;
       }}
       jumpOlder=${jumpOlder}
+      onPin=${isOwner ? (m) => store.pinMessage(room.address, m?.id ?? null).catch(fail(m ? 'Pin' : 'Unpin')) : undefined}
+      pinnedId=${room.pinned}
       ...${actions.list}
       header=${html`<div class="older">
         ${state.exhausted
