@@ -1091,3 +1091,37 @@ mark {
   font-size: 16px;
   color: var(--muted);
 }
+
+/* Accounts */
+.sidebar header button.me {
+  border: 0;
+  padding: 0;
+  background: none;
+  text-align: left;
+}
+.me .caret {
+  flex: none;
+  font-size: 11px;
+  color: var(--muted);
+}
+.sidebar {
+  position: relative;
+}
+.menu.accounts {
+  position: absolute;
+  top: 56px;
+  left: 10px;
+  right: 10px;
+  z-index: 20;
+}
+.menu.accounts button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.menu.accounts button.current {
+  background: var(--bg);
+}
+.menu.accounts .label small {
+  color: var(--muted);
+}

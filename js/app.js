@@ -237,7 +237,8 @@ function Login() {
       ${mode === 'nsec' && remember && html`<p class="muted small">Your key will be stored unencrypted in this browser.</p>`}
       ${authUrl && html`<p>Approve in your signer: <a href=${authUrl} target="_blank" rel="noopener">${authUrl}</a></p>`}
       ${error && html`<p class="error">${error}</p>`}
-      <button class="primary" disabled=${busy}>${busy ? 'Connecting…' : 'Sign in'}</button>
+      <button class="primary" disabled=${busy}>${busy ? 'Connecting…' : me.value ? 'Add account' : 'Sign in'}</button>
+      ${me.value && html`<button type="button" onClick=${() => (store.addingAccount.value = false)}>Cancel</button>`}
     </form>
   </main>`;
 }
@@ -312,10 +313,40 @@ function ChatMenu({ menu, onClose }) {
   </div>`;
 }
 
+function AccountMenu({ onClose }) {
+  const ref = useRef();
+  const list = store.accounts.value;
+  useEffect(() => {
+    store.requestProfiles(list.map((a) => a.pubkey));
+    const close = (e) => !ref.current?.contains(e.target) && !e.target.closest?.('.sidebar header .me') && onClose();
+    addEventListener('pointerdown', close, true);
+    return () => removeEventListener('pointerdown', close, true);
+  }, []);
+  const act = (fn) => () => {
+    onClose();
+    fn();
+  };
+  return html`<div class="menu accounts" ref=${ref} role="menu">
+    ${list.map(
+      (a) => html`<button role="menuitem" class=${a.pubkey === me.value.pubkey ? 'current' : ''}
+        onClick=${act(() => store.switchAccount(a.pubkey).catch((e) => store.notify(`Could not switch: ${e.message}`)))}>
+        <${Avatar} pubkey=${a.pubkey} size=${28} />
+        <span class="label"><b>${store.displayName(a.pubkey)}</b><small>${a.type === 'nsec' ? 'Private key' : a.type === 'bunker' ? 'Remote signer' : 'Extension'}</small></span>
+        ${a.pubkey === me.value.pubkey && html`<span class="tick">✓</span>`}
+      </button>`,
+    )}
+    ${!list.some((a) => a.pubkey === me.value.pubkey) &&
+    html`<p class="muted small pad">This account isn't remembered on this device.</p>`}
+    <button role="menuitem" onClick=${act(() => (store.addingAccount.value = true))}>＋ Add account</button>
+    <button role="menuitem" onClick=${act(() => store.go('#/settings'))}>⚙ Settings</button>
+  </div>`;
+}
+
 function Sidebar() {
   const r = route.value;
   const [query, setQuery] = useState('');
   const [menu, setMenu] = useState(null);
+  const [accountsOpen, setAccountsOpen] = useState(false);
   const q = query.trim().toLowerCase();
   const match = (name) => !q || name.toLowerCase().includes(q);
   const onMenu = (chat) => (e) => {
@@ -341,12 +372,14 @@ function Sidebar() {
   const unpinnedChats = chats.filter(({ peer }) => !pinnedKeys.includes(peer));
   return html`<aside class="sidebar">
     <header>
-      <a class="me" href="#/settings" title="Settings">
+      <button class="me" title="Accounts" onClick=${() => setAccountsOpen(!accountsOpen)}>
         <${Avatar} pubkey=${me.value.pubkey} size=${32} />
         <span>${store.displayName(me.value.pubkey)}</span>
-      </a>
+        <span class="caret">▾</span>
+      </button>
       <a class="button" href="#/new" title="New chat or room">+</a>
     </header>
+    ${accountsOpen && html`<${AccountMenu} onClose=${() => setAccountsOpen(false)} />`}
     <div class="search"><input type="search" placeholder="Search" value=${query} onInput=${(e) => setQuery(e.target.value)} /></div>
     <nav>
       ${q.length >= 2 && html`<${MessageResults} q=${q} />`}
@@ -1117,7 +1150,7 @@ function Settings() {
       </div>
       <${NotificationSettings} />
       <div class="card">
-        <button class="danger" onClick=${store.logout}>Sign out</button>
+        <button class="danger" onClick=${store.logout}>Sign out of this account</button>
       </div>
     </div>
   </section>`;
@@ -1269,7 +1302,7 @@ function App() {
   useEffect(() => {
     document.title = unread ? `(${unread}) Anagram lite` : 'Anagram lite';
   }, [unread]);
-  if (!me.value) return html`<${Login} />`;
+  if (!me.value || store.addingAccount.value) return html`<${Login} />`;
   const r = route.value;
   const view =
     r.kind === 'dm'

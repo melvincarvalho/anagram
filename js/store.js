@@ -57,11 +57,71 @@ export const go = (hash) => (location.hash = hash);
 let inboxSub = null;
 const roomSubs = new Map();
 
+// ---------- Accounts ----------
+// Remembered accounts live in localStorage as serialized signers; one is active.
+
+export const accounts = signal([]); // [{ pubkey, type }]
+export const addingAccount = signal(false);
+
+function savedAccounts() {
+  const list = storage.get('lite:accounts', null);
+  if (list) return list;
+  // Migrate the single-session format used before multiple accounts.
+  const legacy = storage.get('lite:session', null);
+  return legacy?.type ? [{ pubkey: legacy.pubkey ?? null, saved: legacy }] : [];
+}
+
+function refreshAccounts() {
+  accounts.value = savedAccounts()
+    .filter((a) => a.pubkey)
+    .map((a) => ({ pubkey: a.pubkey, type: a.saved.type }));
+}
+
+function rememberAccount(signer) {
+  const list = savedAccounts().filter((a) => a.pubkey && a.pubkey !== signer.pubkey);
+  storage.set('lite:accounts', [{ pubkey: signer.pubkey, saved: nostr.serializeSigner(signer) }, ...list]);
+  storage.set('lite:session', undefined);
+  refreshAccounts();
+}
+
+// Stop everything belonging to the current account without forgetting it.
+function teardown() {
+  inboxSub?.close();
+  inboxSub = null;
+  for (const sub of roomSubs.values()) sub.close();
+  roomSubs.clear();
+  seenWraps.clear();
+  deleted.clear();
+  oldestWrap = Infinity;
+  contactList = null;
+  batch(() => {
+    me.value = null;
+    contacts.value = [];
+    reactions.value = {};
+    dms.value = {};
+    roomState.value = {};
+    joinedRooms.value = [];
+    inboxRelays.value = null;
+    syncing.value = false;
+  });
+}
+
+export async function switchAccount(pubkey) {
+  const entry = savedAccounts().find((a) => a.pubkey === pubkey);
+  if (!entry || me.value?.pubkey === pubkey) return;
+  const signer = await nostr.restoreSigner(entry.saved);
+  go('');
+  await login(signer, true);
+}
+
 export async function login(signer, remember) {
+  if (me.value) teardown();
+  addingAccount.value = false;
   liveSince = nostr.now() - 10;
   me.value = signer;
   nostr.enableAuth(signer);
-  if (remember) storage.set('lite:session', nostr.serializeSigner(signer));
+  if (remember) rememberAccount(signer);
+  storage.set('lite:active', signer.pubkey);
   readMarks.value = storage.get(`lite:read:${signer.pubkey}`, {});
   drafts.value = storage.get(`lite:drafts:${signer.pubkey}`, {});
   chatPrefs.value = { pinned: [], muted: [], ...storage.get(`lite:prefs:${signer.pubkey}`, {}) };
@@ -78,10 +138,15 @@ export async function login(signer, remember) {
 }
 
 export async function restoreSession() {
-  const saved = storage.get('lite:session', null);
-  if (!saved) return false;
+  const list = savedAccounts();
+  refreshAccounts();
+  const active = storage.get('lite:active', null);
+  const entry = list.find((a) => a.pubkey === active) ?? list[0];
+  if (!entry) return false;
   try {
-    await login(await nostr.restoreSigner(saved), false);
+    const signer = await nostr.restoreSigner(entry.saved);
+    // Fill in the pubkey for sessions migrated from the old format.
+    await login(signer, !entry.pubkey);
     return true;
   } catch (e) {
     notify(`Could not restore session: ${e.message}`);
@@ -89,25 +154,16 @@ export async function restoreSession() {
   }
 }
 
-export function logout() {
-  inboxSub?.close();
-  for (const sub of roomSubs.values()) sub.close();
-  roomSubs.clear();
+// Sign out of the current account only; move to the next remembered one if any.
+export async function logout() {
+  const current = me.value?.pubkey;
+  teardown();
+  storage.set('lite:accounts', savedAccounts().filter((a) => a.pubkey !== current));
   storage.set('lite:session', undefined);
-  seenWraps.clear();
-  deleted.clear();
-  oldestWrap = Infinity;
-  contactList = null;
-  batch(() => {
-    me.value = null;
-    contacts.value = [];
-    reactions.value = {};
-    dms.value = {};
-    roomState.value = {};
-    joinedRooms.value = [];
-    inboxRelays.value = null;
-  });
+  refreshAccounts();
   go('');
+  const next = accounts.value[0];
+  if (next) await switchAccount(next.pubkey).catch((e) => notify(`Could not switch: ${e.message}`));
 }
 
 // ---------- Pinned & muted chats ----------
@@ -569,13 +625,15 @@ export async function openRoom(pointer) {
   if (roomSubs.has(address) || roomState.value[address]?.loading) return;
   if (!me.value) return;
   setRoom(address, { loading: true, error: '' });
+  const owner = me.value;
   let room;
   try {
     room = await nostr.fetchRoom(pointer);
   } catch (e) {
-    setRoom(address, { loading: false, error: e.message });
+    if (me.value === owner) setRoom(address, { loading: false, error: e.message });
     return;
   }
+  if (me.value !== owner) return; // switched account while loading
   setRoom(address, { room, loading: false });
   if (joinedRooms.value.some((r) => r.address === address)) {
     // Refresh name/picture without moving the room in the list.
