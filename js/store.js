@@ -1188,6 +1188,12 @@ function roomActivity(address, event) {
     applyDeletions(event.tags.filter((t) => t[0] === 'e').map((t) => t[1]), event.pubkey);
 }
 
+function dropRoomMessage(address, id) {
+  const state = roomState.value[address];
+  if (state) setRoom(address, { messages: state.messages.filter((m) => m.id !== id) });
+  db.deleteRoomMessages([id]).catch(() => {});
+}
+
 // Undo a local deletion (used when publishing it failed).
 function undoDeletions(ids, author, restore) {
   for (const id of ids) deleted.get(id)?.delete(author);
@@ -1322,6 +1328,7 @@ export async function sendRoomMessage(address, text, reply, extraTags = []) {
     onSigned(e);
   }, extraTags);
   // Signing is the only wait (instant for local keys). A signing error rejects here.
+  sending.catch(() => {}); // publish failures are reported by track()
   const event = await Promise.race([signed, sending.then(() => signed)]);
   const relays = nostr.uniq([...room.relays, ...nostr.APP_RELAYS]);
   track(event.id, sending, () => nostr.publish(relays, event, me.value));
@@ -1374,13 +1381,24 @@ export async function editMessage(context, message, text) {
   const signer = me.value;
   if (context.room) {
     const room = roomState.value[context.room].room;
+    const relays = nostr.roomRelays(room);
     // signRoomMessage copies the edited message's q and imeta tags (Anagram's edit format).
     const replacement = await nostr.signRoomMessage(signer, room, text, null, message);
-    const deletion = deleteMessage(context, message, { onlyCurrent: true, background: false });
+    const deletion = await nostr.signRoomDeletion(signer, room, [message.id], 9);
+    applyDeletions([message.id], signer.pubkey);
     addRoomMessages(context.room, [replacement]);
-    const relays = nostr.roomRelays(room);
-    const sending = deletion.then(() => nostr.publish(relays, replacement, signer));
-    track(replacement.id, sending, () => nostr.publish(relays, replacement, signer));
+    setStatus(replacement.id, 'sending');
+    const publishReplacement = () => nostr.publish(relays, replacement, signer);
+    try {
+      await nostr.publish(relays, deletion, signer);
+    } catch (e) {
+      // Nothing changed on the relays, so undo the edit here too; the old text stays.
+      dropRoomMessage(context.room, replacement.id);
+      setStatus(replacement.id, null);
+      undoDeletions([message.id], signer.pubkey, () => addRoomMessages(context.room, [message]));
+      throw new Error(`Edit failed: ${e.message}`);
+    }
+    track(replacement.id, publishReplacement(), publishReplacement);
     return;
   }
   deleteMessage(context, message, { onlyCurrent: true, background: false }).catch((e) => notify(`Edit failed: ${e.message}`));

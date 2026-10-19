@@ -814,6 +814,16 @@ export async function uploadBlossom(signer, file, server = DEFAULT_BLOSSOM) {
   return ['imeta', `url ${blob.url}`, `m ${blob.type || file.type}`, `size ${blob.size ?? file.size}`, `x ${blob.sha256 || sha256}`];
 }
 
+// Answer relay AUTH challenges with the account's signer. nostr-tools rethrows a failed
+// challenge answer with nothing to catch it, so the error is tagged and logged once here
+// and app.js swallows the tagged rejection (publishes that needed AUTH still fail normally).
+let authWarned = false;
 export function enableAuth(signer) {
-  pool.automaticallyAuth = () => (t) => signer.sign(t);
+  pool.automaticallyAuth = (relay) => (t) =>
+    signer.sign(t).catch((e) => {
+      if (!authWarned) console.warn(`[nostr] could not answer AUTH for ${relay.url}: ${e.message}`);
+      authWarned = true;
+      e.relayAuth = true;
+      throw e;
+    });
 }

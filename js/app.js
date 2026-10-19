@@ -1088,6 +1088,9 @@ function Composer({ onSend, placeholder, replyTo, onCancelReply, editing, onEdit
   // Drafts reach the store after a pause in typing, so each keystroke doesn't re-render the sidebar.
   const draftTimer = useRef();
   const pendingDraft = useRef(null);
+  // Resize whenever the text changes from code too (send clears it, drafts restore it);
+  // field-sizing handles this natively where supported.
+  useEffect(() => autosize(input.current), [text]);
   const setText = (value) => {
     setTextState(value);
     if (editing) return;
@@ -2134,6 +2137,19 @@ function App() {
 }
 
 const root = document.getElementById('app');
+// A failed relay AUTH exchange (our signer failing, or the relay refusing the answer, e.g.
+// "relay needs serviceUrl to be configured") is rethrown by nostr-tools with nothing to
+// catch it. Log it once and keep it out of the console; publishes that needed AUTH still
+// fail normally through their own promises.
+let authRejectionLogged = false;
+addEventListener('unhandledrejection', (e) => {
+  const reason = e.reason;
+  if (!(reason?.relayAuth || /\bauth\b/i.test(String(reason?.message ?? '')))) return;
+  if (!authRejectionLogged && !reason?.relayAuth) console.warn(`[nostr] relay AUTH failed: ${reason.message}`);
+  authRejectionLogged = true;
+  e.preventDefault();
+});
+
 render(html`<${App} />`, root);
 store.restoreSession();
 
