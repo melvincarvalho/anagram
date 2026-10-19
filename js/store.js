@@ -577,8 +577,8 @@ function chooseAutoNdr(peer) {
   autoProtocols.value = { ...autoProtocols.value, [peer]: 'ndr' };
   storage.set(`lite:auto-protocols:${me.value.pubkey}`, autoProtocols.value);
 }
-function preserveExistingProtocols(messages) {
-  // Existing history keeps its previous transport until the person chooses Auto.
+function preserveCachedProtocols(messages) {
+  // Pre-existing cached history keeps its transport until the person chooses Auto.
   for (const message of messages) if (message.peer && directProtocols.value[message.peer] === undefined)
     saveDirectPreference(message.peer, message.protocol === 'ndr' ? 'ndr' : 'nip17');
 }
@@ -1036,7 +1036,10 @@ function flushIncoming() {
   const { messages, reactions: rs } = incoming;
   incoming = { messages: [], reactions: [] };
   const live = messages.filter((m) => deleted.get(m.id) !== m.pubkey);
-  preserveExistingProtocols(live);
+  // A newly received conversation stays Auto, even when its first message used
+  // NIP-17. Persist that preference before caching it so reload is not migration.
+  for (const message of live) if (message.account === me.value?.pubkey && directProtocols.value[message.peer] === undefined)
+    saveDirectPreference(message.peer, 'auto');
   batch(() => {
     addMessages(live);
     addReactions(rs);
@@ -1073,7 +1076,7 @@ async function startInbox() {
     else messages.push(r);
   }
   if (me.value !== signer) return; // switched account while loading
-  preserveExistingProtocols(messages);
+  preserveCachedProtocols(messages);
   resolveHistory?.();
   addMessages(messages.filter((m) => !isDeleted(m)));
   addReactions(saved);

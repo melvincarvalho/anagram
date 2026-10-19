@@ -257,3 +257,50 @@ test('Auto discovery and NDR fetch, subscription and publishing share Iris relay
     await store.logout();
   }
 });
+
+test('a new incoming NIP-17 conversation remains Auto and can upgrade later', async () => {
+  const alice = nostr.newKeySigner(), bob = nostr.newKeySigner();
+  localStorage.setItem(`lite:rooms:${alice.pubkey}`, '[]');
+  const original = { subscribe: nostr.pool.subscribe, publish: nostr.pool.publish };
+  let inbox;
+  const rosters = [], wraps = [];
+  nostr.pool.subscribe = (relays, filter, callbacks) => {
+    if (filter.kinds.includes(1059)) inbox = callbacks;
+    if (filter.kinds.includes(37368)) rosters.push(callbacks);
+    queueMicrotask(() => callbacks.oneose?.());
+    return { close() {} };
+  };
+  nostr.pool.publish = (_relays, event) => { if (event.kind === 1059) wraps.push(event); return [Promise.resolve()]; };
+  const incoming = async (text) => {
+    await nostr.sendDirectMessage(bob, alice.pubkey, text, [], []);
+    const wrap = wraps.findLast((event) => event.tags.some((tag) => tag[0] === 'p' && tag[1] === alice.pubkey));
+    assert.ok(wrap);
+    inbox.onevent(wrap);
+    await eventually(() => store.dms.value[bob.pubkey]?.some((message) => message.content === text));
+  };
+  try {
+    await store.login(alice, false);
+    await incoming('First incoming NIP-17');
+    assert.equal(store.directPreference(bob.pubkey), 'auto');
+    assert.equal(store.directProtocol(bob.pubkey), 'nip17');
+    await store.login(alice, false);
+    assert.equal(store.directPreference(bob.pubkey), 'auto'); // not mistaken for legacy cache on reload
+    store.openDirectChat(bob.pubkey);
+    await store.prepareDirectProtocol(bob.pubkey);
+    assert.equal(rosters.length, 1);
+    await store.sendDirectMessage(bob.pubkey, 'Reply before compatible device');
+    assert.equal(store.directPreference(bob.pubkey), 'auto');
+    const time = nostr.now();
+    rosters[0].onevent(await bob.sign(new AppKeys([{ identityPubkey: nostr.newKeySigner().pubkey, createdAt: time }]).getEvent({ ownerPubkey: bob.pubkey, createdAt: time })));
+    await eventually(() => store.directProtocol(bob.pubkey) === 'ndr');
+    await store.sendDirectMessage(bob.pubkey, 'Reply after compatible device');
+    assert.equal(clients.at(-1).sent.at(-1).event.content, 'Reply after compatible device');
+    await store.setDirectProtocol(bob.pubkey, 'nip17');
+    await incoming('Explicit NIP-17 stays selected');
+    assert.equal(store.directPreference(bob.pubkey), 'nip17');
+    assert.equal(store.directProtocol(bob.pubkey), 'nip17');
+  } finally {
+    Object.assign(nostr.pool, original);
+    await store.logout();
+  }
+});
