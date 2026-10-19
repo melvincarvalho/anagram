@@ -56,6 +56,34 @@ const VIDEO_RE = /\.(?:mp4|webm|mov|m4v)(?:[?#]|$)/i;
 const viewer = signal(null); // full-screen media url
 const infoOpen = signal(false); // chat info panel
 const forwarding = signal(null); // message being forwarded
+
+// Theme: 'system' | 'light' | 'dark', per device. index.html applies it before first paint.
+const darkQuery = matchMedia('(prefers-color-scheme: dark)');
+const readTheme = () => {
+  try {
+    return JSON.parse(localStorage.getItem('lite:theme')) ?? 'system';
+  } catch {
+    return 'system';
+  }
+};
+const theme = signal(readTheme());
+const isDark = () => theme.value === 'dark' || (theme.value === 'system' && darkQuery.matches);
+function setTheme(value) {
+  theme.value = value;
+  try {
+    if (value === 'system') localStorage.removeItem('lite:theme');
+    else localStorage.setItem('lite:theme', JSON.stringify(value));
+  } catch {}
+  applyTheme();
+}
+function applyTheme() {
+  const root = document.documentElement;
+  if (theme.value === 'system') delete root.dataset.theme;
+  else root.dataset.theme = theme.value;
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', isDark() ? '#16191e' : '#ffffff');
+}
+darkQuery.addEventListener('change', () => theme.value === 'system' && applyTheme());
+applyTheme();
 const chatSearch = signal(false); // in-chat search bar open
 const focusMessage = signal(null); // message id to scroll to and flash once it is rendered
 
@@ -338,6 +366,7 @@ function AccountMenu({ onClose }) {
     ${!list.some((a) => a.pubkey === me.value.pubkey) &&
     html`<p class="muted small pad">This account isn't remembered on this device.</p>`}
     <button role="menuitem" onClick=${act(() => (store.addingAccount.value = true))}>＋ Add account</button>
+    <button role="menuitem" onClick=${act(() => setTheme(isDark() ? 'light' : 'dark'))}>${isDark() ? '☀️ Day mode' : '🌙 Night mode'}</button>
     <button role="menuitem" onClick=${act(() => store.go('#/settings'))}>⚙ Settings</button>
   </div>`;
 }
@@ -1147,6 +1176,18 @@ function Settings() {
             : html`<p class="muted">You have no NIP-17 inbox relays published, so some clients can't reach you.</p>
                 <button disabled=${inbox.busy} onClick=${() => inbox.run(store.publishDefaultInbox)}>Publish default inbox relays</button>`}
         ${inbox.error && html`<p class="error">${inbox.error}</p>`}
+      </div>
+      <div class="card">
+        <h3>Appearance</h3>
+        <div class="segmented" role="radiogroup" aria-label="Theme">
+          ${[
+            ['system', 'System'],
+            ['light', '☀️ Light'],
+            ['dark', '🌙 Dark'],
+          ].map(
+            ([value, label]) => html`<button role="radio" aria-checked=${theme.value === value} class=${theme.value === value ? 'on' : ''} onClick=${() => setTheme(value)}>${label}</button>`,
+          )}
+        </div>
       </div>
       <${NotificationSettings} />
       <div class="card">

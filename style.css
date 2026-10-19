@@ -14,8 +14,9 @@
   --radius: 14px;
   color-scheme: light;
 }
+/* Dark: follows the system unless the user picked a theme (data-theme on <html>). */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme='light']) {
     --bg: #0f1114;
     --panel: #16191e;
     --line: #262a31;
@@ -27,6 +28,18 @@
     --chat-bg: #0f1114;
     color-scheme: dark;
   }
+}
+:root[data-theme='dark'] {
+  --bg: #0f1114;
+  --panel: #16191e;
+  --line: #262a31;
+  --text: #e7e9ee;
+  --muted: #8b93a1;
+  --accent: #7c7cf0;
+  --mine: #5555c8;
+  --theirs: #22262d;
+  --chat-bg: #0f1114;
+  color-scheme: dark;
 }
 * {
   box-sizing: border-box;
@@ -1124,4 +1137,21 @@ mark {
 }
 .menu.accounts .label small {
   color: var(--muted);
+}
+
+.segmented {
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  border-radius: 10px;
+  background: var(--bg);
+}
+.segmented button {
+  flex: 1;
+  border: 0;
+  background: none;
+}
+.segmented button.on {
+  background: var(--panel);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.12);
 }
