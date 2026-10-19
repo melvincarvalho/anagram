@@ -1167,6 +1167,27 @@ export async function toggleReaction(context, message, emoji) {
   }
 }
 
+// Reply targets that aren't loaded yet: fetch just that message so the quote can show.
+export const quotes = signal({}); // id -> event | null (not found)
+const quoteFetches = new Set();
+export function fetchQuote(address, id) {
+  if (quoteFetches.has(id)) return;
+  quoteFetches.add(id);
+  const room = roomState.value[address]?.room;
+  if (!room) return;
+  nostr
+    .fetchEvent(nostr.roomRelays(room), id)
+    .then((e) => (quotes.value = { ...quotes.value, [id]: e && nostr.validRoomMessage(e, address) ? e : null }))
+    .catch(() => {});
+}
+
+// Page back through a room's history until a message is loaded (for jumping to it).
+export async function loadUntil(address, id, maxPages = 10) {
+  const has = () => roomState.value[address]?.messages.some((m) => m.id === id || m.prev?.includes(id));
+  for (let i = 0; i < maxPages && !has() && !roomState.value[address]?.exhausted; i++) await loadOlderRoomMessages(address);
+  return has();
+}
+
 const roomPaging = new Map(); // address -> { cursors, done }
 
 export async function loadOlderRoomMessages(address) {

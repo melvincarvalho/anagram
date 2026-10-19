@@ -1384,3 +1384,10 @@ mark {
 .mentions-popup small {
   color: var(--muted);
 }
+
+.pinned {
+  cursor: pointer;
+}
+.pinned:hover {
+  background: var(--bg);
+}

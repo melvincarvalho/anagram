@@ -823,7 +823,7 @@ function Tick({ id }) {
   return html`<span class="tick" title="Accepted by a relay">✓</span>`;
 }
 
-function MessageList({ messages, policy = () => 'trusted', badge = () => '', mediaAuto = () => true, onReply, onReact, onEdit, onDelete, footer, header, unreadAfter = Infinity, onReachTop }) {
+function MessageList({ messages, policy = () => 'trusted', badge = () => '', mediaAuto = () => true, onReply, onReact, onEdit, onDelete, footer, header, unreadAfter = Infinity, onReachTop, lookupQuote, jumpOlder }) {
   const ref = useRef();
   const stick = useRef(true);
   const touch = useRef(null);
@@ -984,7 +984,7 @@ function MessageList({ messages, policy = () => 'trusted', badge = () => '', med
       const first = !sameRun(prev, m);
       const last = !sameRun(m, next);
       const quoteId = m.reply ?? m.tags?.find((t) => t[0] === 'q')?.[1];
-      const quote = quoteId && byId[quoteId];
+      const quote = quoteId && (byId[quoteId] ?? lookupQuote?.(quoteId));
       const tag = badge(m.pubkey);
       // Keyed per message, so loading older pages adds nodes instead of rewriting every row.
       return html`<${Fragment} key=${m.id}>${newDay && html`<div class="day"><span>${dayLabel(m.created_at)}</span></div>`}${m === firstUnread &&
@@ -1006,7 +1006,7 @@ function MessageList({ messages, policy = () => 'trusted', badge = () => '', med
           <div class="bubble">
             ${first && !mine && html`<div class="who" style=${`--name-color:${nameColor(m.pubkey)}`}>${store.displayName(m.pubkey)}${tag && html`<span class="badge">${tag}</span>`}</div>`}
             ${quote &&
-            html`<button class="quote" onClick=${() => (focusMessage.value = quote.id)}>
+            html`<button class="quote" onClick=${() => (byId[quote.id] || !jumpOlder ? (focusMessage.value = quote.id) : jumpOlder(quote.id))}>
               <b>${store.displayName(quote.pubkey)}</b>${previewText(quote.content).slice(0, 140)}
             </button>`}
             ${policy(m.pubkey) === 'trusted' && html`<${Media} message=${m} auto=${mine || mediaAuto(m.pubkey)} />`}
@@ -1579,6 +1579,12 @@ function RoomChat({ id }) {
       ${state.error ? html`<p class="error">${state.error}</p>` : html`<p class="muted">Loading room…</p>`}
     </section>`;
   const policy = (pk) => nostr.roomPolicy(room, pk);
+  // Load older pages until the message is present, then scroll to it.
+  const jumpOlder = (id) =>
+    older.run(async () => {
+      if (await store.loadUntil(room.address, id)) focusMessage.value = id;
+      else store.notify('That message is too far back to load.');
+    });
   return html`<section class="main">
     <header class="bar">
       <a class="back" href="#">‹</a>
@@ -1597,7 +1603,7 @@ function RoomChat({ id }) {
     <${InfoPanel}><${RoomInfo} room=${room} messages=${state.messages} /></${InfoPanel}>
     ${state.pinnedEvent &&
     policy(state.pinnedEvent.pubkey) !== 'blocked' &&
-    html`<div class="pinned" title="Pinned message">
+    html`<div class="pinned" role="button" title="Jump to pinned message" onClick=${() => jumpOlder(state.pinnedEvent.id)}>
       <b>Pinned</b> <span><${Text} content=${state.pinnedEvent.content} links=${policy(state.pinnedEvent.pubkey) === 'trusted'} /></span>
     </div>`}
     <${MessageList}
@@ -1606,6 +1612,12 @@ function RoomChat({ id }) {
       badge=${(pk) => (pk === room.owner ? 'owner' : '')}
       unreadAfter=${unreadAfter}
       onReachTop=${() => !older.busy && !state.exhausted && older.run(() => store.loadOlderRoomMessages(room.address))}
+      lookupQuote=${(id) => {
+        const q = store.quotes.value[id];
+        if (q === undefined) store.fetchQuote(room.address, id);
+        return q ?? null;
+      }}
+      jumpOlder=${jumpOlder}
       ...${actions.list}
       header=${html`<div class="older">
         ${state.exhausted
