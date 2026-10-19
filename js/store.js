@@ -390,12 +390,15 @@ export function requestProfiles(pubkeys) {
     const keys = [...pendingProfiles];
     pendingProfiles.clear();
     keys.forEach((k) => requested.add(k));
+    // HTTP DID documents give a quick name/avatar for unknown people while relays answer.
+    for (const k of keys) if (!profiles.value[k]) resolveDid(k);
     for (let i = 0; i < keys.length; i += 100) {
       const found = await nostr.fetchProfiles(keys.slice(i, i + 100)).catch(() => []);
       // Also refresh rows cached before newer fields (about, website) existed.
       const fresh = found.filter((p) => {
         const cached = profiles.value[p.pubkey];
-        return !cached || cached.created_at < p.created_at || !('about' in cached);
+        // Signed relay profiles always replace the unsigned DID-document hint.
+        return !cached || cached.source === 'did' || cached.created_at < p.created_at || !('about' in cached);
       });
       if (!fresh.length) continue;
       profiles.value = { ...profiles.value, ...Object.fromEntries(fresh.map((p) => [p.pubkey, p])) };
@@ -405,6 +408,46 @@ export function requestProfiles(pubkeys) {
 }
 
 export const displayName = (pk) => profiles.value[pk]?.name || nostr.shortKey(pk);
+
+// ---------- did:nostr documents (nostr.social resolver) ----------
+
+export const didDocs = signal({}); // pubkey -> resolved document, or { error }
+const didInFlight = new Map();
+let didActive = 0;
+const didWaiting = [];
+
+// Resolve (cached per session, at most 6 requests at a time).
+export function resolveDid(pk) {
+  if (didInFlight.has(pk)) return didInFlight.get(pk);
+  const job = new Promise((resolve) => didWaiting.push(resolve))
+    .then(() => nostr.resolveDid(pk))
+    .then(
+      (r) => {
+        didDocs.value = { ...didDocs.value, [pk]: r };
+        // A fast first paint for people we have nothing on; signed relay profiles replace it.
+        if (!profiles.value[pk] && (r.profile.name || r.profile.picture))
+          profiles.value = { ...profiles.value, [pk]: r.profile };
+        return r;
+      },
+      (e) => {
+        didDocs.value = { ...didDocs.value, [pk]: { error: e.message } };
+        return null;
+      },
+    )
+    .finally(() => {
+      didActive--;
+      pumpDid();
+    });
+  didInFlight.set(pk, job);
+  pumpDid();
+  return job;
+}
+function pumpDid() {
+  while (didActive < 6 && didWaiting.length) {
+    didActive++;
+    didWaiting.shift()();
+  }
+}
 
 // Verified NIP-05 addresses: pubkey -> address that checked out ('' = failed). Per session.
 export const nip05Verified = signal({});

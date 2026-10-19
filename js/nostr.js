@@ -141,6 +141,41 @@ export const did = (hex) => `did:nostr:${hex}`;
 // nostr.social serves did:nostr profile pages at /<hex> (the DID document is at
 // /.well-known/did/nostr/<hex>.json); /did:nostr:<hex> is not a route there.
 export const profileUrl = (hex) => `https://nostr.social/${hex}`;
+export const didDocumentUrl = (hex) => `https://nostr.social/.well-known/did/nostr/${hex}.json`;
+
+// Resolve a did:nostr DID document over HTTP (did-nostr.com, served by nostr.social).
+// Server-provided and unsigned: treat its profile as a display hint; signed kind 0 wins.
+export async function resolveDid(hex) {
+  if (!HEX.test(hex)) throw new Error('Not a did:nostr key.');
+  const res = await fetch(didDocumentUrl(hex), {
+    headers: { Accept: 'application/did+json, application/json' },
+    referrerPolicy: 'no-referrer',
+    signal: AbortSignal.timeout(5000),
+  });
+  if (!res.ok) throw new Error(`DID resolution failed (${res.status})`);
+  const doc = await res.json();
+  if (doc?.id !== did(hex)) throw new Error('DID document does not match the key.');
+  const p = doc.profile && typeof doc.profile === 'object' ? doc.profile : {};
+  const https = (v) => (typeof v === 'string' && /^https:\/\//.test(v) ? v : '');
+  return {
+    doc,
+    profile: {
+      pubkey: hex,
+      created_at: Number.isSafeInteger(p.created_at) ? p.created_at : 0,
+      name: String(p.display_name || p.name || '').slice(0, 80),
+      picture: https(p.picture),
+      nip05: typeof p.nip05 === 'string' ? p.nip05.slice(0, 120) : '',
+      about: typeof p.about === 'string' ? p.about.slice(0, 600) : '',
+      website: https(p.website),
+      source: 'did',
+    },
+    follows: (Array.isArray(doc.follows) ? doc.follows : [])
+      .map((d) => (typeof d === 'string' ? decodePubkey(d) : null))
+      .filter(Boolean),
+    alsoKnownAs: Array.isArray(doc.alsoKnownAs) ? doc.alsoKnownAs.filter((x) => typeof x === 'string').slice(0, 20) : [],
+    service: Array.isArray(doc.service) ? doc.service.slice(0, 20) : [],
+  };
+}
 export const npub = (hex) => nip19.npubEncode(hex);
 export const shortKey = (hex) => {
   const n = npub(hex);
