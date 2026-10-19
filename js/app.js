@@ -40,7 +40,171 @@ function Mentions({ text }) {
   });
 }
 
+// Anagram's message formatting grammar (utils/messageFormatting.ts), ported as-is:
+// **bold** *italic* _italic_ __underline__ ~strike~ ||spoiler|| `code` ```block``` [label](https://…),
+// "- " bullets and \ escapes. Text only: no HTML, bounded tokens and nesting.
+const FORMAT_MARKERS = { '**': 'bold', '*': 'italic', __: 'underline', _: 'italic', '~': 'strike', '~~': 'strike', '||': 'spoiler' };
+const isWord = (c) => !!c && /[\p{L}\p{N}_]/u.test(c);
+const isSpace = (c) => !c || /\s/u.test(c);
+
+function formatMessage(text) {
+  const root = { marker: '', start: 0, children: [] };
+  const stack = [root];
+  let buffer = '';
+  let cursor = 0;
+  let tokens = 0;
+  const frame = () => stack[stack.length - 1];
+  const flush = () => {
+    if (buffer) frame().children.push({ type: 'text', text: buffer });
+    buffer = '';
+  };
+  const urlPattern = /(?:https?:\/\/|www\.)[^\s<>"'`]+/iy;
+  while (cursor < text.length) {
+    if (tokens >= 1000) {
+      flush();
+      frame().children.push({ type: 'text', text: text.slice(cursor) });
+      break;
+    }
+    const rest = text.slice(cursor);
+    if (text[cursor] === '\\' && /[\\*_~|`\[\]()]/.test(text[cursor + 1] ?? '')) {
+      buffer += text[cursor + 1];
+      cursor += 2;
+      continue;
+    }
+    if ((cursor === 0 || text[cursor - 1] === '\n') && /^[*-] +(?=\S)/.test(rest)) {
+      buffer += '• ';
+      cursor += rest.match(/^[*-] +/)[0].length;
+      continue;
+    }
+    urlPattern.lastIndex = cursor;
+    const url = !isWord(text[cursor - 1]) && urlPattern.exec(text);
+    if (url) {
+      // URLs stay plain text (linkified later) so underscores in them aren't formatting.
+      let value = url[0];
+      const marker = frame().marker;
+      if (marker) {
+        let end = value.indexOf(marker);
+        while (end > 0 && marker.includes('_') && isWord(value[end + marker.length])) end = value.indexOf(marker, end + marker.length);
+        if (end > 0) value = value.slice(0, end);
+      }
+      buffer += value;
+      cursor += value.length;
+      tokens++;
+      continue;
+    }
+    if (rest.startsWith('`')) {
+      const fence = rest.startsWith('```') ? '```' : '`';
+      const end = text.indexOf(fence, cursor + fence.length);
+      if (end > cursor + fence.length && (fence.length === 3 || !text.slice(cursor + 1, end).includes('\n'))) {
+        flush();
+        let content = text.slice(cursor + fence.length, end);
+        if (fence.length === 3) content = content.replace(/^(?:[a-zA-Z][\w+-]{0,30})?\r?\n/, '').replace(/\r?\n$/, '');
+        frame().children.push({ type: 'code', text: content, block: fence.length === 3 });
+        cursor = end + fence.length;
+        tokens++;
+        continue;
+      }
+      buffer += fence;
+      cursor += fence.length;
+      tokens++;
+      continue;
+    }
+    if (text[cursor] === '[') {
+      const labelOffset = text.slice(cursor + 1, cursor + 2049).indexOf('](');
+      const labelEnd = labelOffset < 0 ? -1 : cursor + 1 + labelOffset;
+      if (labelEnd > cursor + 1 && labelEnd - cursor <= 2048) {
+        let end = labelEnd + 2;
+        let depth = 1;
+        for (; end < text.length && end - labelEnd <= 4096 && depth; end++) {
+          if (text[end] === '(') depth++;
+          else if (text[end] === ')') depth--;
+          if (/\s/.test(text[end])) break;
+        }
+        if (!depth) {
+          const href = text.slice(labelEnd + 2, end - 1);
+          let safe = false;
+          try {
+            const u = new URL(href);
+            safe = /^https?:\/\//i.test(href) && !u.username && !u.password && !/[\s\x00-\x1f\x7f]/.test(href);
+          } catch {}
+          flush();
+          frame().children.push(
+            safe ? { type: 'link', text: text.slice(cursor + 1, labelEnd), href: new URL(href).href } : { type: 'text', text: text.slice(cursor, end) },
+          );
+          cursor = end;
+          tokens++;
+          continue;
+        }
+      }
+      tokens++;
+    }
+    const marker =
+      frame().marker && rest.startsWith(frame().marker) && !isSpace(text[cursor - 1])
+        ? frame().marker
+        : ['**', '__', '||', '~~', '*', '_', '~'].find((m) => rest.startsWith(m));
+    if (marker) {
+      const previous = text[cursor - 1];
+      const next = text[cursor + marker.length];
+      if (frame().marker === marker && (marker === '||' || !isSpace(previous)) && (!marker.includes('_') || !isWord(next))) {
+        flush();
+        const closed = stack.pop();
+        frame().children.push({ type: 'format', format: FORMAT_MARKERS[marker], children: closed.children });
+      } else if ((marker === '||' ? next !== undefined : !isSpace(next)) && (!marker.includes('_') || !isWord(previous)) && stack.length < 9) {
+        flush();
+        stack.push({ marker, start: cursor + marker.length, children: [] });
+      } else buffer += marker;
+      cursor += marker.length;
+      tokens++;
+      continue;
+    }
+    buffer += text[cursor++];
+  }
+  flush();
+  while (stack.length > 1) {
+    const unclosed = stack.pop();
+    frame().children.push({ type: 'text', text: unclosed.marker }, ...unclosed.children);
+  }
+  return root.children;
+}
+
+const formatCache = new Map(); // content -> parsed parts (bounded)
+function formatted(content) {
+  let parts = formatCache.get(content);
+  if (!parts) {
+    parts = formatMessage(content);
+    if (formatCache.size > 2000) formatCache.clear();
+    formatCache.set(content, parts);
+  }
+  return parts;
+}
+
+const FORMAT_TAGS = { bold: 'strong', italic: 'em', underline: 'u', strike: 's' };
+
+function Spoiler({ children }) {
+  const [shown, setShown] = useState(false);
+  return html`<span class=${`spoiler${shown ? ' shown' : ''}`} title=${shown ? '' : 'Tap to reveal'} onClick=${(e) => {
+    if (!shown) e.stopPropagation();
+    setShown(true);
+  }}>${children}</span>`;
+}
+
+function renderParts(parts, links) {
+  return parts.map((p) => {
+    if (p.type === 'text') return html`<${PlainText} content=${p.text} links=${links} />`;
+    if (p.type === 'code') return p.block ? html`<pre class="code"><code>${p.text}</code></pre>` : html`<code>${p.text}</code>`;
+    if (p.type === 'link')
+      return links ? html`<a href=${p.href} target="_blank" rel="noopener noreferrer nofollow">${p.text}</a>` : html`<span>${p.text}</span>`;
+    const inner = renderParts(p.children, links);
+    if (p.format === 'spoiler') return html`<${Spoiler}>${inner}</${Spoiler}>`;
+    return h(FORMAT_TAGS[p.format], null, inner);
+  });
+}
+
 function Text({ content, links = true }) {
+  return renderParts(formatted(content), links);
+}
+
+function PlainText({ content, links = true }) {
   const parts = content.split(URL_RE);
   return parts.map((part, i) =>
     i % 2 === 0
@@ -159,7 +323,20 @@ function Viewer() {
 }
 
 // Plain-text preview for sidebars and quotes: mentions become @names.
+function flattenParts(parts) {
+  return parts
+    .map((p) =>
+      p.type === 'format' && p.format === 'spoiler'
+        ? '▒▒▒'
+        : p.type === 'format'
+          ? flattenParts(p.children)
+          : p.text,
+    )
+    .join('');
+}
+
 function previewText(content) {
+  content = flattenParts(formatted(content));
   return content.replace(MENTION_RE, (m) => {
     const pk = nostr.decodePubkey(m);
     return pk ? `@${store.displayName(pk)}` : m;
