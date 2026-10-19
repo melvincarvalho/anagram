@@ -587,7 +587,7 @@ export function validRoomMessage(event, address) {
   );
 }
 
-export async function sendRoomMessage(signer, room, text, reply, edit, onSigned, extraTags = []) {
+export async function signRoomMessage(signer, room, text, reply, edit, extraTags = []) {
   const event = await signer.sign({
     kind: 9,
     // Edits keep the original timestamp so the message stays in place.
@@ -607,8 +607,13 @@ export async function sendRoomMessage(signer, room, text, reply, edit, onSigned,
       ...extraTags,
     ],
   });
+  return event;
+}
+
+export async function sendRoomMessage(signer, room, text, reply, edit, onSigned, extraTags = []) {
+  const event = await signRoomMessage(signer, room, text, reply, edit, extraTags);
   onSigned?.(event);
-  return publish(uniq([...room.relays, ...APP_RELAYS]), event, signer);
+  return publish(roomRelays(room), event, signer);
 }
 
 // Anagram's starter room, as an owner-signed snapshot so it shows before relays answer.
@@ -700,8 +705,10 @@ export async function publishContactList(signer, pubkeys, relays, previous) {
   return publish(relays, event, signer);
 }
 
-export async function sendRoomReaction(signer, room, message, emoji) {
-  const event = await signer.sign({
+export const roomRelays = (room) => uniq([...room.relays, ...APP_RELAYS]);
+
+export function signRoomReaction(signer, room, message, emoji) {
+  return signer.sign({
     kind: 7,
     created_at: now(),
     content: emoji,
@@ -712,18 +719,20 @@ export async function sendRoomReaction(signer, room, message, emoji) {
       ['k', '9'],
     ],
   });
-  return publish(uniq([...room.relays, ...APP_RELAYS]), event, signer);
 }
 
 // NIP-09 deletion of our own room events (reactions: k=7, messages: k=9).
-export async function sendRoomDeletion(signer, room, ids, kind) {
-  const event = await signer.sign({
+export function signRoomDeletion(signer, room, ids, kind) {
+  return signer.sign({
     kind: 5,
     created_at: now(),
     content: '',
     tags: [['h', room.address], ['k', String(kind)], ...ids.map((id) => ['e', id])],
   });
-  return publish(uniq([...room.relays, ...APP_RELAYS]), event, signer);
+}
+
+export async function sendRoomDeletion(signer, room, ids, kind) {
+  return publish(roomRelays(room), await signRoomDeletion(signer, room, ids, kind), signer);
 }
 
 // ---------- Blossom media uploads (Anagram's format) ----------

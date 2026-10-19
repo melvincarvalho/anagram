@@ -1067,38 +1067,65 @@ function roomActivity(address, event) {
     applyDeletions(event.tags.filter((t) => t[0] === 'e').map((t) => t[1]), event.pubkey);
 }
 
-// Telegram-style toggle: same emoji again removes our reaction.
+// Undo a local deletion (used when publishing it failed).
+function undoDeletions(ids, author, restore) {
+  for (const id of ids) if (deleted.get(id) === author) deleted.delete(id);
+  restore();
+}
+
+// Telegram-style toggle: same emoji again removes our reaction. The change shows at
+// once; publishing happens in the background and is rolled back if every relay refuses.
 export async function toggleReaction(context, message, emoji) {
   const signer = me.value;
   const mine = knownIds(message)
-    .flatMap((id) => reactions.value[id] ?? [])
+    .flatMap((id) => (reactions.value[id] ?? []).map((r) => ({ ...r, target: id })))
     .filter((r) => r.pubkey === signer.pubkey && r.emoji === emoji);
   // React to the original, as Anagram does; earlier ids map to the current version.
   message = { ...message, id: rootId(message) };
+  const ids = mine.map((r) => r.id);
+  const fail = (what, undo) => (e) => {
+    undo();
+    notify(`${what} failed: ${e.message}`);
+  };
   if (context.room) {
     const room = roomState.value[context.room].room;
     if (mine.length) {
-      await nostr.sendRoomDeletion(signer, room, mine.map((r) => r.id), 7);
-      applyDeletions(mine.map((r) => r.id), signer.pubkey);
+      const event = await nostr.signRoomDeletion(signer, room, ids, 7);
+      applyDeletions(ids, signer.pubkey);
+      nostr.publish(nostr.roomRelays(room), event, signer).catch(fail('Removing reaction', () => undoDeletions(ids, signer.pubkey, () => addReactions(mine))));
     } else {
-      const event = await nostr.sendRoomReaction(signer, room, message, emoji);
+      const event = await nostr.signRoomReaction(signer, room, message, emoji);
       roomActivity(room.address, event);
+      nostr.publish(nostr.roomRelays(room), event, signer).catch(fail('Reaction', () => applyDeletions([event.id], signer.pubkey)));
     }
     return;
   }
   const peer = context.peer;
-  const send = (kind, content, tags) =>
-    nostr.sendRumor(signer, peer, kind, content, [['p', peer], ...tags], inboxOf(peer), inboxRelays.value ?? []);
+  const send = (kind, content, tags, onRumor) =>
+    nostr.sendRumor(signer, peer, kind, content, [['p', peer], ...tags], inboxOf(peer), inboxRelays.value ?? [], nostr.now(), onRumor);
   if (mine.length) {
-    const ids = mine.map((r) => r.id);
-    await send(5, '', [...ids.map((id) => ['e', id]), ['k', '7']]);
     applyDeletions(ids, signer.pubkey);
     for (const id of ids) queueSave({ account: signer.pubkey, id, deletedBy: signer.pubkey });
+    send(5, '', [...ids.map((id) => ['e', id]), ['k', '7']]).catch(
+      fail('Removing reaction', () =>
+        undoDeletions(ids, signer.pubkey, () => {
+          addReactions(mine);
+          for (const r of mine) queueSave({ account: signer.pubkey, peer, kind: 7, ...r });
+        }),
+      ),
+    );
   } else {
-    const rumor = await send(7, emoji, [['e', message.id], ['p', message.pubkey], ['k', String(message.kind ?? 14)]]);
-    const r = { account: signer.pubkey, id: rumor.id, peer, pubkey: signer.pubkey, kind: 7, target: message.id, emoji, created_at: rumor.created_at };
-    addReactions([r]);
-    queueSave(r);
+    let added;
+    send(7, emoji, [['e', message.id], ['p', message.pubkey], ['k', String(message.kind ?? 14)]], (rumor) => {
+      added = { account: signer.pubkey, id: rumor.id, peer, pubkey: signer.pubkey, kind: 7, target: message.id, emoji, created_at: rumor.created_at };
+      addReactions([added]);
+      queueSave(added);
+    }).catch(
+      fail('Reaction', () => {
+        applyDeletions([added.id], signer.pubkey);
+        queueSave({ account: signer.pubkey, id: added.id, deletedBy: signer.pubkey });
+      }),
+    );
   }
 }
 
@@ -1165,37 +1192,55 @@ export function forwardMessage(target, message) {
 }
 
 // Delete our own message: NIP-09 request, honoured by Anagram and most clients.
-export async function deleteMessage(context, message, { onlyCurrent = false } = {}) {
+// Delete our own message: shown at once, NIP-09 request published in the background
+// (restored with a notice if every relay refuses). Honoured by Anagram and most clients.
+export async function deleteMessage(context, message, { onlyCurrent = false, background = true } = {}) {
   const signer = me.value;
   if (message.pubkey !== signer.pubkey) throw new Error('You can only delete your own messages.');
   // Deleting removes every version of an edited message; an edit replaces only the current one (Anagram).
   const ids = onlyCurrent ? [message.id] : knownIds(message);
-  if (context.room) {
-    await nostr.sendRoomDeletion(signer, roomState.value[context.room].room, ids, 9);
-  } else {
-    const peer = context.peer;
-    await nostr.sendRumor(
-      signer,
-      peer,
-      5,
-      '',
-      [['p', peer], ...ids.map((id) => ['e', id]), ['k', String(message.kind ?? 14)]],
-      inboxOf(peer),
-      inboxRelays.value ?? [],
-    );
-    for (const id of ids) queueSave({ account: signer.pubkey, id, deletedBy: signer.pubkey });
-  }
-  applyDeletions(ids, signer.pubkey);
-}
-
-// Anagram's edit flow: delete the old version, then send a replacement at the same timestamp.
-export async function editMessage(context, message, text) {
-  await deleteMessage(context, message, { onlyCurrent: true });
+  let publishing;
+  const restore = () =>
+    undoDeletions(ids, signer.pubkey, () => {
+      if (context.room) addRoomMessages(context.room, [message]);
+      else {
+        addMessages([message]);
+        queueSave(current(message));
+      }
+    });
   if (context.room) {
     const room = roomState.value[context.room].room;
-    const event = await nostr.sendRoomMessage(me.value, room, text, null, message);
-    addRoomMessages(context.room, [event]);
+    const event = await nostr.signRoomDeletion(signer, room, ids, 9);
+    applyDeletions(ids, signer.pubkey);
+    publishing = nostr.publish(nostr.roomRelays(room), event, signer);
   } else {
-    await sendDirectMessage(context.peer, text, null, message, (message.tags ?? []).filter((t) => t[0] === 'imeta'));
+    const peer = context.peer;
+    applyDeletions(ids, signer.pubkey);
+    for (const id of ids) queueSave({ account: signer.pubkey, id, deletedBy: signer.pubkey });
+    publishing = nostr.sendRumor(signer, peer, 5, '', [['p', peer], ...ids.map((id) => ['e', id]), ['k', String(message.kind ?? 14)]], inboxOf(peer), inboxRelays.value ?? []);
   }
+  if (!background) return publishing;
+  publishing.catch((e) => {
+    restore();
+    notify(`Delete failed: ${e.message}`);
+  });
+}
+
+// Anagram's edit flow: delete the old version, then send a replacement at the same
+// timestamp. The new text shows at once with 🕓; the two events publish in order.
+export async function editMessage(context, message, text) {
+  const signer = me.value;
+  if (context.room) {
+    const room = roomState.value[context.room].room;
+    // signRoomMessage copies the edited message's q and imeta tags (Anagram's edit format).
+    const replacement = await nostr.signRoomMessage(signer, room, text, null, message);
+    const deletion = deleteMessage(context, message, { onlyCurrent: true, background: false });
+    addRoomMessages(context.room, [replacement]);
+    const relays = nostr.roomRelays(room);
+    const sending = deletion.then(() => nostr.publish(relays, replacement, signer));
+    track(replacement.id, sending, () => nostr.publish(relays, replacement, signer));
+    return;
+  }
+  deleteMessage(context, message, { onlyCurrent: true, background: false }).catch((e) => notify(`Edit failed: ${e.message}`));
+  sendDirectMessage(context.peer, text, null, message, (message.tags ?? []).filter((t) => t[0] === 'imeta'));
 }
