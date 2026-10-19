@@ -99,9 +99,11 @@ function teardown() {
   nostr.pool.close([...nostr.pool.relays.keys()]);
   contactsLoaded = null;
   contactQueue = Promise.resolve();
+  dmCursors.clear();
+  dmDone.clear();
+  roomPaging.clear();
   seenWraps.clear();
   deleted.clear();
-  oldestWrap = Infinity;
   contactList = null;
   batch(() => {
     me.value = null;
@@ -112,6 +114,7 @@ function teardown() {
     joinedRooms.value = [];
     inboxRelays.value = null;
     syncing.value = false;
+    dmHistoryDone.value = false;
   });
 }
 
@@ -342,7 +345,6 @@ const deleted = new Map(); // message id -> deleter pubkey
 let queue = Promise.resolve();
 let pendingRows = [];
 let flushTimer;
-let oldestWrap = Infinity;
 
 // ---------- Edits ----------
 // Like Anagram, a replacement takes the original's place and remembers every earlier
@@ -478,7 +480,6 @@ async function handleWrap(wrap) {
   const signer = me.value;
   if (!signer || seenWraps.has(wrap.id)) return;
   seenWraps.add(wrap.id);
-  oldestWrap = Math.min(oldestWrap, wrap.created_at);
   if (await db.hasWrap(signer.pubkey, wrap.id).catch(() => false)) return;
   let rumor;
   try {
@@ -567,22 +568,43 @@ async function startInbox() {
   );
 }
 
+// Page history from each relay on its own, with its own cursor, so a slow or sparse
+// relay can't make us skip events another relay has (Anagram pages per relay too).
+async function pagePerRelay(relays, filter, cursors, done, limit) {
+  const pages = await Promise.all(
+    relays
+      .filter((r) => !done.has(r))
+      .map(async (relay) => {
+        const until = cursors.get(relay);
+        const events = await nostr.pool
+          .querySync([relay], { ...filter, limit, ...(until ? { until: until - 1 } : {}) })
+          .catch(() => null);
+        if (!events) return []; // relay failed: try it again next time
+        if (!events.length) done.add(relay);
+        else cursors.set(relay, Math.min(...events.map((e) => e.created_at)));
+        return events;
+      }),
+  );
+  return { events: pages.flat(), finished: relays.every((r) => done.has(r)) };
+}
+
+const dmCursors = new Map();
+const dmDone = new Set();
+export const dmHistoryDone = signal(false);
+
 export async function loadOlderDirectMessages() {
   const signer = me.value;
   syncing.value = true;
-  const events = await nostr.pool.querySync(
-    nostr.uniq([...(inboxRelays.value ?? []), ...nostr.APP_RELAYS]),
-    {
-      kinds: [1059],
-      '#p': [signer.pubkey],
-      limit: 500,
-      ...(Number.isFinite(oldestWrap) ? { until: oldestWrap - 1 } : {}),
-    },
-  );
-  events.forEach(enqueue);
-  await queue;
-  syncing.value = false;
-  return events.length;
+  try {
+    const relays = nostr.uniq([...(inboxRelays.value ?? []), ...nostr.APP_RELAYS]);
+    const { events, finished } = await pagePerRelay(relays, { kinds: [1059], '#p': [signer.pubkey] }, dmCursors, dmDone, 500);
+    if (me.value !== signer) return;
+    events.forEach(enqueue);
+    await queue;
+    dmHistoryDone.value = finished;
+  } finally {
+    syncing.value = false;
+  }
 }
 
 const theirInbox = new Map(); // peer -> Promise<relays>, cached per session
@@ -858,18 +880,23 @@ export async function toggleReaction(context, message, emoji) {
   }
 }
 
+const roomPaging = new Map(); // address -> { cursors, done }
+
 export async function loadOlderRoomMessages(address) {
   const state = roomState.value[address];
   if (!state?.room) return;
-  const oldest = state.messages[0]?.created_at ?? nostr.now();
-  const events = await nostr.pool.querySync(nostr.uniq([...state.room.relays, ...nostr.APP_RELAYS]), {
-    kinds: [9],
-    '#a': [address],
-    until: oldest - 1,
-    limit: 100,
-  });
+  if (!roomPaging.has(address)) roomPaging.set(address, { cursors: new Map(), done: new Set() });
+  const { cursors, done } = roomPaging.get(address);
+  const relays = nostr.uniq([...state.room.relays, ...nostr.APP_RELAYS]);
+  const { events, finished } = await pagePerRelay(relays, { kinds: [9], '#a': [address] }, cursors, done, 100);
   addRoomMessages(address, events);
-  if (!events.length) setRoom(address, { exhausted: true });
+  // Reactions and deletions for the older messages too, or deleted ones would reappear.
+  const ids = nostr.uniq(events.map((e) => e.id));
+  for (let i = 0; i < ids.length; i += 100) {
+    const activity = await nostr.pool.querySync(relays, { kinds: [5, 7], '#e': ids.slice(i, i + 100) }).catch(() => []);
+    for (const e of activity) roomActivity(address, e);
+  }
+  if (finished) setRoom(address, { exhausted: true });
 }
 
 export function joinRoom(room) {

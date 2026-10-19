@@ -1003,9 +1003,11 @@ function DirectChat({ id }) {
       mediaAuto=${(pk) => store.contacts.value.includes(pk)}
       messages=${messages}
       header=${html`<div class="older">
-        <button class="link" disabled=${older.busy} onClick=${() => older.run(store.loadOlderDirectMessages)}>
-          ${older.busy ? 'Loading…' : 'Load older messages'}
-        </button>
+        ${store.dmHistoryDone.value
+          ? html`<span class="muted small">Start of history</span>`
+          : html`<button class="link" disabled=${older.busy} onClick=${() => older.run(store.loadOlderDirectMessages)}>
+              ${older.busy ? 'Loading…' : 'Load older messages'}
+            </button>`}
       </div>`}
     />
     <${Composer}
