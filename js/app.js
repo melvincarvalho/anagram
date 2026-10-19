@@ -1915,6 +1915,16 @@ function ForwardPicker() {
   </div>`;
 }
 
+const CONNECTION_TEXT = { offline: 'Waiting for network…', connecting: 'Connecting…', updating: 'Updating…' };
+
+function ConnectionBanner() {
+  const state = store.connection.value;
+  if (state === 'ok') return null;
+  return html`<div class=${`connection ${state}`} role="status" aria-live="polite">
+    ${state === 'updating' ? html`<span class="spinner" />` : '⚠'} ${CONNECTION_TEXT[state]}
+  </div>`;
+}
+
 function Home() {
   return html`<section class="main empty">
     <div>
@@ -1960,6 +1970,7 @@ function App() {
     <${Sidebar} />
     ${view}
     ${toast.value && html`<div class="toast">${toast.value}</div>`}
+    <${ConnectionBanner} />
     <${Viewer} />
     <${ForwardPicker} />
   </div>`;

@@ -286,6 +286,20 @@ export function setDraft(key, text) {
   draftTimer = setTimeout(() => storage.set(`lite:drafts:${account}`, snapshot), 300);
 }
 
+// ---------- Connection status ----------
+
+// 'offline' (no network) | 'connecting' (no relay up) | 'updating' (syncing) | 'ok'
+export const connection = signal('ok');
+function updateConnection() {
+  if (!me.value) return (connection.value = 'ok');
+  if (!navigator.onLine) return (connection.value = 'offline');
+  const up = [...nostr.pool.listConnectionStatus().values()].some(Boolean);
+  connection.value = !up ? 'connecting' : syncing.value ? 'updating' : 'ok';
+}
+addEventListener('online', updateConnection);
+addEventListener('offline', updateConnection);
+setInterval(updateConnection, 2000);
+
 // ---------- Unread ----------
 
 export function markRead(key, ts) {
