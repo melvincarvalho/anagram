@@ -715,3 +715,63 @@ button.link {
   font-weight: 600;
   text-align: center;
 }
+
+.media {
+  display: grid;
+  gap: 2px;
+  margin: 2px -6px 4px;
+  border-radius: 10px;
+  overflow: hidden;
+}
+.media.n2 {
+  grid-template-columns: 1fr 1fr;
+}
+.media.n3 {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+.media img,
+.media video {
+  display: block;
+  width: 100%;
+  max-height: 360px;
+  object-fit: cover;
+  background: rgb(127 127 127 / 0.15);
+}
+.media.n1 img {
+  object-fit: contain;
+  max-width: 420px;
+}
+.media img {
+  cursor: zoom-in;
+}
+.show-media {
+  display: block;
+  margin: 4px 0;
+  border-style: dashed;
+  background: transparent;
+  font-size: 13px;
+}
+.show-media small {
+  opacity: 0.7;
+}
+.viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgb(0 0 0 / 0.85);
+  cursor: zoom-out;
+}
+.viewer img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+.viewer .open {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  color: #fff;
+}

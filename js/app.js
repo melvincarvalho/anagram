@@ -1,4 +1,5 @@
 import { h, render } from 'preact';
+import { signal } from '@preact/signals';
 import { useState, useEffect, useRef, useLayoutEffect } from 'preact/hooks';
 import htm from 'htm';
 import * as nostr from './nostr.js';
@@ -47,6 +48,54 @@ function Text({ content, links = true }) {
         ? html`<a href=${part} target="_blank" rel="noopener noreferrer nofollow">${part}</a>`
         : '[link removed]',
   );
+}
+
+const IMAGE_RE = /\.(?:png|jpe?g|gif|webp|avif|svg)(?:[?#]|$)/i;
+const VIDEO_RE = /\.(?:mp4|webm|mov|m4v)(?:[?#]|$)/i;
+const viewer = signal(null); // full-screen media url
+
+// Media URLs from the text plus NIP-92 imeta attachments.
+function mediaOf(message) {
+  const urls = new Set((message.content.match(URL_RE) ?? []).filter((u) => IMAGE_RE.test(u) || VIDEO_RE.test(u)));
+  for (const t of message.tags ?? [])
+    if (t[0] === 'imeta') {
+      const url = t.find((v) => v.startsWith('url '))?.slice(4);
+      const mime = t.find((v) => v.startsWith('m '))?.slice(2) ?? '';
+      if (url?.startsWith('https://') && (/^(image|video)\//.test(mime) || IMAGE_RE.test(url) || VIDEO_RE.test(url))) urls.add(url);
+    }
+  return [...urls].filter((u) => u.startsWith('https://')).slice(0, 10);
+}
+
+function Media({ message, auto }) {
+  const urls = mediaOf(message);
+  const [shown, setShown] = useState(auto);
+  if (!urls.length) return null;
+  if (!shown)
+    return html`<button class="show-media" onClick=${() => setShown(true)}>
+      🖼 Show ${urls.length > 1 ? `${urls.length} media` : 'media'} <small>(reveals your IP to the host)</small>
+    </button>`;
+  return html`<div class=${`media n${Math.min(urls.length, 3)}`}>
+    ${urls.map((url) =>
+      VIDEO_RE.test(url)
+        ? html`<video src=${url} controls preload="metadata" playsinline />`
+        : html`<img src=${url} loading="lazy" referrerpolicy="no-referrer" alt="" onClick=${() => (viewer.value = url)} />`,
+    )}
+  </div>`;
+}
+
+function Viewer() {
+  const url = viewer.value;
+  useEffect(() => {
+    if (!url) return;
+    const key = (e) => e.key === 'Escape' && (viewer.value = null);
+    addEventListener('keydown', key);
+    return () => removeEventListener('keydown', key);
+  }, [url]);
+  if (!url) return null;
+  return html`<div class="viewer" onClick=${() => (viewer.value = null)}>
+    <img src=${url} referrerpolicy="no-referrer" alt="" />
+    <a class="open" href=${url} target="_blank" rel="noopener noreferrer" onClick=${(e) => e.stopPropagation()}>Open original ↗</a>
+  </div>`;
 }
 
 // Plain-text preview for sidebars and quotes: mentions become @names.
@@ -298,7 +347,7 @@ function Reactions({ message, onReact }) {
   </div>`;
 }
 
-function MessageList({ messages, policy = () => 'trusted', badge = () => '', onReply, onReact, onEdit, onDelete, footer, header }) {
+function MessageList({ messages, policy = () => 'trusted', badge = () => '', mediaAuto = () => true, onReply, onReact, onEdit, onDelete, footer, header }) {
   const ref = useRef();
   const stick = useRef(true);
   const press = useRef();
@@ -361,6 +410,7 @@ function MessageList({ messages, policy = () => 'trusted', badge = () => '', onR
             html`<button class="quote" onClick=${() => jumpTo(quote.id)}>
               <b>${store.displayName(quote.pubkey)}</b>${previewText(quote.content).slice(0, 140)}
             </button>`}
+            ${policy(m.pubkey) === 'trusted' && html`<${Media} message=${m} auto=${mine || mediaAuto(m.pubkey)} />`}
             <div class="body"><${Text} content=${m.content} links=${policy(m.pubkey) === 'trusted'} /><span class="meta">${(m.edited ?? nostr.isEdited(m.tags ?? [])) ? 'edited ' : ''}${clock(m.created_at)}</span></div>
             <${Reactions} message=${m} onReact=${onReact} />
           </div>
@@ -500,6 +550,7 @@ function DirectChat({ id }) {
     </header>
     <${MessageList}
       ...${actions.list}
+      mediaAuto=${(pk) => store.contacts.value.includes(pk)}
       messages=${messages}
       header=${html`<div class="older">
         <button class="link" disabled=${older.busy} onClick=${() => older.run(store.loadOlderDirectMessages)}>
@@ -709,6 +760,7 @@ function App() {
     <${Sidebar} />
     ${view}
     ${toast.value && html`<div class="toast">${toast.value}</div>`}
+    <${Viewer} />
   </div>`;
 }
 
