@@ -1,11 +1,10 @@
 // Read-only Settings view: no runtime, signer, device creation or relay publishing.
 import { verifyEvent } from '../vendor/nostr-tools.mjs';
-import * as nostr from './nostr.js';
+import * as transport from './transport.js';
 import * as db from './db.js';
 
 export async function loadMessagingDevices(owner, {
-  relays = nostr.NDR_RELAYS,
-  fetchEvents = (filter) => nostr.fetchNdrEvents(relays, filter),
+  fetchEvents = (filter) => transport.queryConfirmed('ndr', filter),
   readCurrentDevice = (account) => db.ndrStorage(account).get('v1/device-manager/identity-public-key'),
   loadParser = () => import('../vendor/nostr-double-ratchet.mjs').then((module) => module.AppKeys),
 } = {}) {

@@ -1,7 +1,6 @@
 // Nostr protocol layer: relays, signers, NIP-17 gift wraps, NIP-72 public rooms.
 // Wire formats match Anagram (github.com/lnbits/anagram) so both clients interoperate.
 import {
-  SimplePool,
   finalizeEvent,
   generateSecretKey,
   getPublicKey,
@@ -13,30 +12,15 @@ import {
 } from 'nostr-tools';
 import { BunkerSigner, parseBunkerInput } from 'nostr-tools/nip46';
 
-export const APP_RELAYS = [
-  'wss://relay.nostr.com',
-  'wss://relay.damus.io',
-  'wss://nostr.mom',
-  'wss://nostr.bitcoiner.social',
-  'wss://nos.lol',
-];
-// Shared with Iris for device discovery and ratcheted messages only.
-export const NDR_RELAYS = [...APP_RELAYS, 'wss://relay.snort.social'];
-export const INDEXERS = ['wss://purplepag.es', 'wss://indexer.coracle.social', 'wss://relay.nos.social'];
+import * as transport from './transport.js';
+import { APP_RELAYS, INDEXERS, uniq } from './transport.js';
+
+export { APP_RELAYS, INDEXERS, uniq };
 export const ROOM_KIND = 34550;
 const HEX = /^[a-f0-9]{64}$/;
 const bytesToHex = (b) => [...b].map((x) => x.toString(16).padStart(2, '0')).join('');
 const hexToBytes = (h) => Uint8Array.from(h.match(/../g), (x) => parseInt(x, 16));
 
-export const pool = new SimplePool({ enableReconnect: true });
-
-// Relay reads always have a deadline; a relay that never answers must not stall the app.
-const RELAY_WAIT = 6000;
-const withWait = (params) => ({ maxWait: RELAY_WAIT, ...(params ?? {}) });
-export const relayGet = (relays, filter, params) => pool.get(relays, filter, withWait(params));
-export const relayQuery = (relays, filter, params) => pool.querySync(relays, filter, withWait(params));
-
-export const uniq = (list) => [...new Set(list.filter(Boolean))];
 export const now = () => Math.floor(Date.now() / 1000);
 
 export function normalizeRelay(url) {
@@ -238,10 +222,7 @@ export async function verifyNip05(pubkey, address) {
 }
 
 export async function fetchInboxRelays(pubkey) {
-  const event = await relayGet(uniq([...APP_RELAYS, ...INDEXERS]), {
-    kinds: [10050],
-    authors: [pubkey],
-  });
+  const event = await transport.get('index', { kinds: [10050], authors: [pubkey] });
   return uniq((event?.tags ?? []).filter((t) => t[0] === 'relay').map((t) => normalizeRelay(t[1])));
 }
 
@@ -252,7 +233,43 @@ export async function publishInboxRelays(signer, relays) {
     tags: relays.map((r) => ['relay', r]),
     content: '',
   });
-  return publish(uniq([...APP_RELAYS, ...INDEXERS, ...relays]), event);
+  return transport.publish({ relays, index: true }, event, signer);
+}
+
+// NIP-65 relay list (kind 10002): read+write for every relay given. Other clients and the
+// did:nostr document (nostr.social adds them as service entries) learn our relays from it.
+export async function publishRelayList(signer, relays) {
+  const event = await signer.sign({
+    kind: 10002,
+    created_at: now(),
+    tags: relays.map((r) => ['r', r]),
+    content: '',
+  });
+  return transport.publish({ relays, index: true }, event, signer);
+}
+
+// Someone's NIP-65 read relays, for reaching people who never published a NIP-17 inbox
+// list: nostr.social's indexed kind 10002 (signed, verified) first, then the relays.
+export async function fetchReadRelays(hex) {
+  if (!HEX.test(hex)) return [];
+  const [directory, relay] = await Promise.allSettled([
+    directoryGet(`/api/relays/${hex}`).then((raw) => verifiedFromDirectory(raw, 10002)),
+    transport.query('index', { kinds: [10002], authors: [hex] }),
+  ]);
+  const candidates = [directory.value, ...(relay.value ?? [])].filter((e) => e && e.pubkey === hex);
+  const event = candidates.sort((a, b) => b.created_at - a.created_at)[0];
+  if (!event) return [];
+  return uniq(event.tags.filter((t) => t[0] === 'r' && (!t[2] || t[2] === 'read')).map((t) => normalizeRelay(t[1]))).slice(0, 8);
+}
+
+// nostr.social's relay health directory: public, online relays ranked by uptime and
+// latency, for suggesting inbox relays. Fields: url, uptime (%), responseTime (ms),
+// requiresAuth, requiresPayment.
+export async function fetchRelayDirectory(limit = 40) {
+  const data = await directoryGet(`/api/relays-directory?filter=public&sort=quality&limit=${limit}`);
+  return (data?.relays ?? [])
+    .map((r) => ({ url: normalizeRelay(r.relay), uptime: r.uptime, responseTime: r.responseTime, requiresAuth: !!r.requiresAuth, requiresPayment: !!r.requiresPayment, acceptsEvents: r.acceptsEvents !== false }))
+    .filter((r) => r.url && r.acceptsEvents);
 }
 
 // Our own kind 0, raw, so edits keep fields other clients set (lud16, banner, ...).
@@ -260,7 +277,7 @@ export async function publishInboxRelays(signer, relays) {
 // Returns event: null only if neither source had one.
 export async function fetchOwnProfile(pubkey) {
   const [relay, directory] = await Promise.allSettled([
-    relayQuery(uniq([...APP_RELAYS, ...INDEXERS]), { kinds: [0], authors: [pubkey] }),
+    transport.query('index', { kinds: [0], authors: [pubkey] }),
     directoryGet(`/api/profile/${pubkey}`).then((raw) => verifiedFromDirectory(raw, 0)),
   ]);
   const candidates = [...(relay.value ?? []), directory.value].filter((e) => e && e.pubkey === pubkey);
@@ -286,16 +303,13 @@ export async function publishProfile(signer, fields, previous, relays = []) {
     tags: [],
     content: JSON.stringify(data),
   });
-  await publish(uniq([...APP_RELAYS, ...INDEXERS, ...relays]), event, signer);
+  await transport.publish('self', event, signer);
   return { event, data };
 }
 
 export async function fetchProfiles(pubkeys) {
   if (!pubkeys.length) return [];
-  const events = await relayQuery(uniq([...APP_RELAYS, ...INDEXERS]), {
-    kinds: [0],
-    authors: pubkeys,
-  });
+  const events = await transport.query('index', { kinds: [0], authors: pubkeys });
   const newest = new Map();
   for (const e of events)
     if (!newest.has(e.pubkey) || newest.get(e.pubkey).created_at < e.created_at)
@@ -349,7 +363,7 @@ export async function fetchDirectoryProfile(hex) {
 // derived (unsigned) list is a fast fallback.
 export async function fetchFollows(hex) {
   const [relay, directory] = await Promise.allSettled([
-    relayQuery(uniq([...APP_RELAYS, ...INDEXERS]), { kinds: [3], authors: [hex] }, { maxWait: 4000 }),
+    transport.query('index', { kinds: [3], authors: [hex] }, { maxWait: 4000 }),
     directoryGet(`/api/follows/${hex}`),
   ]);
   const signed = (relay.value ?? []).filter((e) => e.pubkey === hex).sort((a, b) => b.created_at - a.created_at)[0];
@@ -370,27 +384,9 @@ export async function searchDirectory(q, limit = 20) {
     .filter(Boolean);
 }
 
-// Publish to all relays and resolve once at least one accepts.
-// Publish to all relays; resolve as soon as the first one accepts (the rest carry on).
-// Publish to all relays; resolve as soon as one accepts (the rest carry on). With
-// `require`, success means one of THOSE relays accepted: if only others did, the error
-// carries `partial: true` (the event is out there, but not where the recipient reads).
-export async function publish(relays, event, signer, { require } = {}) {
-  relays = uniq(relays);
-  const onauth = signer ? (t) => signer.sign(t) : undefined;
-  const attempts = pool.publish(relays, event, { onauth }).map((p, i) => p.then(() => relays[i]));
-  const needed = require?.length ? attempts.filter((_, i) => require.includes(relays[i])) : attempts;
-  try {
-    await Promise.any(needed.length ? needed : attempts);
-  } catch (e) {
-    const reasons = (e.errors ?? []).map((r) => r?.message ?? String(r));
-    const elsewhere = needed !== attempts && (await Promise.any(attempts).then(() => true, () => false));
-    const error = new Error(elsewhere ? "Delivered to shared relays only; the recipient's inbox relays did not accept it." : reasons.join('; ') || 'No relay accepted the event.');
-    error.partial = elsewhere;
-    throw error;
-  }
-  return event;
-}
+// Publishing goes through the transport (see transport.js for scopes and the partial-
+// delivery rule for DM recipients).
+export const publish = (scope, event, signer) => transport.publish(scope, event, signer);
 
 // ---------- NIP-17 direct messages ----------
 
@@ -423,7 +419,7 @@ export function makeRumor(pubkey, kind, content, tags, createdAt = now()) {
   return { ...rumor, id: getEventHash(rumor) };
 }
 
-export async function sendRumor(signer, recipient, kind, content, tags, recipientRelays, ownRelays, createdAt = now(), onRumor) {
+export async function sendRumor(signer, recipient, kind, content, tags, recipientRelays, createdAt = now(), onRumor) {
   const rumor = { pubkey: signer.pubkey, created_at: createdAt, kind, tags, content };
   rumor.id = getEventHash(rumor);
   onRumor?.(rumor);
@@ -434,8 +430,8 @@ export async function sendRumor(signer, recipient, kind, content, tags, recipien
   ]);
   // The recipient's copy is what matters: it must land on one of THEIR inbox relays
   // (when they have published any); our own copy only restores history.
-  await publish(uniq([...recipientRelays, ...APP_RELAYS]), theirs, signer, { require: recipientRelays });
-  if (mine) publish(uniq([...ownRelays, ...APP_RELAYS]), mine, signer).catch(() => {});
+  await transport.publish({ peer: recipient, relays: recipientRelays }, theirs, signer);
+  if (mine) transport.publish('self', mine, signer).catch(() => {});
   return rumor;
 }
 
@@ -443,14 +439,14 @@ export async function sendRumor(signer, recipient, kind, content, tags, recipien
 export const editTag = (previousId) => ['e', previousId, '', 'edit'];
 export const isEdited = (tags) => tags.some((t) => t[0] === 'e' && t[3] === 'edit');
 
-export function sendDirectMessage(signer, recipient, text, recipientRelays, ownRelays, replyId, edit, onRumor, extraTags = []) {
+export function sendDirectMessage(signer, recipient, text, recipientRelays, replyId, edit, onRumor, extraTags = []) {
   const tags = [
     ['p', recipient],
     ...(replyId ? [['e', replyId, '', 'reply']] : []),
     ...(edit ? [editTag(edit.id)] : []),
     ...extraTags,
   ];
-  return sendRumor(signer, recipient, 14, text, tags, recipientRelays, ownRelays, edit?.created_at ?? now(), onRumor);
+  return sendRumor(signer, recipient, 14, text, tags, recipientRelays, edit?.created_at ?? now(), onRumor);
 }
 
 // NIP-25 shorthand: '+' or empty is a like, '-' a dislike.
@@ -572,7 +568,7 @@ export function roomPolicy(room, pubkey) {
 }
 
 export async function fetchRoom(pointer) {
-  const events = await relayQuery(uniq([...pointer.relays, ...APP_RELAYS]), {
+  const events = await transport.query({ relays: pointer.relays }, {
     kinds: [ROOM_KIND],
     authors: [pointer.owner],
     '#d': [pointer.slug],
@@ -602,7 +598,7 @@ export async function createRoom(signer, { name, about, relays }) {
       ...relays.map((r) => ['relay', r]),
     ],
   });
-  await publish(uniq([...relays, ...APP_RELAYS]), event, signer);
+  await transport.publish({ relays }, event, signer);
   return parseRoom(event);
 }
 
@@ -653,7 +649,7 @@ export async function updateRoom(signer, room, changes) {
     tags,
   });
   const next = parseRoom(event, room.address);
-  await publish(roomRelays(room), event, signer);
+  await transport.publish({ room }, event, signer);
   return next;
 }
 
@@ -695,7 +691,7 @@ export async function signRoomMessage(signer, room, text, reply, edit, extraTags
 export async function sendRoomMessage(signer, room, text, reply, edit, onSigned, extraTags = []) {
   const event = await signRoomMessage(signer, room, text, reply, edit, extraTags);
   onSigned?.(event);
-  return publish(roomRelays(room), event, signer);
+  return transport.publish({ room }, event, signer);
 }
 
 // Anagram's starter room, as an owner-signed snapshot so it shows before relays answer.
@@ -728,14 +724,12 @@ export function starterRoom() {
   return verifyEvent(STARTER_ROOM) ? parseRoom(STARTER_ROOM) : null;
 }
 
-export async function fetchEvent(relays, id) {
-  return relayGet(relays, { ids: [id] });
-}
+export const fetchEvent = (scope, id) => transport.get(scope, { ids: [id] });
 
 // ---------- Private contact list (Anagram: kind 30000, d=contacts, NIP-44 to self) ----------
 
-export async function fetchContactList(signer, relays) {
-  const event = await relayGet(relays, { kinds: [30000], authors: [signer.pubkey], '#d': ['contacts'] });
+export async function fetchContactList(signer) {
+  const event = await transport.get('self', { kinds: [30000], authors: [signer.pubkey], '#d': ['contacts'] });
   if (!event) return { event: null, pubkeys: [] };
   const tags = event.content.trim() ? JSON.parse(await signer.decrypt(signer.pubkey, event.content)) : [];
   const pubkeys = uniq(
@@ -748,8 +742,8 @@ export async function fetchContactList(signer, relays) {
 
 // ---------- Mute list (Anagram: kind 10000, private ['p'] muted / ['bp'] blocked, NIP-44 to self) ----------
 
-export async function fetchMuteList(signer, relays) {
-  const event = await relayGet(relays, { kinds: [10000], authors: [signer.pubkey] });
+export async function fetchMuteList(signer) {
+  const event = await transport.get('self', { kinds: [10000], authors: [signer.pubkey] });
   if (!event) return { event: null, entries: [] };
   let entries = [];
   if (event.content.trim()) {
@@ -760,7 +754,7 @@ export async function fetchMuteList(signer, relays) {
 }
 
 // Rewrites only the 'bp' (blocked) entries; everything else (muted, words, ...) and public tags are kept.
-export async function publishMuteList(signer, blocked, previous, relays) {
+export async function publishMuteList(signer, blocked, previous) {
   const kept = (previous?.entries ?? []).filter((t) => t[0] !== 'bp' && !(t[0] === 'p' && blocked.includes(t[1])));
   const entries = [...kept, ...uniq(blocked).map((pk) => ['bp', pk])];
   const event = await signer.sign({
@@ -769,11 +763,43 @@ export async function publishMuteList(signer, blocked, previous, relays) {
     tags: previous?.event?.tags ?? [],
     content: await signer.encrypt(signer.pubkey, JSON.stringify(entries)),
   });
-  await publish(relays, event, signer);
+  await transport.publish('self', event, signer);
   return { event, entries };
 }
 
-export async function publishContactList(signer, pubkeys, relays, previous) {
+// ---------- App settings sync (NIP-78 kind 30078, d=nostr.chat, NIP-44 to self) ----------
+// Read marks, pinned/muted chats and hidden messages travel between devices in one
+// encrypted event. Its d tag is ours alone: Anagram keeps its own preferences under d=1.
+
+export const SETTINGS_D = 'nostr.chat';
+
+export async function fetchSettings(signer) {
+  const event = await transport.get('self', { kinds: [30078], authors: [signer.pubkey], '#d': [SETTINGS_D] });
+  return event ? parseSettings(signer, event) : null;
+}
+
+export async function parseSettings(signer, event) {
+  if (event.kind !== 30078 || event.pubkey !== signer.pubkey) return null;
+  try {
+    const data = JSON.parse(await signer.decrypt(signer.pubkey, event.content));
+    return data && typeof data === 'object' ? { event, data } : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function publishSettings(signer, data, previous) {
+  const event = await signer.sign({
+    kind: 30078,
+    created_at: Math.max(now(), (previous?.created_at ?? 0) + 1),
+    tags: [['d', SETTINGS_D]],
+    content: await signer.encrypt(signer.pubkey, JSON.stringify(data)),
+  });
+  await transport.publish('self', event, signer);
+  return event;
+}
+
+export async function publishContactList(signer, pubkeys, previous) {
   const event = await signer.sign({
     kind: 30000,
     // Replaceable: must beat the version we merged from.
@@ -784,10 +810,8 @@ export async function publishContactList(signer, pubkeys, relays, previous) {
     ],
     content: await signer.encrypt(signer.pubkey, JSON.stringify(uniq(pubkeys).map((pk) => ['p', pk]))),
   });
-  return publish(relays, event, signer);
+  return transport.publish('self', event, signer);
 }
-
-export const roomRelays = (room) => uniq([...room.relays, ...APP_RELAYS]);
 
 export function signRoomReaction(signer, room, message, emoji) {
   return signer.sign({
@@ -814,7 +838,7 @@ export function signRoomDeletion(signer, room, ids, kind) {
 }
 
 export async function sendRoomDeletion(signer, room, ids, kind) {
-  return publish(roomRelays(room), await signRoomDeletion(signer, room, ids, kind), signer);
+  return transport.publish({ room }, await signRoomDeletion(signer, room, ids, kind), signer);
 }
 
 // ---------- Blossom media uploads (Anagram's format) ----------
@@ -872,42 +896,4 @@ export async function uploadBlossom(signer, file, server = DEFAULT_BLOSSOM) {
   return ['imeta', `url ${blob.url}`, `m ${blob.type || file.type}`, `size ${blob.size ?? file.size}`, `x ${blob.sha256 || sha256}`];
 }
 
-// Answer relay AUTH challenges with the account's signer. nostr-tools rethrows a failed
-// challenge answer with nothing to catch it, so the error is tagged and logged once here
-// and app.js swallows the tagged rejection (publishes that needed AUTH still fail normally).
-let authWarned = false;
-export function enableAuth(signer) {
-  pool.automaticallyAuth = (relay) => (t) =>
-    signer.sign(t).catch((e) => {
-      if (!authWarned) console.warn(`[nostr] could not answer AUTH for ${relay.url}: ${e.message}`);
-      authWarned = true;
-      e.relayAuth = true;
-      throw e;
-    });
-}
-
-// Registration must distinguish an empty roster from unavailable relays. Only
-// a real EOSE counts; a failed connection or query timeout cannot authorize it.
-export async function fetchNdrEvents(relays, filter) {
-  const results = await Promise.allSettled(relays.map(async (url) => {
-    const relay = await pool.ensureRelay(url, { connectionTimeout: 5000 });
-    return new Promise((resolve, reject) => {
-      const events = [];
-      let sub;
-      const finish = (error) => {
-        clearTimeout(timer);
-        if (error) reject(error); else resolve(events);
-        sub?.close();
-      };
-      const timer = setTimeout(() => finish(new Error('Relay discovery timed out')), 5000);
-      sub = relay.subscribe([filter], {
-        onevent: (event) => events.push(event),
-        oneose: () => finish(),
-        onclose: () => { clearTimeout(timer); reject(new Error('Relay discovery unavailable')); },
-      });
-    });
-  }));
-  const available = results.filter((result) => result.status === 'fulfilled');
-  if (!available.length) throw new Error('Connect to a relay before enabling double ratchet.');
-  return available.flatMap((result) => result.value);
-}
+export const enableAuth = (signer) => transport.setAuthSigner(signer);

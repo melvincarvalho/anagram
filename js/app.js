@@ -27,9 +27,23 @@ const URL_RE = /(https?:\/\/[^\s<>"']+[^\s<>"'.,;:!?)\]])/g;
 // Profile references: nostr:npub…/nprofile… (NIP-27) and did:nostr:<hex>.
 const MENTION_RE = /((?:nostr:)?(?:npub1|nprofile1)[02-9ac-hj-np-z]{20,}|did:nostr:[a-f0-9]{64})/g;
 
+// Open someone's profile inside the app: their chat with the info panel showing. The
+// nostr.social page stays one tap away from there.
+let infoOnArrival = false; // openProfile: show the info panel once the new route renders
+function openProfile(pubkey) {
+  const target = `#/dm/${nostr.did(pubkey)}`;
+  if (location.hash === target) return void (infoOpen.value = true);
+  infoOnArrival = true;
+  store.go(target);
+}
+
 function Mention({ pubkey }) {
   useEffect(() => store.requestProfiles([pubkey]), [pubkey]);
-  return html`<a class="mention" href=${nostr.profileUrl(pubkey)} target="_blank" rel="noopener" title=${nostr.did(pubkey)}>@${store.displayName(pubkey)}</a>`;
+  return html`<a class="mention" href=${`#/dm/${nostr.did(pubkey)}`} title=${nostr.did(pubkey)} onClick=${(e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    openProfile(pubkey);
+  }}>@${store.displayName(pubkey)}</a>`;
 }
 
 function Mentions({ text }) {
@@ -501,11 +515,41 @@ function draftPreview(key, open) {
   return draft && !open ? html`<small><span class="draft">Draft:</span> ${draft.slice(0, 80)}</small>` : null;
 }
 
+// Touch long-press (450 ms, no movement) opens the row's menu; iOS Safari fires no
+// contextmenu event. The click that follows a long-press is swallowed.
+// State lives on the element: opening the menu re-renders the row with new handlers.
+function longPress(open) {
+  const st = (e) => (e.currentTarget._press ??= {});
+  return {
+    ontouchstart: (e) => {
+      const t = e.touches[0];
+      const p = st(e);
+      p.start = { x: t.clientX, y: t.clientY };
+      p.fired = false;
+      p.timer = setTimeout(() => {
+        p.fired = true;
+        open({ preventDefault() {}, clientX: p.start.x, clientY: p.start.y });
+      }, 450);
+    },
+    ontouchmove: (e) => {
+      const t = e.touches[0];
+      const p = st(e);
+      if (p.start && (Math.abs(t.clientX - p.start.x) > 8 || Math.abs(t.clientY - p.start.y) > 8)) clearTimeout(p.timer);
+    },
+    ontouchend: (e) => {
+      const p = st(e);
+      clearTimeout(p.timer);
+      if (p.fired) e.preventDefault();
+    },
+    ontouchcancel: (e) => clearTimeout(st(e).timer),
+  };
+}
+
 function RoomItem({ room, active, onMenu }) {
   const messages = roomState.value[room.address]?.messages ?? [];
   const last = messages[messages.length - 1];
   const link = nostr.encodeRoomLink(room);
-  return html`<a class=${'item' + (active ? ' on' : '')} href=${`#/room/${link}`} onContextMenu=${onMenu({ room })}>
+  return html`<a class=${'item' + (active ? ' on' : '')} href=${`#/room/${link}`} onContextMenu=${onMenu({ room })} ...${longPress(onMenu({ room }))}>
     <${RoomAvatar} room=${room} />
     <span class="label">
       <span class="line"><b>${room.name}</b><${ChatFlags} chatKey=${room.address} />${last && html`<time>${shortTime(last.created_at)}</time>`}</span>
@@ -520,7 +564,7 @@ function RoomItem({ room, active, onMenu }) {
 }
 
 function ChatItem({ peer, last, active, onMenu }) {
-  return html`<a class=${'item' + (active ? ' on' : '')} href=${`#/dm/${nostr.did(peer)}`} onContextMenu=${onMenu({ peer })}>
+  return html`<a class=${'item' + (active ? ' on' : '')} href=${`#/dm/${nostr.did(peer)}`} onContextMenu=${onMenu({ peer })} ...${longPress(onMenu({ peer }))}>
     <${Avatar} pubkey=${peer} />
     <span class="label">
       <span class="line">
@@ -791,7 +835,7 @@ function menuKeys(e) {
   items[(at + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length]?.focus();
 }
 
-function MessageMenu({ menu, onClose, onReply, onReact, onEdit, onDelete, onMoreReactions, onPin, pinnedId }) {
+function MessageMenu({ menu, onClose, onReply, onReact, onEdit, onDelete, onHide, onMoreReactions, onPin, pinnedId }) {
   const ref = useRef();
   const [confirming, setConfirming] = useState(false);
   useEffect(() => {
@@ -830,7 +874,7 @@ function MessageMenu({ menu, onClose, onReply, onReact, onEdit, onDelete, onMore
     <button role="menuitem" onClick=${act(() => (forwarding.value = m))}>↪ Forward</button>
     <button role="menuitem" onClick=${act(() => copy(m.content, 'Text copied'))}>⧉ Copy text</button>
     <button role="menuitem" onClick=${act(() => copy(nostr.did(m.pubkey), 'DID copied'))}>⧉ Copy author DID</button>
-    <button role="menuitem" onClick=${act(() => window.open(nostr.profileUrl(m.pubkey), '_blank', 'noopener'))}>👤 View profile</button>
+    <button role="menuitem" onClick=${act(() => openProfile(m.pubkey))}>👤 View profile</button>
     ${m.pubkey === me.value.pubkey && onEdit && html`<button role="menuitem" onClick=${act(() => onEdit(m))}>✎ Edit</button>`}
     ${onPin && html`<button role="menuitem" onClick=${act(() => onPin(pinnedId === m.id ? null : m))}>📌 ${pinnedId === m.id ? 'Unpin' : 'Pin'}</button>`}
     ${m.pubkey !== me.value.pubkey &&
@@ -840,6 +884,7 @@ function MessageMenu({ menu, onClose, onReply, onReact, onEdit, onDelete, onMore
     (confirming
       ? html`<button role="menuitem" class="danger" onClick=${act(() => onDelete(m))}>🗑 Tap again to delete for everyone</button>`
       : html`<button role="menuitem" class="danger" onClick=${() => setConfirming(true)}>🗑 Delete</button>`)}
+    ${onHide && html`<button role="menuitem" title="Hides it on your devices only" onClick=${act(() => onHide(m))}>🙈 Delete for me</button>`}
   </div>`;
 }
 
@@ -872,7 +917,7 @@ function Tick({ id }) {
   return html`<span class="tick" title="Accepted by a relay">✓</span>`;
 }
 
-function MessageList({ messages, policy = () => 'trusted', badge = () => '', mediaAuto = () => true, onReply, onReact, onEdit, onDelete, footer, header, unreadAfter = Infinity, onReachTop, lookupQuote, jumpOlder, onPin, pinnedId }) {
+function MessageList({ messages, policy = () => 'trusted', badge = () => '', mediaAuto = () => true, onReply, onReact, onEdit, onDelete, onHide, footer, header, unreadAfter = Infinity, onReachTop, lookupQuote, jumpOlder, onPin, pinnedId, showNames = true }) {
   const ref = useRef();
   const stick = useRef(true);
   const touch = useRef(null);
@@ -1051,9 +1096,9 @@ function MessageList({ messages, policy = () => 'trusted', badge = () => '', med
           ontouchend=${touchEnd}
           ontouchcancel=${touchEnd}
         >
-          <div class="slot">${last && !mine && html`<${Avatar} pubkey=${m.pubkey} size=${32} />`}</div>
+          ${showNames && html`<div class="slot">${last && !mine && html`<${Avatar} pubkey=${m.pubkey} size=${32} />`}</div>`}
           <div class="bubble">
-            ${first && !mine && html`<div class="who" style=${`--name-color:${nameColor(m.pubkey)}`}>${store.displayName(m.pubkey)}${tag && html`<span class="badge">${tag}</span>`}</div>`}
+            ${showNames && first && !mine && html`<div class="who" style=${`--name-color:${nameColor(m.pubkey)}`}>${store.displayName(m.pubkey)}${tag && html`<span class="badge">${tag}</span>`}</div>`}
             ${quote &&
             html`<button class="quote" onClick=${() => (byId[quote.id] || !jumpOlder ? (focusMessage.value = quote.id) : jumpOlder(quote.id))}>
               <b>${store.displayName(quote.pubkey)}</b>${previewText(quote.content).slice(0, 140)}
@@ -1073,6 +1118,7 @@ function MessageList({ messages, policy = () => 'trusted', badge = () => '', med
       onReact=${onReact}
       onEdit=${onEdit}
       onDelete=${onDelete}
+      onHide=${onHide}
       onPin=${onPin}
       pinnedId=${pinnedId}
       onMoreReactions=${(message, x, y) => setReactPicker({ message, x, y })}
@@ -1183,7 +1229,7 @@ function Composer({ onSend, placeholder, replyTo, onCancelReply, editing, onEdit
   const input = useRef();
   const { busy, error, run } = useAction();
   useEffect(() => {
-    if (editing) setText(editing.content);
+    if (editing) setText(collapseMentions(editing.content));
     if (editing || replyTo) input.current?.focus();
   }, [editing?.id, replyTo?.id]);
   const cancel = () => {
@@ -1195,14 +1241,15 @@ function Composer({ onSend, placeholder, replyTo, onCancelReply, editing, onEdit
   const send = () => {
     const value = text.trim();
     if (!value || busy) return;
-    if (editing && value === editing.content.trim()) return cancel();
+    if (editing && expandMentions(value) === editing.content.trim()) return cancel();
     // Clear at once like Telegram; put the text back if sending fails outright.
     // After an edit, bring back whatever draft was there before.
     if (editing) setTextState(store.drafts.value[draftKey] ?? '');
     else setText('');
     run(async () => {
       try {
-        await (editing ? onEdit(editing, value) : onSend(value, attachmentsFor(value)));
+        const wire = expandMentions(value); // @Name -> nostr:nprofile… (Anagram's mention format)
+        await (editing ? onEdit(editing, wire) : onSend(wire, attachmentsFor(value)));
       } catch (e) {
         setText(value);
         throw e;
@@ -1280,10 +1327,31 @@ function Composer({ onSend, placeholder, replyTo, onCancelReply, editing, onEdit
         .filter((pk) => pk !== me.value.pubkey && store.displayName(pk).toLowerCase().includes(mention.query))
         .slice(0, 6)
     : [];
+  // The composer shows @Name; the wire format (nostr:nprofile…) is produced on send.
+  const mentionMap = useRef(new Map()); // '@Name' -> pubkey
+  const labelFor = (pk) => `@${store.displayName(pk).replace(/\s+/g, ' ').trim()}`;
+  const expandMentions = (value) => {
+    let out = value;
+    for (const [label, pk] of [...mentionMap.current].sort((a, b) => b[0].length - a[0].length)) {
+      const re = new RegExp(`(^|[^\\p{L}\\p{N}_])${label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?=$|[^\\p{L}\\p{N}_])`, 'gu');
+      out = out.replace(re, (_, before) => `${before}${nostr.mentionUri(pk)}`);
+    }
+    return out;
+  };
+  const collapseMentions = (value) =>
+    value.replace(MENTION_RE, (m) => {
+      const pk = nostr.decodePubkey(m);
+      if (!pk) return m;
+      const label = labelFor(pk);
+      mentionMap.current.set(label, pk);
+      return label;
+    });
   const pickMention = (pk) => {
     const el = input.current;
     const end = el.selectionStart;
-    const uri = `${nostr.mentionUri(pk)} `;
+    const label = labelFor(pk);
+    mentionMap.current.set(label, pk);
+    const uri = `${label} `;
     setText(text.slice(0, mention.start) + uri + text.slice(end));
     setMention(null);
     requestAnimationFrame(() => {
@@ -1438,6 +1506,7 @@ function useChatActions(context, messages) {
       onReact: react(context),
       onEdit: startEdit,
       onDelete: (m) => store.deleteMessage(context, m).catch(fail('Delete')),
+      onHide: (m) => store.hideMessage(m),
     },
     composer: {
       replyTo,
@@ -1478,12 +1547,14 @@ function SharedMedia({ messages, allowed }) {
   </section>`;
 }
 
-function Field({ label, value, onCopy, href }) {
+function Field({ label, value, onCopy, href, onClick }) {
   return html`<div class="field">
     <small>${label}</small>
     ${href
       ? html`<a href=${href} target="_blank" rel="noopener noreferrer">${value}</a>`
-      : html`<span class=${onCopy ? 'copyable mono' : ''} title=${onCopy ? 'Copy' : ''} onClick=${onCopy}>${value}</span>`}
+      : onClick
+        ? html`<button class="link field-link" onClick=${onClick}>${value}</button>`
+        : html`<span class=${onCopy ? 'copyable mono' : ''} title=${onCopy ? 'Copy' : ''} onClick=${onCopy}>${value}</span>`}
   </div>`;
 }
 
@@ -1651,7 +1722,7 @@ function RoomInfo({ room, messages }) {
     ${room.about && html`<section><p class="about">${room.about}</p></section>`}
     <section>
       <${Field} label="Invite link" value="Copy link" onCopy=${() => copy(link, 'Room link copied')} />
-      <${Field} label="Owner" value=${store.displayName(room.owner)} href=${nostr.profileUrl(room.owner)} />
+      <${Field} label="Owner" value=${store.displayName(room.owner)} onClick=${() => openProfile(room.owner)} />
       <${Field} label="Relays" value=${room.relays.map((r) => r.replace(/^wss:\/\//, '')).join(', ')} />
     </section>
     <${ChatToggles} chatKey=${room.address} />
@@ -1754,6 +1825,7 @@ function DirectChat({ id }) {
     <${MessageList}
       ...${actions.list}
       mediaAuto=${(pk) => store.contacts.value.includes(pk)}
+      showNames=${false}
       messages=${messages}
       unreadAfter=${unreadAfter}
       onReachTop=${() => !older.busy && !store.dmHistoryDone.value && older.run(store.loadOlderDirectMessages)}
@@ -1987,7 +2059,7 @@ function MessagingDevices({ owner }) {
     setState({ owner, loading: true, devices: [], error: '' });
     try {
       const { loadMessagingDevices } = await import('./messaging-devices.js');
-      const devices = await loadMessagingDevices(owner, { relays: nostr.uniq([...(inboxRelays.value ?? []), ...nostr.NDR_RELAYS]) });
+      const devices = await loadMessagingDevices(owner);
       if (request.current === current) setState({ owner, loading: false, devices, error: '' });
     } catch {
       if (request.current === current) setState({ owner, loading: false, devices: [], error: 'Could not load devices. Try refreshing.' });
@@ -2041,7 +2113,7 @@ function Settings() {
         <h3>Messaging</h3>
         <label class="check"><input type="checkbox" checked=${store.preferDoubleRatchet.value}
           onChange=${(e) => store.setPreferDoubleRatchet(e.target.checked)} /> Prefer double ratchet when available</label>
-        <p class="muted small">For Auto chats. Existing chats keep their encryption. Double-ratchet chats never switch back automatically.</p>
+        <p class="muted small">Automatically use double ratchet when a compatible device is found. Existing double-ratchet chats keep their encryption.</p>
         <${MessagingDevices} owner=${signer.pubkey} />
       </div>
       <div class="card">
@@ -2068,6 +2140,7 @@ function Settings() {
       </div>
       <${ProfileSettings} />
       <${MediaServerSettings} />
+      <${RelaySettings} />
       <${BlockedSettings} />
       <${NotificationSettings} />
       <div class="card">
@@ -2139,6 +2212,56 @@ function MediaServerSettings() {
     ${save.error && html`<p class="error">${save.error}</p>`}
     <button disabled=${save.busy}>Save</button>
   </form>`;
+}
+
+// NIP-17 inbox relays: where others deliver your DMs. Suggestions come from
+// nostr.social's relay health directory (public relays ranked by uptime and latency).
+function RelaySettings() {
+  const current = store.inboxRelays.value;
+  const [list, setList] = useState(null); // null = not editing
+  const [draft, setDraft] = useState('');
+  const save = useAction();
+  const editing = list ?? current ?? [];
+  useEffect(() => store.loadRelayDirectory(), []);
+  const suggestions = (store.relayDirectory.value ?? []).filter((r) => !editing.includes(r.url) && !r.requiresPayment).slice(0, 8);
+  const add = (url) => {
+    const n = nostr.normalizeRelay(url.trim());
+    if (!n) return store.notify('Enter a wss:// relay address.');
+    if (!editing.includes(n)) setList([...editing, n]);
+    setDraft('');
+  };
+  const dirty = list && (list.length !== (current ?? []).length || list.some((r, i) => r !== current?.[i]));
+  return html`<div class="card relays">
+    <h3>Inbox relays</h3>
+    <p class="muted small">Where other people deliver your encrypted messages (NIP-17). Pick two or three reliable ones; they are published signed by your key, with a matching relay list for other apps and your did:nostr document.</p>
+    ${current === null && html`<p class="muted small">Loading your current list…</p>`}
+    ${current?.length === 0 && !list && html`<p class="error">You haven't published inbox relays yet, so people can only reach you through the shared app relays.</p>`}
+    <ul class="relay-list">
+      ${editing.map((r) => html`<li key=${r}><span class="mono">${r.replace(/^wss:\/\//, '')}</span>
+        <button class="link" title="Remove" aria-label=${`Remove ${r}`} onClick=${() => setList(editing.filter((x) => x !== r))}>✕</button></li>`)}
+    </ul>
+    <form class="row" onSubmit=${(e) => { e.preventDefault(); add(draft); }}>
+      <input value=${draft} placeholder="wss://relay.example.com" onInput=${(e) => setDraft(e.target.value)} />
+      <button type="submit" disabled=${!draft.trim()}>Add</button>
+    </form>
+    ${suggestions.length > 0 && html`<details class="suggestions">
+      <summary>Suggested relays <small class="muted">from nostr.social's health checks</small></summary>
+      ${suggestions.map((r) => html`<div class="suggestion" key=${r.url}>
+        <span class="mono">${r.url.replace(/^wss:\/\//, '')}</span>
+        <small class="muted">${r.uptime}% up · ${r.responseTime} ms${r.requiresAuth ? ' · auth' : ''}</small>
+        <button class="link" onClick=${() => add(r.url)}>+ Add</button>
+      </div>`)}
+    </details>`}
+    ${save.error && html`<p class="error">${save.error}</p>`}
+    <div class="row">
+      <button class="primary" disabled=${save.busy || !dirty} onClick=${() => save.run(async () => {
+        await store.saveInboxRelays(editing);
+        setList(null);
+        store.notify('Inbox relays published');
+      })}>${save.busy ? 'Publishing…' : 'Publish'}</button>
+      ${dirty && html`<button class="link" onClick=${() => setList(null)}>Cancel</button>`}
+    </div>
+  </div>`;
 }
 
 function BlockedSettings() {
@@ -2304,7 +2427,8 @@ function App() {
   const unread = store.totalUnread.value;
   const routeKey = `${route.value.kind}:${route.value.id ?? ''}`;
   useEffect(() => {
-    infoOpen.value = false;
+    infoOpen.value = infoOnArrival;
+    infoOnArrival = false;
     chatSearch.value = false;
   }, [routeKey]);
   useEffect(() => {
@@ -2338,6 +2462,11 @@ function App() {
   }, []);
   useEffect(() => {
     document.title = unread ? `(${unread}) nostr.chat` : 'nostr.chat';
+    // Installed-app icon badge (where supported).
+    try {
+      if (unread) navigator.setAppBadge?.(unread)?.catch?.(() => {});
+      else navigator.clearAppBadge?.()?.catch?.(() => {});
+    } catch {}
   }, [unread]);
   if (!me.value && store.restoring.value) return html`<p class="boot muted">Loading…</p>`;
   if (!me.value || store.addingAccount.value) return html`<${Login} />`;

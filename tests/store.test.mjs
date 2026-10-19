@@ -16,6 +16,7 @@ globalThis.localStorage = {
 };
 globalThis.location = { hash: '' };
 globalThis.window = { addEventListener() {} };
+globalThis.document = { addEventListener() {} };
 globalThis.addEventListener = () => {};
 globalThis.fetch = async () => { throw new Error('No directory request in tests'); };
 // Web Locks keep the browser's device state single-writer. The test owns one tab.
@@ -23,7 +24,7 @@ Object.defineProperty(globalThis, 'navigator', { value: { locks: { request: (_na
 await mkdir('work', { recursive: true });
 await build({
   stdin: {
-    contents: `export * as store from './js/store.js'; export * as nostr from './js/nostr.js'; export * as db from './js/db.js'; export { clients, failStart } from './js/ndr.js';`,
+    contents: `export * as store from './js/store.js'; export * as nostr from './js/nostr.js'; export * as db from './js/db.js'; export * as transport from './js/transport.js'; export { clients, failStart } from './js/ndr.js';`,
     resolveDir: process.cwd(),
   },
   outfile: 'work/store-test.mjs', bundle: true, format: 'esm', platform: 'browser',
@@ -45,11 +46,11 @@ await build({
     `, resolveDir: process.cwd() }));
   } }],
 });
-const { store, nostr, clients, db, failStart } = await import('../work/store-test.mjs');
-nostr.pool.get = async () => null;
-nostr.pool.querySync = async () => [];
-nostr.pool.subscribe = (_relays, _filter, callbacks) => { queueMicrotask(() => callbacks.oneose?.()); return { close() {} }; };
-nostr.pool.publish = () => [Promise.resolve()];
+const { store, nostr, clients, db, failStart, transport } = await import('../work/store-test.mjs');
+transport.pool.get = async () => null;
+transport.pool.querySync = async () => [];
+transport.pool.subscribe = (_relays, _filter, callbacks) => { queueMicrotask(() => callbacks.oneose?.()); return { close() {} }; };
+transport.pool.publish = () => [Promise.resolve()];
 const signer = nostr.newKeySigner();
 const peer = nostr.newKeySigner().pubkey;
 localStorage.setItem(`lite:rooms:${signer.pubkey}`, '[]');
@@ -103,8 +104,8 @@ test('upstream NIP-17 optimistic reactions and deletes roll back on relay refusa
   await store.setDirectProtocol(peer, 'nip17');
   await store.sendDirectMessage(peer, 'NIP-17 optimistic baseline');
   const message = store.dms.value[peer].find((row) => row.content === 'NIP-17 optimistic baseline');
-  const published = nostr.pool.publish;
-  nostr.pool.publish = () => [Promise.reject(new Error('Relay refused'))];
+  const published = transport.pool.publish;
+  transport.pool.publish = () => [Promise.reject(new Error('Relay refused'))];
   const until = async (predicate) => {
     for (let i = 0; i < 50 && !predicate(); i++) await new Promise((resolve) => setTimeout(resolve, 10));
     assert.ok(predicate());
@@ -118,7 +119,7 @@ test('upstream NIP-17 optimistic reactions and deletes roll back on relay refusa
     await until(() => store.dms.value[peer].some((row) => row.id === message.id));
     assert.equal(clients.length, 1); // no NDR activation or transport fallback
   } finally {
-    nostr.pool.publish = published;
+    transport.pool.publish = published;
     await store.logout();
   }
 });
@@ -131,8 +132,8 @@ const eventually = async (predicate) => {
 test('Auto discovers delayed support, caches sends, respects overrides and never downgrades chosen NDR', async () => {
   const alice = nostr.newKeySigner(), bob = nostr.newKeySigner(), subscriptions = [];
   localStorage.setItem(`lite:rooms:${alice.pubkey}`, '[]');
-  const original = nostr.pool.subscribe;
-  nostr.pool.subscribe = (relays, filter, callbacks) => {
+  const original = transport.pool.subscribe;
+  transport.pool.subscribe = (relays, filter, callbacks) => {
     if (filter.kinds.includes(37368)) {
       const entry = { filter, callbacks, closed: false };
       subscriptions.push(entry);
@@ -190,7 +191,7 @@ test('Auto discovers delayed support, caches sends, respects overrides and never
     assert.equal(subscriptions.length, 3); // a negative cache is rechecked on open
     await store.logout();
     assert.equal(subscriptions.at(-1).closed, true);
-  } finally { nostr.pool.subscribe = original; }
+  } finally { transport.pool.subscribe = original; }
 });
 
 test('existing NIP-17 history stays selected, settings and Auto selection persist per account', async () => {
@@ -226,18 +227,18 @@ test('Auto discovery and NDR fetch, subscription and publishing share Iris relay
   const alice = nostr.newKeySigner(), bob = nostr.newKeySigner();
   localStorage.setItem(`lite:rooms:${alice.pubkey}`, '[]');
   await store.login(alice, false);
-  const original = { subscribe: nostr.pool.subscribe, ensureRelay: nostr.pool.ensureRelay, publish: nostr.pool.publish };
+  const original = { subscribe: transport.pool.subscribe, ensureRelay: transport.pool.ensureRelay, publish: transport.pool.publish };
   const subscriptions = [], fetched = [], published = [];
-  nostr.pool.subscribe = (relays, filter, callbacks) => {
+  transport.pool.subscribe = (relays, filter, callbacks) => {
     subscriptions.push({ relays, filter });
     queueMicrotask(() => callbacks.oneose?.());
     return { close() {} };
   };
-  nostr.pool.ensureRelay = async (url) => {
+  transport.pool.ensureRelay = async (url) => {
     fetched.push(url);
     return { subscribe(_filters, callbacks) { queueMicrotask(() => callbacks.oneose()); return { close() {} }; } };
   };
-  nostr.pool.publish = (relays) => { published.push(relays); return [Promise.resolve()]; };
+  transport.pool.publish = (relays) => { published.push(relays); return [Promise.resolve()]; };
   try {
     assert.ok(!nostr.APP_RELAYS.includes('wss://relay.snort.social'));
     store.openDirectChat(bob.pubkey);
@@ -249,13 +250,13 @@ test('Auto discovery and NDR fetch, subscription and publishing share Iris relay
     await options.publish(await alice.sign({ kind: 1060, content: 'ciphertext', tags: [], created_at: nostr.now() }));
     for (const kind of [37368, 1060]) {
       const actual = subscriptions.find((entry) => entry.filter.kinds.includes(kind));
-      assert.deepEqual(actual.relays, nostr.NDR_RELAYS);
+      assert.deepEqual(actual.relays, transport.NDR_RELAYS);
     }
-    assert.deepEqual(fetched, nostr.NDR_RELAYS);
-    assert.ok(published.some((relays) => JSON.stringify(relays) === JSON.stringify(nostr.NDR_RELAYS)));
+    assert.deepEqual(fetched, transport.NDR_RELAYS);
+    assert.ok(published.some((relays) => JSON.stringify(relays) === JSON.stringify(transport.NDR_RELAYS)));
     close();
   } finally {
-    Object.assign(nostr.pool, original);
+    Object.assign(transport.pool, original);
     await store.logout();
   }
 });
@@ -264,9 +265,9 @@ test('explicit NDR remains selected after registration failure and retries witho
   const alice = nostr.newKeySigner(), bob = nostr.newKeySigner();
   localStorage.setItem(`lite:rooms:${alice.pubkey}`, '[]');
   await store.login(alice, false);
-  const originalPublish = nostr.pool.publish;
+  const originalPublish = transport.pool.publish;
   let publications = 0;
-  nostr.pool.publish = () => { publications++; return [Promise.resolve()]; };
+  transport.pool.publish = () => { publications++; return [Promise.resolve()]; };
   failStart(new Error('Device registration conflicted. Try again.'));
   try {
     await assert.rejects(store.setDirectProtocol(bob.pubkey, 'ndr'), /registration conflicted/);
@@ -281,7 +282,7 @@ test('explicit NDR remains selected after registration failure and retries witho
     assert.equal(publications, 0);
   } finally {
     failStart(undefined);
-    nostr.pool.publish = originalPublish;
+    transport.pool.publish = originalPublish;
     await store.logout();
   }
 });
@@ -309,18 +310,18 @@ test('unblocking an NDR contact restores messages without displaying persisted e
 test('a new incoming NIP-17 conversation remains Auto and can upgrade later', async () => {
   const alice = nostr.newKeySigner(), bob = nostr.newKeySigner();
   localStorage.setItem(`lite:rooms:${alice.pubkey}`, '[]');
-  const original = { subscribe: nostr.pool.subscribe, publish: nostr.pool.publish };
+  const original = { subscribe: transport.pool.subscribe, publish: transport.pool.publish };
   let inbox;
   const rosters = [], wraps = [];
-  nostr.pool.subscribe = (relays, filter, callbacks) => {
+  transport.pool.subscribe = (relays, filter, callbacks) => {
     if (filter.kinds.includes(1059)) inbox = callbacks;
     if (filter.kinds.includes(37368)) rosters.push(callbacks);
     queueMicrotask(() => callbacks.oneose?.());
     return { close() {} };
   };
-  nostr.pool.publish = (_relays, event) => { if (event.kind === 1059) wraps.push(event); return [Promise.resolve()]; };
+  transport.pool.publish = (_relays, event) => { if (event.kind === 1059) wraps.push(event); return [Promise.resolve()]; };
   const incoming = async (text) => {
-    await nostr.sendDirectMessage(bob, alice.pubkey, text, [], []);
+    await nostr.sendDirectMessage(bob, alice.pubkey, text, []);
     const wrap = wraps.findLast((event) => event.tags.some((tag) => tag[0] === 'p' && tag[1] === alice.pubkey));
     assert.ok(wrap);
     inbox.onevent(wrap);
@@ -348,7 +349,7 @@ test('a new incoming NIP-17 conversation remains Auto and can upgrade later', as
     assert.equal(store.directPreference(bob.pubkey), 'nip17');
     assert.equal(store.directProtocol(bob.pubkey), 'nip17');
   } finally {
-    Object.assign(nostr.pool, original);
+    Object.assign(transport.pool, original);
     await store.logout();
   }
 });
@@ -384,4 +385,39 @@ test('unknown NDR senders use message requests until accepted, isolated across a
     assert.deepEqual(store.accepted.value, []);
     assert.deepEqual(store.myFollows.value, []);
   } finally { stop(); await store.logout(); }
+});
+
+test('synced read marks, pins and hidden NDR messages survive replay and reload', async () => {
+  const alice = nostr.newKeySigner(), bob = nostr.newKeySigner();
+  localStorage.setItem(`lite:rooms:${alice.pubkey}`, '[]');
+  const original = transport.pool.subscribe;
+  let settings;
+  transport.pool.subscribe = (relays, filter, callbacks) => {
+    if (filter.kinds.includes(30078)) settings = callbacks;
+    return original(relays, filter, callbacks);
+  };
+  const notifications = [];
+  const stop = store.onIncoming((_chat, message) => notifications.push(message));
+  try {
+    await store.login(alice, false);
+    await eventually(() => !!settings);
+    await store.setDirectProtocol(bob.pubkey, 'ndr');
+    await store.acceptRequest(bob.pubkey);
+    const message = nostr.makeRumor(bob.pubkey, 14, 'Hide this on every device', [['p', alice.pubkey]]);
+    await clients.at(-1).options.receive(message, bob.pubkey);
+    assert.equal(notifications.length, 1);
+    const at = nostr.now();
+    const event = await nostr.publishSettings(alice, { v: 1, hidden: [message.id], read: { [bob.pubkey]: at }, pinned: { [bob.pubkey]: { on: true, at } }, muted: {} });
+    await settings.onevent(event);
+    assert.equal(store.isHidden(message.id), true);
+    assert.equal(store.readMarks.value[bob.pubkey], at);
+    assert.ok(store.chatPrefs.value.pinned.includes(bob.pubkey));
+    assert.deepEqual(store.dms.value[bob.pubkey], []);
+    await clients.at(-1).options.receive(message, bob.pubkey);
+    assert.equal(notifications.length, 1);
+    await store.login(alice, false);
+    assert.equal(store.isHidden(message.id), true);
+    assert.deepEqual(store.dms.value[bob.pubkey] ?? [], []);
+    assert.equal(store.directProtocol(bob.pubkey), 'ndr');
+  } finally { transport.pool.subscribe = original; stop(); await store.logout(); }
 });
