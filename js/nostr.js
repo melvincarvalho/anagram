@@ -606,6 +606,57 @@ export async function createRoom(signer, { name, about, relays }) {
   return parseRoom(event);
 }
 
+// Re-sign a room definition with some fields changed. Every other tag is kept as-is
+// (relays, anagram-room, successor/predecessor, unknown extensions) so an edit from here
+// never strips what Anagram or a newer client wrote. Only the owner can sign it.
+export async function updateRoom(signer, room, changes) {
+  if (signer.pubkey !== room.owner) throw new Error('Only the room owner can change it.');
+  const replaced = new Set();
+  const added = [];
+  if (changes.name !== undefined) {
+    const name = changes.name.trim();
+    if (!name || name.length > 100) throw new Error('Room name must be 1-100 characters.');
+    replaced.add('name');
+    added.push(['name', name]);
+  }
+  if (changes.about !== undefined) {
+    replaced.add('description');
+    if (changes.about.trim()) added.push(['description', changes.about.trim().slice(0, 2000)]);
+  }
+  if (changes.picture !== undefined) {
+    replaced.add('image');
+    if (changes.picture) {
+      if (!/^https:\/\//.test(changes.picture)) throw new Error('The picture must be an https:// URL.');
+      added.push(['image', changes.picture]);
+    }
+  }
+  if (changes.trusted) {
+    replaced.add('trusted');
+    added.push(...uniq(changes.trusted).filter((k) => HEX.test(k) && k !== room.owner).map((k) => ['trusted', k]));
+  }
+  if (changes.blocked) {
+    replaced.add('blocked');
+    added.push(...uniq(changes.blocked).filter((k) => HEX.test(k) && k !== room.owner).map((k) => ['blocked', k]));
+  }
+  if (changes.pinned !== undefined) {
+    replaced.add('pinned');
+    if (changes.pinned) {
+      if (!HEX.test(changes.pinned)) throw new Error('Invalid pinned message id.');
+      added.push(['pinned', changes.pinned]);
+    }
+  }
+  const tags = [...room.event.tags.filter((t) => !replaced.has(t[0])), ...added];
+  const event = await signer.sign({
+    kind: ROOM_KIND,
+    created_at: Math.max(now(), room.event.created_at + 1), // newest definition wins
+    content: room.event.content ?? '',
+    tags,
+  });
+  const next = parseRoom(event, room.address);
+  await publish(roomRelays(room), event, signer);
+  return next;
+}
+
 export function validRoomMessage(event, address) {
   const refs = event.tags.filter((t) => t[0] === 'a');
   return (

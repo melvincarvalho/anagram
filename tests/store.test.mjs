@@ -352,3 +352,36 @@ test('a new incoming NIP-17 conversation remains Auto and can upgrade later', as
     await store.logout();
   }
 });
+
+test('unknown NDR senders use message requests until accepted, isolated across accounts', async () => {
+  const alice = nostr.newKeySigner(), bob = nostr.newKeySigner(), other = nostr.newKeySigner();
+  for (const account of [alice, other]) localStorage.setItem(`lite:rooms:${account.pubkey}`, '[]');
+  await store.login(alice, false);
+  await store.setDirectProtocol(alice.pubkey, 'ndr');
+  const notifications = [];
+  const stop = store.onIncoming((chat, message) => notifications.push({ chat, message }));
+  try {
+    const message = nostr.makeRumor(bob.pubkey, 14, 'A new encrypted request', [['p', alice.pubkey]]);
+    await clients.at(-1).options.receive(message, bob.pubkey);
+    assert.equal(store.dms.value[bob.pubkey][0].pubkey, bob.pubkey);
+    assert.equal(store.isKnown(bob.pubkey), false);
+    assert.deepEqual(store.requests.value.map(({ peer }) => peer), [bob.pubkey]);
+    assert.deepEqual(store.chatList.value, []);
+    assert.equal(notifications.length, 0);
+    assert.equal(store.totalUnread.value, 0);
+    assert.equal(store.directPreference(bob.pubkey), 'auto');
+    assert.equal(store.directProtocol(bob.pubkey), 'ndr');
+    await store.acceptRequest(bob.pubkey);
+    assert.equal(store.requests.value.length, 0);
+    assert.deepEqual(store.chatList.value.map(({ peer }) => peer), [bob.pubkey]);
+    await clients.at(-1).options.receive(nostr.makeRumor(bob.pubkey, 14, 'Accepted contact', [['p', alice.pubkey]]), bob.pubkey);
+    assert.equal(notifications.length, 1);
+    await store.login(alice, false);
+    assert.equal(store.isKnown(bob.pubkey), true);
+    store.myFollows.value = [bob.pubkey];
+    await store.login(other, false);
+    assert.equal(store.isKnown(bob.pubkey), false);
+    assert.deepEqual(store.accepted.value, []);
+    assert.deepEqual(store.myFollows.value, []);
+  } finally { stop(); await store.logout(); }
+});
