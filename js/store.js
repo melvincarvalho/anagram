@@ -919,8 +919,9 @@ async function track(id, sending, retry, onSent) {
     onSent?.();
   } catch (e) {
     retries.set(id, { retry, onSent });
-    setStatus(id, 'failed');
-    notify(`Not sent: ${e.message}`);
+    // partial: it reached shared relays but not the recipient's own; still worth a retry.
+    setStatus(id, e.partial ? 'partial' : 'failed');
+    notify(e.partial ? e.message : `Not sent: ${e.message}`);
   }
 }
 export function retrySend(id) {
@@ -1136,16 +1137,20 @@ export async function openRoom(pointer) {
     .then((cached) => me.value === owner && addRoomMessages(address, cached, { fromCache: true }))
     .catch(() => {});
   let room;
+  let stale = '';
   try {
     room = await nostr.fetchRoom(pointer);
   } catch (e) {
-    if (me.value === owner) setRoom(address, { loading: false, error: e.message });
-    return;
+    if (me.value !== owner) return;
+    // Keep the remembered (signed) definition and still go live; just say it couldn't refresh.
+    room = roomState.value[address]?.room;
+    if (!room) return setRoom(address, { loading: false, error: e.message });
+    stale = e.message;
   }
   if (me.value !== owner) return; // switched account while loading
   // A newer room definition may block people whose messages are already loaded.
   const hidden = (pk) => nostr.roomPolicy(room, pk) === 'blocked' || isBlocked(pk);
-  setRoom(address, { room, loading: false, messages: (roomState.value[address]?.messages ?? []).filter((m) => !hidden(m.pubkey)) });
+  setRoom(address, { room, loading: false, stale, messages: (roomState.value[address]?.messages ?? []).filter((m) => !hidden(m.pubkey)) });
   if (joinedRooms.value.some((r) => r.address === address)) {
     // Refresh name/picture without moving the room in the list.
     const entry = roomEntry(room);

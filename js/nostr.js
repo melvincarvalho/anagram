@@ -370,13 +370,22 @@ export async function searchDirectory(q, limit = 20) {
 
 // Publish to all relays and resolve once at least one accepts.
 // Publish to all relays; resolve as soon as the first one accepts (the rest carry on).
-export async function publish(relays, event, signer) {
+// Publish to all relays; resolve as soon as one accepts (the rest carry on). With
+// `require`, success means one of THOSE relays accepted: if only others did, the error
+// carries `partial: true` (the event is out there, but not where the recipient reads).
+export async function publish(relays, event, signer, { require } = {}) {
+  relays = uniq(relays);
   const onauth = signer ? (t) => signer.sign(t) : undefined;
+  const attempts = pool.publish(relays, event, { onauth }).map((p, i) => p.then(() => relays[i]));
+  const needed = require?.length ? attempts.filter((_, i) => require.includes(relays[i])) : attempts;
   try {
-    await Promise.any(pool.publish(relays, event, { onauth }));
+    await Promise.any(needed.length ? needed : attempts);
   } catch (e) {
     const reasons = (e.errors ?? []).map((r) => r?.message ?? String(r));
-    throw new Error(reasons.join('; ') || 'No relay accepted the event.');
+    const elsewhere = needed !== attempts && (await Promise.any(attempts).then(() => true, () => false));
+    const error = new Error(elsewhere ? "Delivered to shared relays only; the recipient's inbox relays did not accept it." : reasons.join('; ') || 'No relay accepted the event.');
+    error.partial = elsewhere;
+    throw error;
   }
   return event;
 }
@@ -416,8 +425,9 @@ export async function sendRumor(signer, recipient, kind, content, tags, recipien
     giftWrap(signer, rumor, recipient),
     recipient === signer.pubkey ? null : giftWrap(signer, rumor, signer.pubkey),
   ]);
-  // The recipient's copy is what matters; our own copy only restores history.
-  await publish(uniq([...recipientRelays, ...APP_RELAYS]), theirs, signer);
+  // The recipient's copy is what matters: it must land on one of THEIR inbox relays
+  // (when they have published any); our own copy only restores history.
+  await publish(uniq([...recipientRelays, ...APP_RELAYS]), theirs, signer, { require: recipientRelays });
   if (mine) publish(uniq([...ownRelays, ...APP_RELAYS]), mine, signer).catch(() => {});
   return rumor;
 }

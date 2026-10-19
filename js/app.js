@@ -856,6 +856,8 @@ function Tick({ id }) {
   if (status === 'sending') return html`<span class="tick" title="Sending">🕓</span>`;
   if (status === 'failed')
     return html`<button class="tick failed" title="Not sent — tap to retry" onClick=${() => store.retrySend(id)}>⚠</button>`;
+  if (status === 'partial')
+    return html`<button class="tick failed" title="Reached shared relays only, not the recipient's inbox relays — tap to retry" onClick=${() => store.retrySend(id)}>⚠</button>`;
   return html`<span class="tick" title="Accepted by a relay">✓</span>`;
 }
 
@@ -1643,7 +1645,7 @@ function RoomChat({ id }) {
       <${RoomAvatar} room=${room} size=${32} />
       <button class="title" title="Room info" onClick=${() => (infoOpen.value = !infoOpen.value)}>
         <b>${room.name}</b>
-        <small>${room.about || `by ${store.displayName(room.owner)}`}</small>
+        <small>${room.about || `by ${store.displayName(room.owner)}`}${state.stale && html` · <span title=${state.stale}>couldn't refresh room info</span>`}</small>
       </button>
 <button class="icon" title="Search (Ctrl+F)" aria-label="Search this chat" onClick=${() => (chatSearch.value = !chatSearch.value)}>🔍</button>
       <button class="wide-only" onClick=${() => copy(`${location.origin}${location.pathname}#/room/${nostr.encodeRoomLink(room)}`, 'Room link copied')}>Share</button>
