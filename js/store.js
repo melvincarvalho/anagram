@@ -409,6 +409,23 @@ export function requestProfiles(pubkeys) {
 
 export const displayName = (pk) => profiles.value[pk]?.name || nostr.shortKey(pk);
 
+// Verified profiles from elsewhere (e.g. people search) go into the cache too.
+export function rememberProfiles(list) {
+  const fresh = list.filter((p) => {
+    const cached = profiles.value[p.pubkey];
+    return !cached || cached.created_at < p.created_at;
+  }).map(({ followers: _, ...p }) => p);
+  if (!fresh.length) return;
+  profiles.value = { ...profiles.value, ...Object.fromEntries(fresh.map((p) => [p.pubkey, p])) };
+  db.saveProfiles(fresh).catch(() => {});
+}
+
+const followsCache = new Map();
+export function followsOf(pk) {
+  if (!followsCache.has(pk)) followsCache.set(pk, nostr.fetchFollows(pk).catch(() => []));
+  return followsCache.get(pk);
+}
+
 // ---------- did:nostr documents (nostr.social resolver) ----------
 
 export const didDocs = signal({}); // pubkey -> resolved document, or { error }

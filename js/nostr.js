@@ -184,6 +184,9 @@ export const shortKey = (hex) => {
 
 export function decodePubkey(value) {
   value = value.trim().replace(/^nostr:/, '');
+  // Profile links: nostr.social/<hex> and nostr.chat/#/dm/did:nostr:<hex>.
+  const link = /^https?:\/\/[^/]+\/(?:#\/dm\/)?(did:nostr:[a-f0-9]{64}|[a-f0-9]{64}|npub1[02-9ac-hj-np-z]+)\/?$/i.exec(value);
+  if (link) value = decodeURIComponent(link[1]);
   const fromDid = /^did:nostr:([a-f0-9]{64})$/.exec(value.toLowerCase());
   if (fromDid) return fromDid[1];
   if (HEX.test(value)) return value;
@@ -318,6 +321,19 @@ export async function fetchDirectoryProfile(hex) {
   if (!HEX.test(hex)) return null;
   const event = verifiedFromDirectory(await directoryGet(`/api/profile/${hex}`), 0);
   return event && event.pubkey === hex ? parseProfile(event) : null;
+}
+
+// Who someone follows: their signed kind 3 from relays is authoritative; nostr.social's
+// derived (unsigned) list is a fast fallback.
+export async function fetchFollows(hex) {
+  const [relay, directory] = await Promise.allSettled([
+    pool.querySync(uniq([...APP_RELAYS, ...INDEXERS]), { kinds: [3], authors: [hex] }, { maxWait: 4000 }),
+    directoryGet(`/api/follows/${hex}`),
+  ]);
+  const signed = (relay.value ?? []).filter((e) => e.pubkey === hex).sort((a, b) => b.created_at - a.created_at)[0];
+  if (signed) return uniq(signed.tags.filter((t) => t[0] === 'p' && HEX.test(t[1])).map((t) => t[1]));
+  const list = directory.value?.pubkey === hex && Array.isArray(directory.value.follows) ? directory.value.follows : [];
+  return uniq(list.filter((pk) => HEX.test(pk)));
 }
 
 // People search (full text over profiles, ranked by followers); every hit is verified.

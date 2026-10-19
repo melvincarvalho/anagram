@@ -1281,3 +1281,36 @@ mark {
   font-weight: 600;
   color: var(--accent);
 }
+
+/* People finder */
+.card.people {
+  max-width: 560px;
+}
+.people-list {
+  display: flex;
+  flex-direction: column;
+  max-height: 420px;
+  overflow-y: auto;
+  margin: 0 -20px;
+}
+.people-list h4 {
+  margin: 10px 20px 4px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+.people-list .person {
+  width: 100%;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  text-align: left;
+  padding: 8px 20px;
+}
+.people-list .person:hover {
+  background: var(--bg);
+}
+.people-list > p {
+  margin: 6px 20px;
+}

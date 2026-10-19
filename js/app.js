@@ -1535,29 +1535,75 @@ function RoomChat({ id }) {
   </section>`;
 }
 
+// Find someone to message: paste an identity, search nostr.social, or pick from your follows.
+function PeopleFinder() {
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState({ q: '', people: [], error: '' });
+  const [follows, setFollows] = useState(null);
+  const open = useAction();
+  const q = query.trim();
+  const direct = nostr.decodePubkey(q);
+  useEffect(() => {
+    store.followsOf(me.value.pubkey).then(setFollows, () => setFollows([]));
+  }, []);
+  useEffect(() => {
+    if (q.length < 2 || direct || q.includes('@')) return setResults({ q: '', people: [], error: '' });
+    const timer = setTimeout(() => {
+      nostr.searchDirectory(q, 20).then(
+        (people) => {
+          store.rememberProfiles(people);
+          setResults({ q, people, error: '' });
+        },
+        (e) => setResults({ q, people: [], error: e.message }),
+      );
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [q]);
+  const go = (pk) => store.go(`#/dm/${nostr.did(pk)}`);
+  const lower = q.toLowerCase();
+  const followRows = (follows ?? []).filter((pk) => !lower || store.displayName(pk).toLowerCase().includes(lower)).slice(0, 60);
+  useEffect(() => follows && store.requestProfiles(follows.slice(0, 60)), [follows]);
+  const row = (pk, extra) => html`<button class="item person" onClick=${() => go(pk)}>
+    <${Avatar} pubkey=${pk} />
+    <span class="label">
+      <b>${store.displayName(pk)}</b>
+      <small>${extra ?? (profiles.value[pk]?.nip05 || nostr.shortKey(pk))}</small>
+    </span>
+  </button>`;
+  return html`<div class="card people">
+    <h3>New message</h3>
+    <form onSubmit=${(e) => {
+      e.preventDefault();
+      open.run(async () => go((await nostr.resolvePubkey(q)).pubkey));
+    }}>
+      <input autofocus placeholder="Search people, or paste did:nostr / nostr.social link / name@domain" value=${query} onInput=${(e) => setQuery(e.target.value)} />
+    </form>
+    ${open.error && html`<p class="error">${open.error}</p>`}
+    <div class="people-list">
+      ${direct && row(direct, nostr.did(direct))}
+      ${!direct && q.includes('@') && html`<button class="item person" onClick=${() => open.run(async () => go((await nostr.resolvePubkey(q)).pubkey))}>
+        <span class="avatar room">@</span><span class="label"><b>Look up ${q}</b><small>NIP-05 address</small></span></button>`}
+      ${results.q === q &&
+      results.people.map((p) => row(p.pubkey, `${p.nip05 || nostr.shortKey(p.pubkey)} · ${p.followers} followers`))}
+      ${results.q === q && !results.people.length && !results.error && html`<p class="muted small">No people found on nostr.social.</p>`}
+      ${results.error && html`<p class="muted small">Search unavailable: ${results.error}</p>`}
+      ${!direct && followRows.length > 0 && html`<h4>People you follow</h4>${followRows.map((pk) => row(pk))}`}
+      ${follows === null && html`<p class="muted small">Loading people you follow…</p>`}
+    </div>
+    <p class="muted small">Search by nostr.social · results are signature-checked.</p>
+  </div>`;
+}
+
 function NewThing() {
-  const [contact, setContact] = useState('');
   const [link, setLink] = useState('');
   const [name, setName] = useState('');
   const [about, setAbout] = useState('');
-  const dm = useAction();
   const join = useAction();
   const create = useAction();
   return html`<section class="main scroll">
     <header class="bar"><a class="back" href="#">‹</a><div class="title"><b>New</b></div></header>
     <div class="forms">
-      <form class="card" onSubmit=${(e) => {
-        e.preventDefault();
-        dm.run(async () => {
-          const { pubkey } = await nostr.resolvePubkey(contact);
-          store.go(`#/dm/${nostr.did(pubkey)}`);
-        });
-      }}>
-        <h3>Direct message</h3>
-        <input placeholder="did:nostr:…, name@domain or npub" value=${contact} onInput=${(e) => setContact(e.target.value)} />
-        ${dm.error && html`<p class="error">${dm.error}</p>`}
-        <button class="primary" disabled=${dm.busy}>Open chat</button>
-      </form>
+      <${PeopleFinder} />
       <form class="card" onSubmit=${(e) => {
         e.preventDefault();
         join.run(async () => {
