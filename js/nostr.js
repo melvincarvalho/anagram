@@ -40,7 +40,7 @@ export const now = () => Math.floor(Date.now() / 1000);
 export function normalizeRelay(url) {
   try {
     const u = new URL(url.trim());
-    if (!['ws:', 'wss:'].includes(u.protocol) || u.username || u.password) return '';
+    if (u.protocol !== 'wss:' || u.username || u.password) return '';
     return u.href.replace(/\/$/, '');
   } catch {
     return '';
@@ -148,7 +148,7 @@ export const did = (hex) => `did:nostr:${hex}`;
 // /.well-known/did/nostr/<hex>.json); /did:nostr:<hex> is not a route there.
 export const profileUrl = (hex) => `https://nostr.social/${hex}`;
 // Shareable chat link: https://nostr.chat/did:nostr:<hex> (404.html routes it into the app).
-export const chatLink = (hex) => `${location.origin}${location.pathname.replace(/[^/]*$/, '')}${did(hex)}`;
+export const chatLink = (hex) => `${location.origin}${location.pathname.replace(/[^/]*$/, '')}#/dm/${did(hex)}`;
 export const didDocumentUrl = (hex) => `https://nostr.social/.well-known/did/nostr/${hex}.json`;
 
 // Resolve a did:nostr DID document over HTTP (did-nostr.com, served by nostr.social).

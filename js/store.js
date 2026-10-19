@@ -51,7 +51,11 @@ function parseRoute() {
   const page = location.hash.match(/^#\/(settings|new)$/)?.[1];
   if (page) return { kind: page };
   const [, kind, id] = location.hash.match(/^#\/(dm|room|public)\/(.+)$/) ?? [];
-  return kind ? { kind: kind === 'public' ? 'room' : kind, id: decodeURIComponent(id) } : { kind: 'home' };
+  try {
+    return kind ? { kind: kind === 'public' ? 'room' : kind, id: decodeURIComponent(id) } : { kind: 'home' };
+  } catch {
+    return { kind: 'home' }; // malformed percent-encoding in the hash
+  }
 }
 window.addEventListener('hashchange', () => (route.value = parseRoute()));
 export const go = (hash) => (location.hash = hash);
@@ -228,6 +232,7 @@ async function loadMuteList() {
 
 // Drop a blocked person's messages everywhere they are already shown.
 function applyBlocked(list) {
+  const unblocked = blocked.value.filter((pk) => !list.includes(pk));
   blocked.value = list;
   const gone = new Set(list);
   const next = { ...dms.value };
@@ -237,6 +242,16 @@ function applyBlocked(list) {
   for (const [address, state] of Object.entries(roomState.value))
     rooms[address] = { ...state, messages: state.messages.filter((m) => !gone.has(m.pubkey)) };
   roomState.value = rooms;
+  // Unblocked: their stored conversation comes back without a reload.
+  if (unblocked.length && me.value) {
+    const account = me.value.pubkey;
+    db.loadDirectMessages(account)
+      .then((rows) => {
+        if (me.value?.pubkey !== account) return;
+        addMessages(rows.filter((m) => unblocked.includes(m.peer) && !m.deletedBy && m.kind !== 7 && !isDeleted(m.id, m.pubkey)));
+      })
+      .catch(() => {});
+  }
 }
 
 export function toggleBlock(pubkey) {
@@ -935,7 +950,7 @@ export function sendDirectMessage(peer, text, reply, edit, extraTags = []) {
   const retry = () =>
     nostr.sendRumor(signer, peer, 14, text, rumor.tags, inboxOf(peer), inboxRelays.value ?? [], rumor.created_at);
   track(rumor.id, sending, retry, () => markSent(saved));
-  addContact(peer).catch((e) => notify(`Could not update contact list: ${e.message}`));
+  if (peer !== signer.pubkey) addContact(peer).catch((e) => notify(`Could not update contact list: ${e.message}`));
 }
 
 // Edit our kind 0. Fields: name, about, picture, website, nip05.

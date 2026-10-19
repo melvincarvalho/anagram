@@ -183,7 +183,11 @@ const FORMAT_TAGS = { bold: 'strong', italic: 'em', underline: 'u', strike: 's' 
 function Spoiler({ children }) {
   const [shown, setShown] = useState(false);
   return html`<span class=${`spoiler${shown ? ' shown' : ''}`} title=${shown ? '' : 'Tap to reveal'} onClick=${(e) => {
-    if (!shown) e.stopPropagation();
+    if (!shown) {
+      // The first tap only reveals; a link hidden inside must not navigate.
+      e.stopPropagation();
+      e.preventDefault();
+    }
     setShown(true);
   }}>${children}</span>`;
 }
@@ -780,7 +784,7 @@ function MessageMenu({ menu, onClose, onReply, onReact, onEdit, onDelete, onMore
       removeEventListener('resize', onClose);
     };
   }, []);
-  useEffect(() => ref.current.querySelector('button:not(:disabled)')?.focus(), []);
+  useEffect(() => ref.current.querySelector('[role=menuitem]:not(:disabled)')?.focus(), []);
   useLayoutEffect(() => {
     // Keep the menu on screen.
     const el = ref.current;
@@ -1812,6 +1816,7 @@ function Settings() {
       </div>
       <${ProfileSettings} />
       <${MediaServerSettings} />
+      <${BlockedSettings} />
       <${NotificationSettings} />
       <div class="card">
         <button class="danger" onClick=${store.logout}>Sign out of this account</button>
@@ -1874,6 +1879,23 @@ function MediaServerSettings() {
     ${save.error && html`<p class="error">${save.error}</p>`}
     <button disabled=${save.busy}>Save</button>
   </form>`;
+}
+
+function BlockedSettings() {
+  const list = store.blocked.value;
+  useEffect(() => store.requestProfiles(list), [list.length]);
+  return html`<div class="card">
+    <h3>Blocked</h3>
+    ${list.length === 0 && html`<p class="muted small">You haven't blocked anyone.</p>`}
+    ${list.map(
+      (pk) => html`<div class="item blocked-row" key=${pk}>
+        <${Avatar} pubkey=${pk} size=${32} />
+        <span class="label"><b>${store.displayName(pk)}</b><small class="mono">${nostr.shortKey(pk)}</small></span>
+        <button onClick=${() => store.toggleBlock(pk).catch(fail('Unblock'))}>Unblock</button>
+      </div>`,
+    )}
+    <p class="muted small">Blocks are kept in your encrypted mute list, shared with Anagram.</p>
+  </div>`;
 }
 
 function NotificationSettings() {

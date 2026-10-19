@@ -1426,3 +1426,10 @@ mark {
 .sidebar h2 .mark-all + .add {
   margin-left: 8px;
 }
+
+.blocked-row {
+  padding: 6px 0;
+}
+.blocked-row .label {
+  flex: 1;
+}
