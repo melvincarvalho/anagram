@@ -808,7 +808,7 @@ function MessageList({ messages, policy = () => 'trusted', badge = () => '', med
   </div>`;
 }
 
-function Composer({ onSend, placeholder, replyTo, onCancelReply, editing, onEdit, onCancelEdit, draftKey }) {
+function Composer({ onSend, placeholder, replyTo, onCancelReply, editing, onEdit, onCancelEdit, draftKey, canUpload = true }) {
   const [text, setTextState] = useState(() => store.drafts.value[draftKey] ?? '');
   // Keep the per-chat draft in step with what is typed (not while editing a sent message).
   // Drafts reach the store after a pause in typing, so each keystroke doesn't re-render the sidebar.
@@ -853,7 +853,7 @@ function Composer({ onSend, placeholder, replyTo, onCancelReply, editing, onEdit
     else setText('');
     run(async () => {
       try {
-        await (editing ? onEdit(editing, value) : onSend(value));
+        await (editing ? onEdit(editing, value) : onSend(value, attachmentsFor(value)));
       } catch (e) {
         setText(value);
         throw e;
@@ -862,6 +862,38 @@ function Composer({ onSend, placeholder, replyTo, onCancelReply, editing, onEdit
   };
   const context = editing ?? replyTo;
   const [emojiOpen, setEmojiOpen] = useState(false);
+  const [dragging, setDragging] = useState(false);
+  // Uploaded media: url -> imeta tag. Like Anagram, the URL goes into the text and only
+  // URLs still present when sending become attachments.
+  const uploads = useRef(new Map());
+  const [uploading, setUploading] = useState(0);
+  const fileInput = useRef();
+  const textRef = useRef(text);
+  textRef.current = text;
+  const upload = async (files) => {
+    const list = [...files].filter(Boolean);
+    if (!list.length) return;
+    if (!canUpload) return store.notify('Only trusted members can post media in this room.');
+    setUploading((n) => n + list.length);
+    for (const file of list) {
+      try {
+        const tag = await store.uploadMedia(file);
+        const url = tag[1].slice(4);
+        uploads.current.set(url, tag);
+        const current = textRef.current;
+        setText(current + (current && !current.endsWith('\n') ? '\n' : '') + url);
+      } catch (e) {
+        store.notify(`Upload failed: ${e.message}`);
+      } finally {
+        setUploading((n) => n - 1);
+      }
+    }
+    input.current?.focus();
+  };
+  const attachmentsFor = (value) => {
+    const tokens = new Set(value.split(/\s+/));
+    return [...uploads.current].filter(([url]) => tokens.has(url)).map(([, tag]) => tag);
+  };
   const insert = (e) => {
     const el = input.current;
     const start = el?.selectionStart ?? text.length;
@@ -872,7 +904,24 @@ function Composer({ onSend, placeholder, replyTo, onCancelReply, editing, onEdit
       el?.setSelectionRange(start + e.length, start + e.length);
     });
   };
-  return html`<footer class="composer">
+  return html`<footer
+    class=${`composer${dragging ? ' dragging' : ''}`}
+    onDragOver=${(e) => {
+      if (!editing && e.dataTransfer?.types?.includes('Files')) {
+        e.preventDefault();
+        setDragging(true);
+      }
+    }}
+    onDragLeave=${() => setDragging(false)}
+    onDrop=${(e) => {
+      setDragging(false);
+      if (e.dataTransfer?.files?.length && !editing) {
+        e.preventDefault();
+        upload(e.dataTransfer.files);
+      }
+    }}
+  >
+    ${uploading > 0 && html`<div class="uploading">Uploading ${uploading} file${uploading > 1 ? 's' : ''} to ${new URL(store.mediaServer.value).host}…</div>`}
     ${emojiOpen && html`<${EmojiPanel} onPick=${insert} onClose=${() => setEmojiOpen(false)} />`}
     ${context &&
     html`<div class="replying">
@@ -883,6 +932,14 @@ function Composer({ onSend, placeholder, replyTo, onCancelReply, editing, onEdit
     ${error && html`<p class="error">${error}</p>`}
     <div class="row">
       <button class="icon emoji-toggle" title="Emoji" onClick=${() => setEmojiOpen(!emojiOpen)}>🙂</button>
+      ${!editing &&
+      html`<button class="icon" title="Attach photo, video or audio" disabled=${uploading > 0} onClick=${() => fileInput.current.click()}>
+          ${uploading ? '⏳' : '📎'}
+        </button>
+        <input ref=${fileInput} type="file" accept="image/*,video/*,audio/*" multiple hidden onChange=${(e) => {
+          upload(e.target.files);
+          e.target.value = '';
+        }} />`}
       <textarea
         ref=${input}
         rows="1"
@@ -891,6 +948,13 @@ function Composer({ onSend, placeholder, replyTo, onCancelReply, editing, onEdit
         onInput=${(e) => {
           setText(e.target.value);
           autosize(e.target);
+        }}
+        onPaste=${(e) => {
+          const files = [...(e.clipboardData?.files ?? [])];
+          if (files.length && !editing) {
+            e.preventDefault();
+            upload(files);
+          }
         }}
         onKeyDown=${(e) => {
           // On touch keyboards Enter makes a new line (like Telegram mobile); send with the button.
@@ -1137,8 +1201,8 @@ function DirectChat({ id }) {
       ...${actions.composer}
       placeholder="Encrypted message"
       draftKey=${peer}
-      onSend=${async (text) => {
-        await store.sendDirectMessage(peer, text, actions.composer.replyTo);
+      onSend=${async (text, tags) => {
+        await store.sendDirectMessage(peer, text, actions.composer.replyTo, null, tags);
         actions.clearReply();
       }}
     />
@@ -1206,8 +1270,9 @@ function RoomChat({ id }) {
       ...${actions.composer}
       placeholder="Public message — anyone can read this"
       draftKey=${room.address}
-      onSend=${async (text) => {
-        await store.sendRoomMessage(room.address, text, actions.composer.replyTo);
+      canUpload=${nostr.roomPolicy(room, me.value.pubkey) === 'trusted'}
+      onSend=${async (text, tags) => {
+        await store.sendRoomMessage(room.address, text, actions.composer.replyTo, tags);
         if (!joined) store.joinRoom(room);
         actions.clearReply();
       }}
@@ -1315,12 +1380,31 @@ function Settings() {
           )}
         </div>
       </div>
+      <${MediaServerSettings} />
       <${NotificationSettings} />
       <div class="card">
         <button class="danger" onClick=${store.logout}>Sign out of this account</button>
       </div>
     </div>
   </section>`;
+}
+
+function MediaServerSettings() {
+  const [value, setValue] = useState(store.mediaServer.value);
+  const save = useAction();
+  return html`<form class="card" onSubmit=${(e) => {
+    e.preventDefault();
+    save.run(async () => {
+      store.setMediaServer(value);
+      store.notify('Media server saved');
+    });
+  }}>
+    <h3>Media server</h3>
+    <p class="muted small">Photos and videos you send are uploaded unencrypted to this Blossom server; anyone with the link can view them.</p>
+    <input value=${value} onInput=${(e) => setValue(e.target.value)} placeholder=${nostr.DEFAULT_BLOSSOM} />
+    ${save.error && html`<p class="error">${save.error}</p>`}
+    <button disabled=${save.busy}>Save</button>
+  </form>`;
 }
 
 function NotificationSettings() {

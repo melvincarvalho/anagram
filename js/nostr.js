@@ -574,6 +574,61 @@ export async function sendRoomDeletion(signer, room, ids, kind) {
   return publish(uniq([...room.relays, ...APP_RELAYS]), event, signer);
 }
 
+// ---------- Blossom media uploads (Anagram's format) ----------
+
+export const DEFAULT_BLOSSOM = 'https://blossom.nostr.build';
+const MAX_UPLOAD = 20 * 1024 * 1024;
+const hexOf = (buf) => [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
+
+export function normalizeBlossomServer(value) {
+  try {
+    const url = new URL(value.trim());
+    if (url.protocol !== 'https:' || url.username || url.password || url.pathname !== '/' || url.search || url.hash) return null;
+    return url.origin;
+  } catch {
+    return null;
+  }
+}
+
+// Upload a file; returns the NIP-92 imeta tag to attach (url, m, size, x).
+export async function uploadBlossom(signer, file, server = DEFAULT_BLOSSOM) {
+  if (!/^(image|video|audio)\//.test(file.type)) throw new Error('Only image, video and audio files are supported.');
+  if (!file.size) throw new Error('The selected file is empty.');
+  if (file.size > MAX_UPLOAD) throw new Error('Media uploads are limited to 20 MiB.');
+  const origin = normalizeBlossomServer(server);
+  if (!origin) throw new Error('The media server must be an https:// origin.');
+  const host = new URL(origin).host;
+  const sha256 = hexOf(await crypto.subtle.digest('SHA-256', await file.arrayBuffer()));
+  const created = now();
+  const auth = await signer.sign({
+    kind: 24242,
+    created_at: created,
+    content: `Authorize media upload to ${host}`,
+    tags: [
+      ['t', 'upload'],
+      ['expiration', String(created + 15 * 60)],
+      ['server', host],
+      ['x', sha256],
+    ],
+  });
+  const bytes = new TextEncoder().encode(JSON.stringify(auth));
+  const res = await fetch(`${origin}/upload`, {
+    method: 'PUT',
+    headers: {
+      Authorization: `Nostr ${btoa(String.fromCharCode(...bytes))}`,
+      'Content-Type': file.type,
+      'X-SHA-256': sha256,
+    },
+    body: file,
+    referrerPolicy: 'no-referrer',
+  });
+  if (res.status !== 200 && res.status !== 201)
+    throw new Error(res.headers.get('X-Reason') || (await res.text().catch(() => '')) || `${host} upload failed (${res.status})`);
+  const blob = await res.json().catch(() => null);
+  if (!blob?.url?.startsWith('https://')) throw new Error(`${host} returned an invalid upload response.`);
+  return ['imeta', `url ${blob.url}`, `m ${blob.type || file.type}`, `size ${blob.size ?? file.size}`, `x ${blob.sha256 || sha256}`];
+}
+
 export function enableAuth(signer) {
   pool.automaticallyAuth = () => (t) => signer.sign(t);
 }

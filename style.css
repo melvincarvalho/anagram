@@ -1181,3 +1181,13 @@ mark {
 .file-card small {
   opacity: 0.75;
 }
+
+.composer.dragging {
+  outline: 2px dashed var(--accent);
+  outline-offset: -6px;
+}
+.uploading {
+  font-size: 13px;
+  color: var(--muted);
+  padding-bottom: 6px;
+}
