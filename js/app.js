@@ -1,4 +1,4 @@
-import { h, render } from 'preact';
+import { h, render, Fragment } from 'preact';
 import { signal } from '@preact/signals';
 import { useState, useEffect, useRef, useLayoutEffect } from 'preact/hooks';
 import htm from 'htm';
@@ -612,21 +612,61 @@ function MessageList({ messages, policy = () => 'trusted', badge = () => '', med
   const ref = useRef();
   const stick = useRef(true);
   const touch = useRef(null);
+  const lastTop = useRef(0);
   const [menu, setMenu] = useState(null);
   const [reactPicker, setReactPicker] = useState(null); // { message, x, y }
-  const [away, setAway] = useState(null); // message count when the user scrolled up, else null
+  const [away, setAway] = useState(null); // id of the newest message when the user scrolled up, else null
+  const inner = useRef();
+  const prev = useRef({ last: null });
+  const anchor = useRef(null); // { id, top } of the first visible message while scrolled up
+  const saveAnchor = () => {
+    const el = ref.current;
+    const box = el.getBoundingClientRect();
+    const first = [...inner.current.querySelectorAll('.msg')].find((m) => m.getBoundingClientRect().bottom > box.top);
+    anchor.current = first ? { id: first.dataset.id, top: first.getBoundingClientRect().top } : null;
+  };
+  // Keep what you were reading in place when content above it changes (older pages, reactions, images).
+  const restoreAnchor = () => {
+    const a = anchor.current;
+    const node = a && inner.current.querySelector(`[data-id="${a.id}"]`);
+    if (node) ref.current.scrollTop += node.getBoundingClientRect().top - a.top;
+  };
   const byId = Object.fromEntries(messages.flatMap((m) => [m.id, ...(m.prev ?? [])].map((id) => [id, m])));
+  const first = messages[0]?.id;
+  const lastMsg = messages[messages.length - 1];
   useLayoutEffect(() => {
-    if (stick.current) ref.current.scrollTop = ref.current.scrollHeight;
-  }, [messages.length]);
+    const el = ref.current;
+    const p = prev.current;
+    // Your own new message always brings you to the bottom, like Telegram.
+    if (lastMsg && lastMsg.id !== p.last && p.last && lastMsg.pubkey === me.value.pubkey) stick.current = true;
+    if (stick.current) el.scrollTop = el.scrollHeight;
+    else restoreAnchor();
+    prev.current = { last: lastMsg?.id };
+  }, [messages.length, first, lastMsg?.id]);
+  // Images and media that load later grow the list; stay pinned to the bottom if you were there.
+  useEffect(() => {
+    const observer = new ResizeObserver(() => {
+      const el = ref.current;
+      if (stick.current) el.scrollTop = el.scrollHeight;
+      else restoreAnchor();
+    });
+    observer.observe(inner.current);
+    return () => observer.disconnect();
+  }, []);
   const onScroll = () => {
     const el = ref.current;
-    stick.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+    // Only scrolling up unsticks; content growing underneath (a burst of messages, images) must not.
+    const gap = el.scrollHeight - el.scrollTop - el.clientHeight;
+    if (gap < 80) stick.current = true;
+    else if (el.scrollTop < lastTop.current - 2) stick.current = false;
+    lastTop.current = el.scrollTop;
+    if (!stick.current) saveAnchor();
     if (stick.current && away !== null) setAway(null);
-    else if (!stick.current && away === null) setAway(messages.length);
+    else if (!stick.current && away === null) setAway(lastMsg?.id ?? '');
     if (menu) setMenu(null);
   };
   const toBottom = () => {
+    stick.current = true;
     ref.current.scrollTo({ top: ref.current.scrollHeight, behavior: 'smooth' });
     setAway(null);
   };
@@ -680,8 +720,10 @@ function MessageList({ messages, policy = () => 'trusted', badge = () => '', med
     if (s.dx > 60) onReply(s.m);
   };
   const visible = messages.filter((m) => policy(m.pubkey) !== 'blocked');
-  const below = away === null ? 0 : Math.max(0, messages.length - away);
-  return html`<div class="thread"><div class="messages" ref=${ref} onScroll=${onScroll}>
+  // New messages from others since you scrolled up (older pages loading above don't count).
+  const awayIndex = away === null ? -1 : messages.findIndex((m) => m.id === away);
+  const below = awayIndex < 0 ? 0 : messages.slice(awayIndex + 1).filter((m) => m.pubkey !== me.value.pubkey).length;
+  return html`<div class="thread"><div class="messages" ref=${ref} onScroll=${onScroll}><div class="messages-inner" ref=${inner}>
     ${header}
     ${visible.map((m, i) => {
       const mine = m.pubkey === me.value.pubkey;
@@ -693,10 +735,10 @@ function MessageList({ messages, policy = () => 'trusted', badge = () => '', med
       const quoteId = m.reply ?? m.tags?.find((t) => t[0] === 'q')?.[1];
       const quote = quoteId && byId[quoteId];
       const tag = badge(m.pubkey);
-      return html`${newDay && html`<div class="day" key=${'d' + m.id}><span>${dayLabel(m.created_at)}</span></div>`}
+      // Keyed per message, so loading older pages adds nodes instead of rewriting every row.
+      return html`<${Fragment} key=${m.id}>${newDay && html`<div class="day"><span>${dayLabel(m.created_at)}</span></div>`}
         <div
           class=${`msg${mine ? ' mine' : ''}${first ? ' first' : ''}${last ? ' last' : ''}`}
-          key=${m.id}
           data-id=${m.id}
           onContextMenu=${(e) => {
             e.preventDefault();
@@ -719,9 +761,10 @@ function MessageList({ messages, policy = () => 'trusted', badge = () => '', med
             <div class="body"><${Text} content=${m.content} links=${policy(m.pubkey) === 'trusted'} /><span class="meta">${(m.edited ?? nostr.isEdited(m.tags ?? [])) ? 'edited ' : ''}${clock(m.created_at)}${mine && html`<${Tick} id=${m.id} />`}</span></div>
             <${Reactions} message=${m} onReact=${onReact} />
           </div>
-        </div>`;
+        </div></${Fragment}>`;
     })}
     ${footer}
+    </div>
     ${menu && html`<${MessageMenu}
       menu=${menu}
       onReply=${onReply}
