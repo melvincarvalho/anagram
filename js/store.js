@@ -2,6 +2,7 @@
 import { signal, computed, batch } from '@preact/signals';
 import * as nostr from './nostr.js';
 import * as db from './db.js';
+import { watchNdrCapability } from './ndr-discovery.js';
 
 export const me = signal(null); // signer
 export const profiles = signal({}); // pubkey -> profile
@@ -109,7 +110,12 @@ async function teardown() {
   contactQueue = Promise.resolve();
   muteList = null;
   muteQueue = Promise.resolve();
+  closeDirectChat();
+  resolveHistory?.();
+  protocolChecks.clear();
   directProtocols.value = {};
+  autoProtocols.value = {};
+  preferDoubleRatchet.value = true;
   ndrEdits.clear();
   ndrDeletions.clear();
   for (const timer of ndrExpiryTimers.values()) clearTimeout(timer);
@@ -151,6 +157,7 @@ export async function login(signer, remember) {
   if (me.value) await teardown();
   addingAccount.value = false;
   liveSince = nostr.now() - 10;
+  historyReady = new Promise((resolve) => { resolveHistory = resolve; });
   me.value = signer;
   nostr.enableAuth(signer);
   if (remember) rememberAccount(signer);
@@ -170,6 +177,8 @@ export async function login(signer, remember) {
   loadContacts();
   loadMuteList();
   directProtocols.value = storage.get(`lite:protocols:${signer.pubkey}`, {});
+  autoProtocols.value = storage.get(`lite:auto-protocols:${signer.pubkey}`, {});
+  preferDoubleRatchet.value = storage.get(`lite:prefer-ndr:${signer.pubkey}`, true);
   await startInbox();
   if (me.value === signer && storage.get(`lite:ndr:${signer.pubkey}`, false))
     startNdr().catch((e) => notify(`Double ratchet unavailable: ${e.message}`));
@@ -527,8 +536,86 @@ export function verifiedNip05(pk) {
 
 // ---------- Optional double-ratchet DMs ----------
 
-export const directProtocols = signal({}); // peer -> explicit sending preference
-export const directProtocol = (peer) => directProtocols.value[peer] ?? 'nip17';
+export const directProtocols = signal({}); // peer -> Auto or explicit override
+export const preferDoubleRatchet = signal(true);
+const autoProtocols = signal({}); // Auto can upgrade to NDR, never silently downgrade
+export const protocolChecking = signal(null);
+export const directPreference = (peer) => directProtocols.value[peer] ?? 'auto';
+export const directProtocol = (peer) => directPreference(peer) === 'auto' ? autoProtocols.value[peer] ?? 'nip17' : directPreference(peer);
+const protocolChecks = new Map();
+let historyReady = Promise.resolve();
+let resolveHistory;
+let directChatPeer;
+let discovery;
+
+function saveDirectPreference(peer, preference) {
+  directProtocols.value = { ...directProtocols.value, [peer]: preference };
+  storage.set(`lite:protocols:${me.value.pubkey}`, directProtocols.value);
+}
+function chooseAutoNdr(peer) {
+  if (autoProtocols.value[peer] === 'ndr') return;
+  autoProtocols.value = { ...autoProtocols.value, [peer]: 'ndr' };
+  storage.set(`lite:auto-protocols:${me.value.pubkey}`, autoProtocols.value);
+}
+function preserveExistingProtocols(messages) {
+  // Existing history keeps its previous transport until the person chooses Auto.
+  for (const message of messages) if (message.peer && directProtocols.value[message.peer] === undefined)
+    saveDirectPreference(message.peer, message.protocol === 'ndr' ? 'ndr' : 'nip17');
+}
+function stopDiscovery() {
+  discovery?.close();
+  discovery = null;
+  protocolChecking.value = null;
+}
+export function closeDirectChat() {
+  directChatPeer = null;
+  stopDiscovery();
+}
+export function openDirectChat(peer) {
+  closeDirectChat();
+  directChatPeer = peer;
+  protocolChecks.delete(peer); // Reopening can discover newly enabled devices.
+  void historyReady.then(() => { if (directChatPeer === peer) return prepareDirectProtocol(peer); });
+  return () => { if (directChatPeer === peer) closeDirectChat(); };
+}
+export function setPreferDoubleRatchet(enabled) {
+  preferDoubleRatchet.value = !!enabled;
+  storage.set(`lite:prefer-ndr:${me.value.pubkey}`, !!enabled);
+  protocolChecks.clear();
+  stopDiscovery();
+  if (directChatPeer) void prepareDirectProtocol(directChatPeer);
+}
+export async function prepareDirectProtocol(peer) {
+  const account = me.value;
+  await historyReady;
+  if (!account || me.value !== account) return;
+  if (directProtocols.value[peer] === undefined) saveDirectPreference(peer, 'auto');
+  if (directPreference(peer) !== 'auto' || !preferDoubleRatchet.value || directProtocol(peer) === 'ndr') return Promise.resolve();
+  if (protocolChecks.has(peer)) return protocolChecks.get(peer);
+  const signer = me.value;
+  const active = () => me.value === signer && directPreference(peer) === 'auto' && preferDoubleRatchet.value;
+  const live = peer === directChatPeer;
+  if (live) protocolChecking.value = peer;
+  const watcher = watchNdrCapability({
+    peer,
+    subscribe: (filter, callbacks) => {
+      const sub = nostr.pool.subscribe(nostr.uniq([...(inboxRelays.value ?? []), ...nostr.APP_RELAYS]), filter, callbacks);
+      return () => sub.close();
+    },
+    onCapability: (supported) => {
+      if (!active() || !supported) return;
+      chooseAutoNdr(peer);
+      startNdr().catch((error) => { if (active()) notify(`Double ratchet unavailable: ${error.message}`); });
+    },
+  });
+  if (live) discovery = watcher;
+  const checked = watcher.initial.finally(() => {
+    if (me.value === signer && discovery === watcher) protocolChecking.value = null;
+    if (!live) watcher.close();
+  });
+  protocolChecks.set(peer, checked);
+  return checked;
+}
 let ndrClient;
 let ndrStarting;
 let ndrGeneration = 0;
@@ -627,12 +714,15 @@ function startNdr() {
 window.addEventListener('online', () => ndrClient?.retry().catch(() => {}));
 
 export async function setDirectProtocol(peer, protocol) {
-  if (!['nip17', 'ndr'].includes(protocol)) throw new Error('Unknown message encryption');
+  if (!['auto', 'nip17', 'ndr'].includes(protocol)) throw new Error('Unknown message encryption');
   const signer = me.value;
   if (protocol === 'ndr') await startNdr();
   if (me.value !== signer) return;
-  directProtocols.value = { ...directProtocols.value, [peer]: protocol };
-  storage.set(`lite:protocols:${signer.pubkey}`, directProtocols.value);
+  saveDirectPreference(peer, protocol);
+  if (protocol === 'ndr') chooseAutoNdr(peer);
+  protocolChecks.delete(peer);
+  if (directChatPeer === peer) stopDiscovery();
+  if (protocol === 'auto') await prepareDirectProtocol(peer);
 }
 
 const ndrExpiresAt = (row) => row.protocol === 'ndr' ? Number(row.tags?.find((t) => t[0] === 'expiration')?.[1]) || Infinity : Infinity;
@@ -701,6 +791,8 @@ async function receiveNdr(signer, event, peer) {
     const row = { ...base, reply: event.tags.find((t) => t[0] === 'e' && (!t[3] || t[3] === 'reply'))?.[1] };
     await db.saveDirectMessages([row]);
     if (me.value !== signer) return;
+    if (directProtocols.value[peer] === undefined) saveDirectPreference(peer, 'auto');
+    if (directPreference(peer) === 'auto') chooseAutoNdr(peer);
     const seen = dms.value[peer]?.some((m) => m.id === row.id);
     addMessages([row]);
     requestProfiles([peer]);
@@ -924,6 +1016,7 @@ function flushIncoming() {
   const { messages, reactions: rs } = incoming;
   incoming = { messages: [], reactions: [] };
   const live = messages.filter((m) => deleted.get(m.id) !== m.pubkey);
+  preserveExistingProtocols(live);
   batch(() => {
     addMessages(live);
     addReactions(rs);
@@ -960,6 +1053,8 @@ async function startInbox() {
     else messages.push(r);
   }
   if (me.value !== signer) return; // switched account while loading
+  preserveExistingProtocols(messages);
+  resolveHistory?.();
   addMessages(messages.filter((m) => !isDeleted(m)));
   addReactions(saved);
   for (const m of messages) if (m.status === 'pending' && m.tags) resumePending(m);
@@ -1097,7 +1192,10 @@ function markSent(m) {
   queueSave(sent);
 }
 
-export function sendDirectMessage(peer, text, reply, edit, extraTags = []) {
+export async function sendDirectMessage(peer, text, reply, edit, extraTags = []) {
+  const account = me.value;
+  if (!edit && directPreference(peer) === 'auto') await prepareDirectProtocol(peer);
+  if (me.value !== account) throw new Error('Account changed');
   if ((edit ? edit.protocol ?? 'nip17' : directProtocol(peer)) === 'ndr')
     return sendNdrMessage(peer, text, reply, extraTags);
   const signer = me.value;

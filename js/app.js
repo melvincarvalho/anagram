@@ -781,6 +781,7 @@ function MessageMenu({ menu, onClose, onReply, onReact, onEdit, onDelete, onMore
       ${QUICK_REACTIONS.map((e) => html`<button title=${`React ${e}`} onClick=${act(() => onReact(m, e))}>${e}</button>`)}
       <button class="more" title="More reactions" onClick=${act(() => onMoreReactions(m, menu.x, menu.y))}>＋</button>
     </div>`}
+    ${m.peer && html`<p class="muted small">${m.protocol === 'ndr' ? 'Double ratchet' : 'NIP-17'}</p>`}
     ${onReply && html`<button role="menuitem" onClick=${act(() => onReply(m))}>↩ Reply</button>`}
     <button role="menuitem" onClick=${act(() => (forwarding.value = m))}>↪ Forward</button>
     <button role="menuitem" onClick=${act(() => copy(m.content, 'Text copied'))}>⧉ Copy text</button>
@@ -1403,13 +1404,14 @@ function PersonInfo({ pubkey, messages }) {
     </section>
     <section>
       <label>Message encryption
-        <select aria-label="Message encryption" value=${store.directProtocol(pubkey)} disabled=${encryption.busy}
+        <select aria-label="Message encryption" value=${store.directPreference(pubkey)} disabled=${encryption.busy}
           onChange=${(e) => encryption.run(() => store.setDirectProtocol(pubkey, e.target.value))}>
+          <option value="auto">Auto</option>
           <option value="nip17">NIP-17</option>
           <option value="ndr">Double ratchet (Iris)</option>
         </select>
       </label>
-      <p class="muted small">${encryption.busy ? 'Connecting… Approve device registration in your signer if asked.' : 'Double ratchet needs a compatible client, such as Iris. Existing NIP-17 messages remain available.'}</p>
+      <p class="muted small">${encryption.busy ? 'Connecting… Approve device registration in your signer if asked.' : 'Auto prefers double ratchet when a compatible device is available. Existing messages keep their encryption.'}</p>
       ${encryption.error && html`<p class="error">${encryption.error}</p>`}
     </section>
     <${DidIdentity} pubkey=${pubkey} />
@@ -1525,6 +1527,7 @@ function DirectChat({ id }) {
   const [unreadAfter] = useState(() => (peer ? store.readPoint(peer) : Infinity));
   useMarkRead(peer, messages);
   useEffect(() => peer && store.requestProfiles([peer]), [peer]);
+  useEffect(() => peer ? store.openDirectChat(peer) : undefined, [peer]);
   if (!peer) return html`<section class="main empty"><p class="error">Invalid contact.</p></section>`;
   return html`<section class="main">
     <header class="bar">
@@ -1532,7 +1535,7 @@ function DirectChat({ id }) {
       <${Avatar} pubkey=${peer} size=${32} />
       <button class="title" title="Chat info" onClick=${() => (infoOpen.value = !infoOpen.value)}>
         <b>${peer === me.value.pubkey ? 'Note to self' : store.displayName(peer)}</b>
-        <small class="mono">${store.directProtocol(peer) === 'ndr' ? 'Double ratchet · ' : ''}${store.verifiedNip05(peer) ? `✓ ${store.verifiedNip05(peer)}` : nostr.shortKey(peer)}</small>
+        <small class="mono">${store.protocolChecking.value === peer ? 'Checking encryption…' : store.directProtocol(peer) === 'ndr' ? 'Double ratchet' : 'NIP-17'} · ${store.verifiedNip05(peer) ? `✓ ${store.verifiedNip05(peer)}` : nostr.shortKey(peer)}</small>
       </button>
       <button class="icon" title="Search (Ctrl+F)" onClick=${() => (chatSearch.value = !chatSearch.value)}>🔍</button>
     </header>
@@ -1557,7 +1560,7 @@ function DirectChat({ id }) {
           <button onClick=${() => store.toggleBlock(peer).catch(fail('Unblock'))}>Unblock</button></footer>`
       : html`<${Composer}
       ...${actions.composer}
-      placeholder=${store.directProtocol(peer) === 'ndr' ? 'Double-ratchet message' : 'Encrypted message'}
+      placeholder=${store.protocolChecking.value === peer ? 'Checking encryption…' : store.directProtocol(peer) === 'ndr' ? 'Double-ratchet message' : 'NIP-17 message'}
       draftKey=${peer}
       mentionables=${[peer]}
       onSend=${async (text, tags) => {
@@ -1769,6 +1772,12 @@ function Settings() {
             ? html`<p class="mono wrap secret">${nostr.exportNsec(signer)}</p>`
             : html`<button onClick=${() => setShowKey(true)}>Reveal private key (nsec)</button>`}
         </div>`}
+      </div>
+      <div class="card">
+        <h3>Messaging</h3>
+        <label class="check"><input type="checkbox" checked=${store.preferDoubleRatchet.value}
+          onChange=${(e) => store.setPreferDoubleRatchet(e.target.checked)} /> Prefer double ratchet when available</label>
+        <p class="muted small">For Auto chats. Existing chats keep their encryption; change it in chat info. Double-ratchet chats never switch back automatically.</p>
       </div>
       <div class="card">
         <h3>DM inbox relays</h3>

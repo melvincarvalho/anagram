@@ -3,7 +3,7 @@ import { build } from 'esbuild';
 import { readFile, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 await build({
-  stdin: { contents: "export { NdrRuntime, createPersistentNostrOutbox, buildAppKeysFilter } from 'nostr-double-ratchet';", resolveDir: process.cwd() },
+  stdin: { contents: "export { NdrRuntime, createPersistentNostrOutbox, buildAppKeysFilter, AppKeys } from 'nostr-double-ratchet';", resolveDir: process.cwd() },
   bundle: true,
   minify: true,
   format: 'esm',

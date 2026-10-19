@@ -1,7 +1,9 @@
-// Optional transport. Loaded only after a person enables double-ratchet messaging.
+// Optional transport. Loaded only after activation or a verified compatible roster candidate.
 // The host owns relays and storage; the library owns device authorization and sessions.
-import { NdrRuntime, createPersistentNostrOutbox, buildAppKeysFilter } from '../vendor/nostr-double-ratchet.mjs';
+import { NdrRuntime, createPersistentNostrOutbox, buildAppKeysFilter, AppKeys } from '../vendor/nostr-double-ratchet.mjs';
 import { getEventHash, verifyEvent } from '../vendor/nostr-tools.mjs';
+
+export const hasNdrDevices = (event) => AppKeys.fromEvent(event).getAllDevices().some((device) => /^[a-f0-9]{64}$/.test(device.identityPubkey));
 
 export function createNdrClient({ owner, sign, storage, subscribe, fetch, publish, receive, delivery = () => {} }) {
   let closed = false;

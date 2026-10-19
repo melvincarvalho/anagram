@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { build } from 'esbuild';
 import { mkdir } from 'node:fs/promises';
 import 'fake-indexeddb/auto';
+import { AppKeys } from 'nostr-double-ratchet';
 
 // The browser's connection-status poll should not keep this Node test alive.
 const setIntervalForTest = globalThis.setInterval;
@@ -30,6 +31,8 @@ await build({
   plugins: [{ name: 'runtime-test-port', setup(build) {
     build.onResolve({ filter: /\/ndr\.js$/ }, () => ({ path: 'ndr', namespace: 'test' }));
     build.onLoad({ filter: /.*/, namespace: 'test' }, () => ({ contents: `
+      import { AppKeys } from 'nostr-double-ratchet';
+      export const hasNdrDevices = (event) => AppKeys.fromEvent(event).getAllDevices().length > 0;
       export const clients = [];
       export function createNdrClient(options) {
         const client = { options, sent: [], closed: false,
@@ -37,13 +40,13 @@ await build({
           async send(peer, event) { this.sent.push({ peer, event }); }
         }; clients.push(client); return client;
       }
-    ` }));
+    `, resolveDir: process.cwd() }));
   } }],
 });
 const { store, nostr, clients, db } = await import('../work/store-test.mjs');
 nostr.pool.get = async () => null;
 nostr.pool.querySync = async () => [];
-nostr.pool.subscribe = () => ({ close() {} });
+nostr.pool.subscribe = (_relays, _filter, callbacks) => { queueMicrotask(() => callbacks.oneose?.()); return { close() {} }; };
 nostr.pool.publish = () => [Promise.resolve()];
 const signer = nostr.newKeySigner();
 const peer = nostr.newKeySigner().pubkey;
@@ -116,4 +119,103 @@ test('upstream NIP-17 optimistic reactions and deletes roll back on relay refusa
     nostr.pool.publish = published;
     await store.logout();
   }
+});
+
+const eventually = async (predicate) => {
+  for (let i = 0; i < 100 && !predicate(); i++) await new Promise((resolve) => setTimeout(resolve, 5));
+  assert.ok(predicate());
+};
+
+test('Auto discovers delayed support, caches sends, respects overrides and never downgrades chosen NDR', async () => {
+  const alice = nostr.newKeySigner(), bob = nostr.newKeySigner(), subscriptions = [];
+  localStorage.setItem(`lite:rooms:${alice.pubkey}`, '[]');
+  const original = nostr.pool.subscribe;
+  nostr.pool.subscribe = (relays, filter, callbacks) => {
+    if (filter.kinds.includes(37368)) {
+      const entry = { filter, callbacks, closed: false };
+      subscriptions.push(entry);
+      queueMicrotask(() => callbacks.oneose());
+      return { close() { entry.closed = true; } };
+    }
+    return original(relays, filter, callbacks);
+  };
+  try {
+    await store.login(alice, false);
+    const count = clients.length;
+    assert.equal(store.directPreference(bob.pubkey), 'auto');
+    store.openDirectChat(bob.pubkey);
+    await store.prepareDirectProtocol(bob.pubkey);
+    await store.sendDirectMessage(bob.pubkey, 'Auto initially NIP-17');
+    await store.sendDirectMessage(bob.pubkey, 'No per-message network query');
+    assert.equal(subscriptions.length, 1);
+    assert.equal(clients.length, count);
+    assert.equal(store.directPreference(bob.pubkey), 'auto');
+    const t = nostr.now();
+    const supported = await bob.sign(new AppKeys([{ identityPubkey: nostr.newKeySigner().pubkey, createdAt: t }]).getEvent({ ownerPubkey: bob.pubkey, createdAt: t }));
+    subscriptions[0].callbacks.onevent(supported);
+    await eventually(() => store.directProtocol(bob.pubkey) === 'ndr');
+    await store.sendDirectMessage(bob.pubkey, 'Auto upgraded to NDR');
+    assert.equal(clients.at(-1).sent.at(-1).event.content, 'Auto upgraded to NDR');
+    const send = clients.at(-1).send;
+    clients.at(-1).send = async () => { throw new Error('Temporary NDR failure'); };
+    await assert.rejects(store.sendDirectMessage(bob.pubkey, 'Keep failed NDR queued'), /Temporary NDR failure/);
+    const failed = store.dms.value[bob.pubkey].find((message) => message.content === 'Keep failed NDR queued');
+    assert.equal(failed.protocol, 'ndr');
+    assert.equal(store.sendStatus.value[failed.id], 'failed');
+    assert.equal(store.directProtocol(bob.pubkey), 'ndr');
+    clients.at(-1).send = send;
+    subscriptions[0].callbacks.onevent(await bob.sign(new AppKeys().getEvent({ ownerPubkey: bob.pubkey, createdAt: t + 1 })));
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    assert.equal(store.directProtocol(bob.pubkey), 'ndr');
+    store.setPreferDoubleRatchet(false);
+    assert.equal(store.directProtocol(bob.pubkey), 'ndr');
+    assert.equal(subscriptions[0].closed, true);
+    await store.setDirectProtocol(bob.pubkey, 'nip17');
+    subscriptions[0].callbacks.onevent(supported);
+    await store.sendDirectMessage(bob.pubkey, 'Explicit NIP-17 override');
+    assert.equal(store.directProtocol(bob.pubkey), 'nip17');
+    assert.equal(clients.at(-1).sent.at(-1).event.content, 'Auto upgraded to NDR');
+    const unknown = nostr.newKeySigner().pubkey;
+    store.openDirectChat(unknown);
+    await store.prepareDirectProtocol(unknown);
+    assert.equal(subscriptions.length, 1); // account setting disables Auto discovery
+    store.setPreferDoubleRatchet(true);
+    await store.prepareDirectProtocol(unknown);
+    assert.equal(subscriptions.length, 2);
+    store.closeDirectChat();
+    store.openDirectChat(unknown);
+    await store.prepareDirectProtocol(unknown);
+    assert.equal(subscriptions.length, 3); // a negative cache is rechecked on open
+    await store.logout();
+    assert.equal(subscriptions.at(-1).closed, true);
+  } finally { nostr.pool.subscribe = original; }
+});
+
+test('existing NIP-17 history stays selected, settings and Auto selection persist per account', async () => {
+  const alice = nostr.newKeySigner(), bob = nostr.newKeySigner();
+  localStorage.setItem(`lite:rooms:${alice.pubkey}`, '[]');
+  const old = nostr.makeRumor(bob.pubkey, 14, 'Cached old NIP-17', [['p', alice.pubkey]]);
+  await db.saveDirectMessages([{ ...old, account: alice.pubkey, peer: bob.pubkey }]);
+  const login = store.login(alice, false);
+  // Opening while the cache is still loading must not turn existing history Auto.
+  store.openDirectChat(bob.pubkey);
+  await login;
+  await store.prepareDirectProtocol(bob.pubkey);
+  assert.equal(store.directPreference(bob.pubkey), 'nip17');
+  store.setPreferDoubleRatchet(false);
+  await store.setDirectProtocol(bob.pubkey, 'auto');
+  await store.login(alice, false);
+  assert.equal(store.preferDoubleRatchet.value, false);
+  assert.equal(store.directPreference(bob.pubkey), 'auto');
+  await store.setDirectProtocol(bob.pubkey, 'ndr');
+  await store.setDirectProtocol(bob.pubkey, 'auto');
+  await store.login(alice, false);
+  assert.equal(store.directProtocol(bob.pubkey), 'ndr');
+  const other = nostr.newKeySigner();
+  localStorage.setItem(`lite:rooms:${other.pubkey}`, '[]');
+  await store.login(other, false);
+  assert.equal(store.preferDoubleRatchet.value, true);
+  assert.equal(store.directPreference(bob.pubkey), 'auto');
+  assert.equal(store.directProtocol(bob.pubkey), 'nip17');
+  await store.logout();
 });
