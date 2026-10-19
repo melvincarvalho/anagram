@@ -200,7 +200,10 @@ function Sidebar() {
           <${RoomAvatar} room=${room} />
           <span class="label">
             <span class="line"><b>${room.name}</b>${last && html`<time>${shortTime(last.created_at)}</time>`}</span>
-            <small>${last ? `${store.displayName(last.pubkey)}: ${previewText(last.content).slice(0, 80)}` : 'Public room'}</small>
+            <span class="line">
+              <small>${last ? `${store.displayName(last.pubkey)}: ${previewText(last.content).slice(0, 80)}` : 'Public room'}</small>
+              <${Unread} count=${store.unreadCount(room.address, roomState.value[room.address]?.messages ?? [])} />
+            </span>
           </span>
         </a>`;
       })}
@@ -215,7 +218,10 @@ function Sidebar() {
               <b>${peer === me.value.pubkey ? 'Note to self' : store.displayName(peer)}</b>
               ${last && html`<time>${shortTime(last.created_at)}</time>`}
             </span>
-            <small>${last ? `${last.pubkey === me.value.pubkey ? 'You: ' : ''}${previewText(last.content).slice(0, 80)}` : 'No messages yet'}</small>
+            <span class="line">
+              <small>${last ? `${last.pubkey === me.value.pubkey ? 'You: ' : ''}${previewText(last.content).slice(0, 80)}` : 'No messages yet'}</small>
+              <${Unread} count=${store.unreadCount(peer, dms.value[peer] ?? [])} />
+            </span>
           </span>
         </a>`;
       })}
@@ -417,6 +423,21 @@ function Composer({ onSend, placeholder, replyTo, onCancelReply, editing, onEdit
   </footer>`;
 }
 
+// Mark a chat read while it is on screen and the tab is visible.
+function useMarkRead(key, messages) {
+  const last = messages[messages.length - 1]?.created_at ?? 0;
+  useEffect(() => {
+    const mark = () => key && last && document.visibilityState === 'visible' && store.markRead(key, last);
+    mark();
+    document.addEventListener('visibilitychange', mark);
+    return () => document.removeEventListener('visibilitychange', mark);
+  }, [key, last]);
+}
+
+function Unread({ count }) {
+  return count ? html`<span class="unread">${count > 999 ? '999+' : count}</span>` : null;
+}
+
 // Reply / edit / delete / react state shared by DM and room views.
 function useChatActions(context, messages) {
   const [replyTo, setReplyTo] = useState(null);
@@ -463,6 +484,7 @@ function DirectChat({ id }) {
   const older = useAction();
   const messages = (peer && dms.value[peer]) || [];
   const actions = useChatActions({ peer }, messages);
+  useMarkRead(peer, messages);
   useEffect(() => peer && store.requestProfiles([peer]), [peer]);
   if (!peer) return html`<section class="main empty"><p class="error">Invalid contact.</p></section>`;
   return html`<section class="main">
@@ -507,6 +529,7 @@ function RoomChat({ id }) {
   const older = useAction();
   const state = (pointer && roomState.value[pointer.address]) || { messages: [], loading: true };
   const actions = useChatActions({ room: pointer?.address }, state.messages);
+  useMarkRead(pointer?.address, state.messages);
   useEffect(() => {
     if (pointer) store.openRoom(pointer);
   }, [pointer?.address]);
@@ -666,6 +689,10 @@ function Home() {
 }
 
 function App() {
+  const unread = store.totalUnread.value;
+  useEffect(() => {
+    document.title = unread ? `(${unread}) Anagram lite` : 'Anagram lite';
+  }, [unread]);
   if (!me.value) return html`<${Login} />`;
   const r = route.value;
   const view =

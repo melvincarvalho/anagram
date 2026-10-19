@@ -13,7 +13,9 @@ export const roomState = signal({}); // address -> { room, messages, loading, er
 export const route = signal(parseRoute());
 export const toast = signal('');
 export const reactions = signal({}); // target message id -> [{ id, pubkey, emoji }]
-export const contacts = signal([]); // pubkeys from the private contact list
+export const contacts = signal([]);
+export const readMarks = signal({}); // chat key (peer hex or room address) -> last read created_at
+let readSince = 0; // messages before first use of this device count as read // pubkeys from the private contact list
 let contactList = null; // { event } once loaded, so we never overwrite a list we haven't read
 
 const storage = {
@@ -57,6 +59,9 @@ export async function login(signer, remember) {
   me.value = signer;
   nostr.enableAuth(signer);
   if (remember) storage.set('lite:session', nostr.serializeSigner(signer));
+  readMarks.value = storage.get(`lite:read:${signer.pubkey}`, {});
+  readSince = storage.get(`lite:read-since:${signer.pubkey}`, 0);
+  if (!readSince) storage.set(`lite:read-since:${signer.pubkey}`, (readSince = nostr.now()));
   const starter = nostr.starterRoom();
   const saved = storage.get(`lite:rooms:${signer.pubkey}`, null);
   joinedRooms.value = saved ?? (starter ? [roomEntry(starter)] : []);
@@ -99,6 +104,30 @@ export function logout() {
   });
   go('');
 }
+
+// ---------- Unread ----------
+
+export function markRead(key, ts) {
+  if (!me.value || (readMarks.value[key] ?? 0) >= ts) return;
+  readMarks.value = { ...readMarks.value, [key]: ts };
+  storage.set(`lite:read:${me.value.pubkey}`, readMarks.value);
+}
+
+export function unreadCount(key, messages) {
+  const since = Math.max(readMarks.value[key] ?? 0, readSince);
+  let n = 0;
+  for (let i = messages.length - 1; i >= 0 && messages[i].created_at > since; i--)
+    if (messages[i].pubkey !== me.value?.pubkey) n++;
+  return n;
+}
+
+export const totalUnread = computed(() => {
+  if (!me.value) return 0;
+  let n = 0;
+  for (const [peer, thread] of Object.entries(dms.value)) n += unreadCount(peer, thread);
+  for (const room of joinedRooms.value) n += unreadCount(room.address, roomState.value[room.address]?.messages ?? []);
+  return n;
+});
 
 // ---------- Profiles ----------
 
