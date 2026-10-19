@@ -248,20 +248,95 @@ function draftPreview(key, open) {
   return draft && !open ? html`<small><span class="draft">Draft:</span> ${draft.slice(0, 80)}</small>` : null;
 }
 
+function RoomItem({ room, active, onMenu }) {
+  const messages = roomState.value[room.address]?.messages ?? [];
+  const last = messages[messages.length - 1];
+  const link = nostr.encodeRoomLink(room);
+  return html`<a class=${'item' + (active ? ' on' : '')} href=${`#/room/${link}`} onContextMenu=${onMenu({ room })}>
+    <${RoomAvatar} room=${room} />
+    <span class="label">
+      <span class="line"><b>${room.name}</b><${ChatFlags} chatKey=${room.address} />${last && html`<time>${shortTime(last.created_at)}</time>`}</span>
+      <span class="line">
+        ${draftPreview(room.address, active) ??
+        html`<small>${last ? `${store.displayName(last.pubkey)}: ${previewText(last.content).slice(0, 80)}` : 'Public room'}</small>`}
+        <${Unread} count=${store.unreadCount(room.address, messages)} muted=${store.isMuted(room.address)} />
+      </span>
+    </span>
+  </a>`;
+}
+
+function ChatItem({ peer, last, active, onMenu }) {
+  return html`<a class=${'item' + (active ? ' on' : '')} href=${`#/dm/${nostr.did(peer)}`} onContextMenu=${onMenu({ peer })}>
+    <${Avatar} pubkey=${peer} />
+    <span class="label">
+      <span class="line">
+        <b>${peer === me.value.pubkey ? 'Note to self' : store.displayName(peer)}</b>
+        <${ChatFlags} chatKey=${peer} />
+        ${last && html`<time>${shortTime(last.created_at)}</time>`}
+      </span>
+      <span class="line">
+        ${draftPreview(peer, active) ??
+        html`<small>${last ? `${last.pubkey === me.value.pubkey ? 'You: ' : ''}${previewText(last.content).slice(0, 80)}` : 'No messages yet'}</small>`}
+        <${Unread} count=${store.unreadCount(peer, dms.value[peer] ?? [])} muted=${store.isMuted(peer)} />
+      </span>
+    </span>
+  </a>`;
+}
+
+function ChatFlags({ chatKey }) {
+  return html`${store.isMuted(chatKey) && html`<span class="flag" title="Muted">🔕</span>`}${store.isPinned(chatKey) &&
+    html`<span class="flag" title="Pinned">📌</span>`}`;
+}
+
+// Right-click (long-press on phones) menu for a sidebar row.
+function ChatMenu({ menu, onClose }) {
+  const ref = useRef();
+  useEffect(() => {
+    const close = (e) => !ref.current?.contains(e.target) && onClose();
+    addEventListener('pointerdown', close, true);
+    return () => removeEventListener('pointerdown', close, true);
+  }, []);
+  const key = menu.chat.room?.address ?? menu.chat.peer;
+  const act = (fn) => () => {
+    fn();
+    onClose();
+  };
+  const messages = menu.chat.room ? roomState.value[key]?.messages ?? [] : dms.value[key] ?? [];
+  return html`<div class="menu" ref=${ref} role="menu" style=${`left:${Math.min(menu.x, innerWidth - 200)}px;top:${Math.min(menu.y, innerHeight - 140)}px`}>
+    <button role="menuitem" onClick=${act(() => store.togglePinned(key))}>📌 ${store.isPinned(key) ? 'Unpin' : 'Pin'}</button>
+    <button role="menuitem" onClick=${act(() => store.toggleMuted(key))}>${store.isMuted(key) ? '🔔 Unmute' : '🔕 Mute'}</button>
+    ${store.unreadCount(key, messages) > 0 &&
+    html`<button role="menuitem" onClick=${act(() => store.markRead(key, messages[messages.length - 1].created_at))}>✓ Mark as read</button>`}
+  </div>`;
+}
+
 function Sidebar() {
   const r = route.value;
   const [query, setQuery] = useState('');
+  const [menu, setMenu] = useState(null);
   const q = query.trim().toLowerCase();
   const match = (name) => !q || name.toLowerCase().includes(q);
-  const rooms = joinedRooms.value
-    .map((room) => {
-      const messages = roomState.value[room.address]?.messages ?? [];
-      return { room, last: messages[messages.length - 1] };
+  const onMenu = (chat) => (e) => {
+    e.preventDefault();
+    setMenu({ chat, x: e.clientX, y: e.clientY });
+  };
+  const activeRoom = (room) => r.kind === 'room' && r.id === nostr.encodeRoomLink(room);
+  const activePeer = (peer) => r.kind === 'dm' && nostr.decodePubkey(r.id) === peer;
+  const rooms = joinedRooms.value.filter((room) => match(room.name));
+  const chats = conversations.value.filter(({ peer }) => match(peer === me.value.pubkey ? 'Note to self' : store.displayName(peer)));
+  const pinnedKeys = store.chatPrefs.value.pinned;
+  // Pinned rows keep the order they were pinned in.
+  const pinned = pinnedKeys
+    .map((key) => {
+      const room = rooms.find((x) => x.address === key);
+      if (room) return html`<${RoomItem} key=${key} room=${room} active=${activeRoom(room)} onMenu=${onMenu} />`;
+      const chat = chats.find((x) => x.peer === key);
+      if (chat) return html`<${ChatItem} key=${key} ...${chat} active=${activePeer(chat.peer)} onMenu=${onMenu} />`;
+      return null;
     })
-    .filter(({ room }) => match(room.name));
-  const chats = conversations.value.filter(({ peer }) =>
-    match(peer === me.value.pubkey ? 'Note to self' : store.displayName(peer)),
-  );
+    .filter(Boolean);
+  const unpinnedRooms = rooms.filter((room) => !pinnedKeys.includes(room.address));
+  const unpinnedChats = chats.filter(({ peer }) => !pinnedKeys.includes(peer));
   return html`<aside class="sidebar">
     <header>
       <a class="me" href="#/settings" title="Settings">
@@ -272,42 +347,15 @@ function Sidebar() {
     </header>
     <div class="search"><input type="search" placeholder="Search" value=${query} onInput=${(e) => setQuery(e.target.value)} /></div>
     <nav>
+      ${q.length >= 2 && html`<${MessageResults} q=${q} />`}
+      ${pinned.length > 0 && html`<h2>Pinned</h2>${pinned}`}
       <h2>Rooms <a class="add" href="#/new" title="Join or create a room">+</a></h2>
-      ${rooms.map(({ room, last }) => {
-        const link = nostr.encodeRoomLink(room);
-        return html`<a class=${'item' + (r.kind === 'room' && r.id === link ? ' on' : '')} href=${`#/room/${link}`}>
-          <${RoomAvatar} room=${room} />
-          <span class="label">
-            <span class="line"><b>${room.name}</b>${last && html`<time>${shortTime(last.created_at)}</time>`}</span>
-            <span class="line">
-              ${draftPreview(room.address, r.kind === 'room' && r.id === link) ??
-              html`<small>${last ? `${store.displayName(last.pubkey)}: ${previewText(last.content).slice(0, 80)}` : 'Public room'}</small>`}
-              <${Unread} count=${store.unreadCount(room.address, roomState.value[room.address]?.messages ?? [])} />
-            </span>
-          </span>
-        </a>`;
-      })}
+      ${unpinnedRooms.map((room) => html`<${RoomItem} key=${room.address} room=${room} active=${activeRoom(room)} onMenu=${onMenu} />`)}
       <h2>Chats ${syncing.value && html`<span class="spinner" title="Syncing" />`} <a class="add" href="#/new" title="New chat">+</a></h2>
       ${chats.length === 0 && html`<p class="muted small pad">${q ? 'No matches.' : 'No conversations yet.'}</p>`}
-      ${q.length >= 2 && html`<${MessageResults} q=${q} />`}
-      ${chats.map(({ peer, last }) => {
-        const id = nostr.did(peer);
-        return html`<a class=${'item' + (r.kind === 'dm' && r.id === id ? ' on' : '')} href=${`#/dm/${id}`}>
-          <${Avatar} pubkey=${peer} />
-          <span class="label">
-            <span class="line">
-              <b>${peer === me.value.pubkey ? 'Note to self' : store.displayName(peer)}</b>
-              ${last && html`<time>${shortTime(last.created_at)}</time>`}
-            </span>
-            <span class="line">
-              ${draftPreview(peer, r.kind === 'dm' && r.id === id) ??
-              html`<small>${last ? `${last.pubkey === me.value.pubkey ? 'You: ' : ''}${previewText(last.content).slice(0, 80)}` : 'No messages yet'}</small>`}
-              <${Unread} count=${store.unreadCount(peer, dms.value[peer] ?? [])} />
-            </span>
-          </span>
-        </a>`;
-      })}
+      ${unpinnedChats.map((chat) => html`<${ChatItem} key=${chat.peer} ...${chat} active=${activePeer(chat.peer)} onMenu=${onMenu} />`)}
     </nav>
+    ${menu && html`<${ChatMenu} menu=${menu} onClose=${() => setMenu(null)} />`}
   </aside>`;
 }
 
@@ -325,8 +373,7 @@ function MessageResults({ q }) {
           <small>${chat.room || m.pubkey === me.value.pubkey ? `${m.pubkey === me.value.pubkey ? 'You' : store.displayName(m.pubkey)}: ` : ''}<${Highlight} text=${snippet(m.content, q)} q=${q} /></small>
         </span>
       </a>`;
-    })}
-    <h2>Chats</h2>`;
+    })}`;
 }
 
 // In-chat search bar: ↑/↓ or Enter step through matches, newest first.
@@ -646,8 +693,8 @@ function useMarkRead(key, messages) {
   }, [key, last]);
 }
 
-function Unread({ count }) {
-  return count ? html`<span class="unread">${count > 999 ? '999+' : count}</span>` : null;
+function Unread({ count, muted }) {
+  return count ? html`<span class=${`unread${muted ? ' muted' : ''}`}>${count > 999 ? '999+' : count}</span>` : null;
 }
 
 // Reply / edit / delete / react state shared by DM and room views.
@@ -716,6 +763,13 @@ function Field({ label, value, onCopy, href }) {
   </div>`;
 }
 
+function ChatToggles({ chatKey }) {
+  return html`<section class="toggles">
+    <label class="check"><input type="checkbox" checked=${store.isPinned(chatKey)} onChange=${() => store.togglePinned(chatKey)} /> 📌 Pin to top</label>
+    <label class="check"><input type="checkbox" checked=${store.isMuted(chatKey)} onChange=${() => store.toggleMuted(chatKey)} /> 🔕 Mute notifications</label>
+  </section>`;
+}
+
 function PersonInfo({ pubkey, messages }) {
   const p = profiles.value[pubkey] ?? {};
   return html`<div class="hero">
@@ -730,6 +784,7 @@ function PersonInfo({ pubkey, messages }) {
       ${p.website && html`<${Field} label="Website" value=${p.website.replace(/^https:\/\//, '')} href=${p.website} />`}
       <${Field} label="Profile" value="nostr.social ↗" href=${nostr.profileUrl(pubkey)} />
     </section>
+    <${ChatToggles} chatKey=${pubkey} />
     <${SharedMedia} messages=${messages} allowed=${() => true} />`;
 }
 
@@ -750,6 +805,7 @@ function RoomInfo({ room, messages }) {
       <${Field} label="Owner" value=${store.displayName(room.owner)} href=${nostr.profileUrl(room.owner)} />
       <${Field} label="Relays" value=${room.relays.map((r) => r.replace(/^wss:\/\//, '')).join(', ')} />
     </section>
+    <${ChatToggles} chatKey=${room.address} />
     <${SharedMedia} messages=${messages} allowed=${(pk) => nostr.roomPolicy(room, pk) === 'trusted'} />
     ${joinedRooms.value.some((r) => r.address === room.address) &&
     html`<section><button class="danger wide" onClick=${() => store.leaveRoom(room.address)}>Leave room</button></section>`}

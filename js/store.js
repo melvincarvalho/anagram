@@ -14,6 +14,7 @@ export const route = signal(parseRoute());
 export const toast = signal('');
 export const reactions = signal({}); // target message id -> [{ id, pubkey, emoji }]
 export const contacts = signal([]);
+export const chatPrefs = signal({ pinned: [], muted: [] }); // chat keys
 export const drafts = signal({}); // chat key -> unsent text
 export const readMarks = signal({}); // chat key (peer hex or room address) -> last read created_at
 let readSince = 0; // messages before first use of this device count as read // pubkeys from the private contact list
@@ -63,6 +64,7 @@ export async function login(signer, remember) {
   if (remember) storage.set('lite:session', nostr.serializeSigner(signer));
   readMarks.value = storage.get(`lite:read:${signer.pubkey}`, {});
   drafts.value = storage.get(`lite:drafts:${signer.pubkey}`, {});
+  chatPrefs.value = { pinned: [], muted: [], ...storage.get(`lite:prefs:${signer.pubkey}`, {}) };
   readSince = storage.get(`lite:read-since:${signer.pubkey}`, 0);
   if (!readSince) storage.set(`lite:read-since:${signer.pubkey}`, (readSince = nostr.now()));
   const starter = nostr.starterRoom();
@@ -108,6 +110,20 @@ export function logout() {
   go('');
 }
 
+// ---------- Pinned & muted chats ----------
+
+export const isPinned = (key) => chatPrefs.value.pinned.includes(key);
+export const isMuted = (key) => chatPrefs.value.muted.includes(key);
+
+function togglePref(list, key) {
+  const current = chatPrefs.value[list];
+  const next = current.includes(key) ? current.filter((k) => k !== key) : [...current, key];
+  chatPrefs.value = { ...chatPrefs.value, [list]: next };
+  storage.set(`lite:prefs:${me.value.pubkey}`, chatPrefs.value);
+}
+export const togglePinned = (key) => togglePref('pinned', key);
+export const toggleMuted = (key) => togglePref('muted', key);
+
 // ---------- Drafts ----------
 
 let draftTimer;
@@ -142,8 +158,10 @@ export function unreadCount(key, messages) {
 export const totalUnread = computed(() => {
   if (!me.value) return 0;
   let n = 0;
-  for (const [peer, thread] of Object.entries(dms.value)) n += unreadCount(peer, thread);
-  for (const room of joinedRooms.value) n += unreadCount(room.address, roomState.value[room.address]?.messages ?? []);
+  // Muted chats keep their own badge but stay out of the total, like Telegram.
+  for (const [peer, thread] of Object.entries(dms.value)) if (!isMuted(peer)) n += unreadCount(peer, thread);
+  for (const room of joinedRooms.value)
+    if (!isMuted(room.address)) n += unreadCount(room.address, roomState.value[room.address]?.messages ?? []);
   return n;
 });
 
@@ -171,6 +189,7 @@ function mentionsMe(event) {
 function emitIncoming(chat, message) {
   if (!me.value || message.pubkey === me.value.pubkey || message.created_at < liveSince) return;
   const settings = notifySettings.value;
+  if (isMuted(chat.peer ?? chat.room.address)) return;
   if (chat.peer && !settings.dms) return;
   if (chat.room && (settings.rooms === 'off' || (settings.rooms === 'mentions' && !mentionsMe(message)))) return;
   for (const fn of incomingListeners) fn(chat, message);
