@@ -27,9 +27,23 @@ const URL_RE = /(https?:\/\/[^\s<>"']+[^\s<>"'.,;:!?)\]])/g;
 // Profile references: nostr:npub…/nprofile… (NIP-27) and did:nostr:<hex>.
 const MENTION_RE = /((?:nostr:)?(?:npub1|nprofile1)[02-9ac-hj-np-z]{20,}|did:nostr:[a-f0-9]{64})/g;
 
+// Open someone's profile inside the app: their chat with the info panel showing. The
+// nostr.social page stays one tap away from there.
+let infoOnArrival = false; // openProfile: show the info panel once the new route renders
+function openProfile(pubkey) {
+  const target = `#/dm/${nostr.did(pubkey)}`;
+  if (location.hash === target) return void (infoOpen.value = true);
+  infoOnArrival = true;
+  store.go(target);
+}
+
 function Mention({ pubkey }) {
   useEffect(() => store.requestProfiles([pubkey]), [pubkey]);
-  return html`<a class="mention" href=${nostr.profileUrl(pubkey)} target="_blank" rel="noopener" title=${nostr.did(pubkey)}>@${store.displayName(pubkey)}</a>`;
+  return html`<a class="mention" href=${`#/dm/${nostr.did(pubkey)}`} title=${nostr.did(pubkey)} onClick=${(e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    openProfile(pubkey);
+  }}>@${store.displayName(pubkey)}</a>`;
 }
 
 function Mentions({ text }) {
@@ -829,7 +843,7 @@ function MessageMenu({ menu, onClose, onReply, onReact, onEdit, onDelete, onMore
     <button role="menuitem" onClick=${act(() => (forwarding.value = m))}>↪ Forward</button>
     <button role="menuitem" onClick=${act(() => copy(m.content, 'Text copied'))}>⧉ Copy text</button>
     <button role="menuitem" onClick=${act(() => copy(nostr.did(m.pubkey), 'DID copied'))}>⧉ Copy author DID</button>
-    <button role="menuitem" onClick=${act(() => window.open(nostr.profileUrl(m.pubkey), '_blank', 'noopener'))}>👤 View profile</button>
+    <button role="menuitem" onClick=${act(() => openProfile(m.pubkey))}>👤 View profile</button>
     ${m.pubkey === me.value.pubkey && onEdit && html`<button role="menuitem" onClick=${act(() => onEdit(m))}>✎ Edit</button>`}
     ${onPin && html`<button role="menuitem" onClick=${act(() => onPin(pinnedId === m.id ? null : m))}>📌 ${pinnedId === m.id ? 'Unpin' : 'Pin'}</button>`}
     ${m.pubkey !== me.value.pubkey &&
@@ -1476,12 +1490,14 @@ function SharedMedia({ messages, allowed }) {
   </section>`;
 }
 
-function Field({ label, value, onCopy, href }) {
+function Field({ label, value, onCopy, href, onClick }) {
   return html`<div class="field">
     <small>${label}</small>
     ${href
       ? html`<a href=${href} target="_blank" rel="noopener noreferrer">${value}</a>`
-      : html`<span class=${onCopy ? 'copyable mono' : ''} title=${onCopy ? 'Copy' : ''} onClick=${onCopy}>${value}</span>`}
+      : onClick
+        ? html`<button class="link field-link" onClick=${onClick}>${value}</button>`
+        : html`<span class=${onCopy ? 'copyable mono' : ''} title=${onCopy ? 'Copy' : ''} onClick=${onCopy}>${value}</span>`}
   </div>`;
 }
 
@@ -1645,7 +1661,7 @@ function RoomInfo({ room, messages }) {
     ${room.about && html`<section><p class="about">${room.about}</p></section>`}
     <section>
       <${Field} label="Invite link" value="Copy link" onCopy=${() => copy(link, 'Room link copied')} />
-      <${Field} label="Owner" value=${store.displayName(room.owner)} href=${nostr.profileUrl(room.owner)} />
+      <${Field} label="Owner" value=${store.displayName(room.owner)} onClick=${() => openProfile(room.owner)} />
       <${Field} label="Relays" value=${room.relays.map((r) => r.replace(/^wss:\/\//, '')).join(', ')} />
     </section>
     <${ChatToggles} chatKey=${room.address} />
@@ -2259,7 +2275,8 @@ function App() {
   const unread = store.totalUnread.value;
   const routeKey = `${route.value.kind}:${route.value.id ?? ''}`;
   useEffect(() => {
-    infoOpen.value = false;
+    infoOpen.value = infoOnArrival;
+    infoOnArrival = false;
     chatSearch.value = false;
   }, [routeKey]);
   useEffect(() => {
