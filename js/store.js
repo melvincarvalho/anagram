@@ -56,6 +56,7 @@ let inboxSub = null;
 const roomSubs = new Map();
 
 export async function login(signer, remember) {
+  liveSince = nostr.now() - 10;
   me.value = signer;
   nostr.enableAuth(signer);
   if (remember) storage.set('lite:session', nostr.serializeSigner(signer));
@@ -128,6 +129,35 @@ export const totalUnread = computed(() => {
   for (const room of joinedRooms.value) n += unreadCount(room.address, roomState.value[room.address]?.messages ?? []);
   return n;
 });
+
+// ---------- Incoming-message notifications ----------
+
+let liveSince = Infinity; // only messages newer than login are "new"
+const incomingListeners = new Set();
+export const onIncoming = (fn) => (incomingListeners.add(fn), () => incomingListeners.delete(fn));
+
+export const notifySettings = signal(storage.get('lite:notify', { dms: true, rooms: 'mentions', sound: true }));
+export function setNotifySettings(patch) {
+  notifySettings.value = { ...notifySettings.value, ...patch };
+  storage.set('lite:notify', notifySettings.value);
+}
+
+// True when a room message @mentions us or replies to one of our messages.
+function mentionsMe(event) {
+  const pk = me.value?.pubkey;
+  if (!pk) return false;
+  if (event.tags.some((t) => (t[0] === 'p' || t[0] === 'q') && (t[1] === pk || t[3] === pk))) return true;
+  if (event.content.includes(nostr.did(pk)) || event.content.includes(nostr.npub(pk))) return true;
+  return /nostr:nprofile1/.test(event.content) && (event.content.match(/nprofile1[02-9ac-hj-np-z]+/g) ?? []).some((p) => nostr.decodePubkey(p) === pk);
+}
+
+function emitIncoming(chat, message) {
+  if (!me.value || message.pubkey === me.value.pubkey || message.created_at < liveSince) return;
+  const settings = notifySettings.value;
+  if (chat.peer && !settings.dms) return;
+  if (chat.room && (settings.rooms === 'off' || (settings.rooms === 'mentions' && !mentionsMe(message)))) return;
+  for (const fn of incomingListeners) fn(chat, message);
+}
 
 // ---------- Search ----------
 
@@ -297,6 +327,7 @@ async function handleWrap(wrap) {
       addMessages([m]);
       queueSave(m);
       requestProfiles([peer]);
+      emitIncoming({ peer }, m);
     }
   }
   db.markWraps(signer.pubkey, [wrap.id]).catch(() => {});
@@ -478,6 +509,8 @@ function addRoomMessages(address, events) {
     messages: [...current, ...fresh].sort((a, b) => a.created_at - b.created_at || (a.id < b.id ? -1 : 1)),
   });
   requestProfiles(nostr.uniq(fresh.map((e) => e.pubkey)));
+  const room = roomState.value[address]?.room;
+  if (room && joinedRooms.value.some((r) => r.address === address)) for (const e of fresh) emitIncoming({ room }, e);
 }
 
 function saveJoined(list) {

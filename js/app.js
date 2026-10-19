@@ -961,12 +961,87 @@ function Settings() {
                 <button disabled=${inbox.busy} onClick=${() => inbox.run(store.publishDefaultInbox)}>Publish default inbox relays</button>`}
         ${inbox.error && html`<p class="error">${inbox.error}</p>`}
       </div>
+      <${NotificationSettings} />
       <div class="card">
         <button class="danger" onClick=${store.logout}>Sign out</button>
       </div>
     </div>
   </section>`;
 }
+
+function NotificationSettings() {
+  const n = store.notifySettings.value;
+  const [permission, setPermission] = useState(typeof Notification === 'undefined' ? 'unsupported' : Notification.permission);
+  return html`<div class="card">
+    <h3>Notifications</h3>
+    <p class="muted small">While this tab is open. There is no push server, so nothing arrives when it's closed.</p>
+    <label class="check"><input type="checkbox" checked=${n.dms} onChange=${(e) => store.setNotifySettings({ dms: e.target.checked })} /> Direct messages</label>
+    <label class="check">Rooms
+      <select value=${n.rooms} onChange=${(e) => store.setNotifySettings({ rooms: e.target.value })}>
+        <option value="mentions">Mentions and replies</option>
+        <option value="all">All messages</option>
+        <option value="off">Off</option>
+      </select>
+    </label>
+    <label class="check"><input type="checkbox" checked=${n.sound} onChange=${(e) => store.setNotifySettings({ sound: e.target.checked })} /> Sound</label>
+    ${permission === 'granted'
+      ? html`<p class="muted small">Desktop notifications are on (shown when the tab is in the background).</p>`
+      : permission === 'denied'
+        ? html`<p class="muted small">Desktop notifications are blocked in your browser's site settings.</p>`
+        : permission === 'unsupported'
+          ? html`<p class="muted small">This browser doesn't support desktop notifications.</p>`
+          : html`<button onClick=${() => Notification.requestPermission().then(setPermission)}>Enable desktop notifications</button>`}
+  </div>`;
+}
+
+// ---------- In-tab notifications ----------
+
+let audio;
+function beep() {
+  try {
+    audio ??= new AudioContext();
+    const osc = audio.createOscillator();
+    const gain = audio.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, audio.currentTime);
+    osc.frequency.setValueAtTime(1320, audio.currentTime + 0.08);
+    gain.gain.setValueAtTime(0.0001, audio.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.15, audio.currentTime + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + 0.25);
+    osc.connect(gain).connect(audio.destination);
+    osc.start();
+    osc.stop(audio.currentTime + 0.26);
+  } catch {}
+}
+
+const chatHash = (chat) => (chat.room ? `#/room/${nostr.encodeRoomLink(chat.room)}` : `#/dm/${nostr.did(chat.peer)}`);
+const viewing = (chat) => {
+  const r = route.value;
+  if (document.visibilityState !== 'visible') return false;
+  if (chat.room) return r.kind === 'room' && nostr.decodeRoomLink(r.id).address === chat.room.address;
+  return r.kind === 'dm' && nostr.decodePubkey(r.id) === chat.peer;
+};
+
+let lastBeep = 0;
+store.onIncoming((chat, m) => {
+  if (viewing(chat)) return;
+  if (store.notifySettings.value.sound && Date.now() - lastBeep > 1500) {
+    lastBeep = Date.now();
+    beep();
+  }
+  if (typeof Notification === 'undefined' || Notification.permission !== 'granted' || !document.hidden) return;
+  const who = store.displayName(m.pubkey);
+  const note = new Notification(chat.room ? `${who} in ${chat.room.name}` : who, {
+    body: previewText(m.content).slice(0, 200),
+    icon: chat.room?.picture || profiles.value[m.pubkey]?.picture || 'icon.svg',
+    tag: chat.room?.address ?? chat.peer, // one notification per chat, replaced by newer ones
+  });
+  note.onclick = () => {
+    window.focus();
+    location.hash = chatHash(chat);
+    note.close();
+  };
+});
 
 function Home() {
   return html`<section class="main empty">

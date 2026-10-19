@@ -974,3 +974,13 @@ mark {
   font-weight: 400;
   text-transform: none;
 }
+
+.check select {
+  margin-left: auto;
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+  color: inherit;
+  font: inherit;
+}
