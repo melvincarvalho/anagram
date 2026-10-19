@@ -616,7 +616,9 @@ function Sidebar() {
   const activeRoom = (room) => r.kind === 'room' && r.id === nostr.encodeRoomLink(room);
   const activePeer = (peer) => r.kind === 'dm' && nostr.decodePubkey(r.id) === peer;
   const rooms = joinedRooms.value.filter((room) => match(room.name));
-  const chats = conversations.value.filter(({ peer }) => match(peer === me.value.pubkey ? 'Note to self' : store.displayName(peer)));
+  const chats = store.chatList.value.filter(({ peer }) => match(peer === me.value.pubkey ? 'Note to self' : store.displayName(peer)));
+  const requests = store.requests.value.filter(({ peer }) => match(store.displayName(peer)));
+  const [requestsOpen, setRequestsOpen] = useState(false);
   const pinnedKeys = store.chatPrefs.value.pinned;
   // Pinned rows keep the order they were pinned in.
   const pinned = pinnedKeys
@@ -647,6 +649,12 @@ function Sidebar() {
     <div class="search"><input type="search" placeholder="Search" value=${query} onInput=${(e) => setQuery(e.target.value)} /></div>
     <nav>
       ${q.length >= 2 && html`<${MessageResults} q=${q} />`}
+      ${requests.length > 0 &&
+      html`<h2 class="requests-head" role="button" onClick=${() => setRequestsOpen(!requestsOpen)}>
+          <span class="caret">${requestsOpen ? '▾' : '▸'}</span> Requests <span class="unread">${requests.length}</span>
+          <small class="muted">from people you don't know</small>
+        </h2>
+        ${requestsOpen && requests.map((chat) => html`<${ChatItem} key=${chat.peer} ...${chat} active=${activePeer(chat.peer)} onMenu=${onMenu} />`)}`}
       ${pinned.length > 0 && html`<h2>Pinned</h2>${pinned}`}
       <h2>${pinned.length ? 'All chats' : 'Chats'} ${syncing.value && html`<span class="spinner" title="Syncing" />`}
         ${store.totalUnread.value > 0 && html`<button class="link mark-all" title="Mark all chats as read" onClick=${store.markAllRead}>✓ Mark all read</button>`}
@@ -1750,6 +1758,12 @@ function DirectChat({ id }) {
             </button>`}
       </div>`}
     />
+    ${!store.isBlocked(peer) && !store.isKnown(peer) && messages.length > 0 &&
+    html`<div class="request-bar">
+      <span><b>${store.displayName(peer)}</b> isn't in your contacts. Accept to move this chat to your list.</span>
+      <button class="primary" onClick=${() => store.acceptRequest(peer).catch(fail('Accept'))}>Accept</button>
+      <${ConfirmButton} label="Block" confirm="Confirm block" onConfirm=${() => store.toggleBlock(peer).catch(fail('Block'))} />
+    </div>`}
     ${store.isBlocked(peer)
       ? html`<footer class="composer blocked-bar">You blocked this person.
           <button onClick=${() => store.toggleBlock(peer).catch(fail('Unblock'))}>Unblock</button></footer>`

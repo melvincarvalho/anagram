@@ -1519,3 +1519,26 @@ mark {
 .pinned button.link {
   margin-left: auto;
 }
+
+/* Message requests */
+.sidebar h2.requests-head {
+  cursor: pointer;
+  user-select: none;
+}
+.sidebar h2.requests-head small {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: normal;
+}
+.request-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  background: var(--panel);
+  border-top: 1px solid var(--border);
+}
+.request-bar span {
+  flex: 1;
+}

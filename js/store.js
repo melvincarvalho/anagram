@@ -163,7 +163,33 @@ export async function login(signer, remember) {
   for (const room of joinedRooms.value) openRoom(room);
   loadContacts();
   loadMuteList();
+  loadMyFollows(signer);
   await startInbox();
+}
+
+// ---------- Message requests ----------
+// A DM from someone you don't know lands in "Requests" instead of the chat list and makes
+// no sound. Known: yourself, contacts, people you follow (kind 3, or nostr.social),
+// anyone you have written to, and anyone you accepted.
+
+export const myFollows = signal([]);
+export const accepted = signal([]); // accepted request peers (local; Accept also adds a contact)
+function loadMyFollows(signer) {
+  accepted.value = storage.get(`lite:accepted:${signer.pubkey}`, []);
+  followsOf(signer.pubkey).then((list) => me.value === signer && (myFollows.value = list));
+}
+
+export function isKnown(peer) {
+  const mine = me.value?.pubkey;
+  if (!mine || peer === mine) return true;
+  if (contacts.value.includes(peer) || myFollows.value.includes(peer) || accepted.value.includes(peer)) return true;
+  return (dms.value[peer] ?? []).some((m) => m.pubkey === mine);
+}
+
+export async function acceptRequest(peer) {
+  accepted.value = nostr.uniq([...accepted.value, peer]);
+  storage.set(`lite:accepted:${me.value.pubkey}`, accepted.value);
+  await addContact(peer);
 }
 
 export const restoring = signal(true); // true until the saved session has been looked at
@@ -371,7 +397,8 @@ export const totalUnread = computed(() => {
   if (!me.value) return 0;
   let n = 0;
   // Muted chats keep their own badge but stay out of the total, like Telegram.
-  for (const [peer, thread] of Object.entries(dms.value)) if (!isMuted(peer)) n += unreadCount(peer, thread);
+  // Requests from strangers don't count either; they have their own section.
+  for (const [peer, thread] of Object.entries(dms.value)) if (!isMuted(peer) && isKnown(peer)) n += unreadCount(peer, thread);
   for (const room of joinedRooms.value)
     if (!isMuted(room.address)) n += unreadCount(room.address, roomState.value[room.address]?.messages ?? []);
   return n;
@@ -402,7 +429,7 @@ function emitIncoming(chat, message) {
   if (!me.value || message.pubkey === me.value.pubkey || message.created_at < liveSince || isBlocked(message.pubkey)) return;
   const settings = notifySettings.value;
   if (isMuted(chat.peer ?? chat.room.address)) return;
-  if (chat.peer && !settings.dms) return;
+  if (chat.peer && (!settings.dms || !isKnown(chat.peer))) return;
   if (chat.room && (settings.rooms === 'off' || (settings.rooms === 'mentions' && !mentionsMe(message)))) return;
   for (const fn of incomingListeners) fn(chat, message);
 }
@@ -1060,6 +1087,8 @@ export const conversations = computed(() => {
     if (!known.has(pk) && !isBlocked(pk) && !clearedAt.value[pk]) rows.push({ peer: pk, last: null });
   return rows.sort((a, b) => (b.last?.created_at ?? 0) - (a.last?.created_at ?? 0));
 });
+export const chatList = computed(() => conversations.value.filter(({ peer }) => isKnown(peer)));
+export const requests = computed(() => conversations.value.filter(({ peer, last }) => last && !isKnown(peer)));
 
 // ---------- Public rooms ----------
 
