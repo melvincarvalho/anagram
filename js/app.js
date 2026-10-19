@@ -774,7 +774,8 @@ function MessageList({ messages, policy = () => 'trusted', badge = () => '', med
               <b>${store.displayName(quote.pubkey)}</b>${previewText(quote.content).slice(0, 140)}
             </button>`}
             ${policy(m.pubkey) === 'trusted' && html`<${Media} message=${m} auto=${mine || mediaAuto(m.pubkey)} />`}
-            <div class="body"><${Text} content=${m.content} links=${policy(m.pubkey) === 'trusted'} /><span class="meta">${(m.edited ?? nostr.isEdited(m.tags ?? [])) ? 'edited ' : ''}${clock(m.created_at)}${mine && html`<${Tick} id=${m.id} />`}</span></div>
+            ${m.kind === 15 && html`<${EncryptedFile} message=${m} />`}
+            <div class="body">${m.kind !== 15 && html`<${Text} content=${m.content} links=${policy(m.pubkey) === 'trusted'} />`}<span class="meta">${(m.edited ?? nostr.isEdited(m.tags ?? [])) ? 'edited ' : ''}${clock(m.created_at)}${mine && html`<${Tick} id=${m.id} />`}</span></div>
             <${Reactions} message=${m} onReact=${onReact} />
           </div>
         </div></${Fragment}>`;
@@ -887,9 +888,13 @@ function Composer({ onSend, placeholder, replyTo, onCancelReply, editing, onEdit
         rows="1"
         placeholder=${placeholder}
         value=${text}
-        onInput=${(e) => setText(e.target.value)}
+        onInput=${(e) => {
+          setText(e.target.value);
+          autosize(e.target);
+        }}
         onKeyDown=${(e) => {
-          if (e.key === 'Enter' && !e.shiftKey) {
+          // On touch keyboards Enter makes a new line (like Telegram mobile); send with the button.
+          if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && !touchKeyboard) {
             e.preventDefault();
             send();
           } else if (e.key === 'Escape' && context) cancel();
@@ -1049,6 +1054,49 @@ function InfoPanel({ children }) {
     </header>
     <div class="info-body">${children}</div>
   </aside>`;
+}
+
+// Touch devices without a hardware keyboard: Enter inserts a newline.
+const touchKeyboard = matchMedia('(hover: none) and (pointer: coarse)').matches;
+
+// Grow the composer with its text (field-sizing isn't available everywhere, e.g. Firefox).
+function autosize(el) {
+  if (!el || CSS.supports('field-sizing', 'content')) return;
+  el.style.height = 'auto';
+  el.style.height = `${Math.min(el.scrollHeight + 2, 160)}px`;
+}
+
+// NIP-17 kind 15: an AES-GCM encrypted file. Decrypt it locally when asked.
+function EncryptedFile({ message }) {
+  const tag = (name) => message.tags?.find((t) => t[0] === name)?.[1];
+  const type = tag('file-type') || 'application/octet-stream';
+  const [state, setState] = useState({ busy: false, url: '', error: '' });
+  const open = async () => {
+    setState({ busy: true, url: '', error: '' });
+    try {
+      if ((tag('encryption-algorithm') || 'aes-gcm') !== 'aes-gcm') throw new Error('Unsupported encryption');
+      const hex = (h) => Uint8Array.from(h.match(/../g), (x) => parseInt(x, 16));
+      const res = await fetch(message.content, { referrerPolicy: 'no-referrer' });
+      if (!res.ok) throw new Error(`Download failed (${res.status})`);
+      const key = await crypto.subtle.importKey('raw', hex(tag('decryption-key')), 'AES-GCM', false, ['decrypt']);
+      const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: hex(tag('decryption-nonce')) }, key, await res.arrayBuffer());
+      const url = URL.createObjectURL(new Blob([plain], { type }));
+      setState({ busy: false, url, error: '' });
+      if (!type.startsWith('image/')) {
+        const a = Object.assign(document.createElement('a'), { href: url, download: 'file' });
+        a.click();
+      }
+    } catch (e) {
+      setState({ busy: false, url: '', error: e.message });
+    }
+  };
+  if (state.url && type.startsWith('image/'))
+    return html`<div class="media n1"><img src=${state.url} alt="" onClick=${() => (viewer.value = state.url)} /></div>`;
+  return html`<button class="file-card" disabled=${state.busy} onClick=${open}>
+    <span class="file-icon">${type.startsWith('image/') ? '🖼' : type.startsWith('video/') ? '🎞' : '📎'}</span>
+    <span class="label"><b>Encrypted ${type.split('/')[0] === 'application' ? 'file' : type.split('/')[0]}</b>
+      <small>${state.error || (state.busy ? 'Decrypting…' : `${type} · tap to open (reveals your IP to the host)`)}</small></span>
+  </button>`;
 }
 
 // ---------- Views ----------
@@ -1324,7 +1372,13 @@ const chatHash = (chat) => (chat.room ? `#/room/${nostr.encodeRoomLink(chat.room
 const viewing = (chat) => {
   const r = route.value;
   if (document.visibilityState !== 'visible') return false;
-  if (chat.room) return r.kind === 'room' && nostr.decodeRoomLink(r.id).address === chat.room.address;
+  if (chat.room) {
+    try {
+      return r.kind === 'room' && nostr.decodeRoomLink(r.id).address === chat.room.address;
+    } catch {
+      return false; // malformed room link in the URL
+    }
+  }
   return r.kind === 'dm' && nostr.decodePubkey(r.id) === chat.peer;
 };
 
