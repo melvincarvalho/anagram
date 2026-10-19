@@ -984,3 +984,7 @@ mark {
   color: inherit;
   font: inherit;
 }
+
+.draft {
+  color: var(--danger);
+}

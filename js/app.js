@@ -242,6 +242,12 @@ function Login() {
 
 // ---------- Sidebar ----------
 
+// Telegram shows "Draft:" in place of the last message for chats you are not in.
+function draftPreview(key, open) {
+  const draft = store.drafts.value[key];
+  return draft && !open ? html`<small><span class="draft">Draft:</span> ${draft.slice(0, 80)}</small>` : null;
+}
+
 function Sidebar() {
   const r = route.value;
   const [query, setQuery] = useState('');
@@ -274,7 +280,8 @@ function Sidebar() {
           <span class="label">
             <span class="line"><b>${room.name}</b>${last && html`<time>${shortTime(last.created_at)}</time>`}</span>
             <span class="line">
-              <small>${last ? `${store.displayName(last.pubkey)}: ${previewText(last.content).slice(0, 80)}` : 'Public room'}</small>
+              ${draftPreview(room.address, r.kind === 'room' && r.id === link) ??
+              html`<small>${last ? `${store.displayName(last.pubkey)}: ${previewText(last.content).slice(0, 80)}` : 'Public room'}</small>`}
               <${Unread} count=${store.unreadCount(room.address, roomState.value[room.address]?.messages ?? [])} />
             </span>
           </span>
@@ -293,7 +300,8 @@ function Sidebar() {
               ${last && html`<time>${shortTime(last.created_at)}</time>`}
             </span>
             <span class="line">
-              <small>${last ? `${last.pubkey === me.value.pubkey ? 'You: ' : ''}${previewText(last.content).slice(0, 80)}` : 'No messages yet'}</small>
+              ${draftPreview(peer, r.kind === 'dm' && r.id === id) ??
+              html`<small>${last ? `${last.pubkey === me.value.pubkey ? 'You: ' : ''}${previewText(last.content).slice(0, 80)}` : 'No messages yet'}</small>`}
               <${Unread} count=${store.unreadCount(peer, dms.value[peer] ?? [])} />
             </span>
           </span>
@@ -562,8 +570,13 @@ function MessageList({ messages, policy = () => 'trusted', badge = () => '', med
   </div>`;
 }
 
-function Composer({ onSend, placeholder, replyTo, onCancelReply, editing, onEdit, onCancelEdit }) {
-  const [text, setText] = useState('');
+function Composer({ onSend, placeholder, replyTo, onCancelReply, editing, onEdit, onCancelEdit, draftKey }) {
+  const [text, setTextState] = useState(() => store.drafts.value[draftKey] ?? '');
+  // Keep the per-chat draft in step with what is typed (not while editing a sent message).
+  const setText = (value) => {
+    setTextState(value);
+    if (!editing) store.setDraft(draftKey, value);
+  };
   const input = useRef();
   const { busy, error, run } = useAction();
   useEffect(() => {
@@ -573,7 +586,7 @@ function Composer({ onSend, placeholder, replyTo, onCancelReply, editing, onEdit
   const cancel = () => {
     if (editing) {
       onCancelEdit();
-      setText('');
+      setTextState(store.drafts.value[draftKey] ?? '');
     } else onCancelReply?.();
   };
   const send = () => {
@@ -581,7 +594,9 @@ function Composer({ onSend, placeholder, replyTo, onCancelReply, editing, onEdit
     if (!value || busy) return;
     if (editing && value === editing.content.trim()) return cancel();
     // Clear at once like Telegram; put the text back if sending fails outright.
-    setText('');
+    // After an edit, bring back whatever draft was there before.
+    if (editing) setTextState(store.drafts.value[draftKey] ?? '');
+    else setText('');
     run(async () => {
       try {
         await (editing ? onEdit(editing, value) : onSend(value));
@@ -796,6 +811,7 @@ function DirectChat({ id }) {
     <${Composer}
       ...${actions.composer}
       placeholder="Encrypted message"
+      draftKey=${peer}
       onSend=${async (text) => {
         await store.sendDirectMessage(peer, text, actions.composer.replyTo);
         actions.clearReply();
@@ -864,6 +880,7 @@ function RoomChat({ id }) {
     <${Composer}
       ...${actions.composer}
       placeholder="Public message — anyone can read this"
+      draftKey=${room.address}
       onSend=${async (text) => {
         await store.sendRoomMessage(room.address, text, actions.composer.replyTo);
         if (!joined) store.joinRoom(room);

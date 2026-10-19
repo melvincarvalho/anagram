@@ -14,6 +14,7 @@ export const route = signal(parseRoute());
 export const toast = signal('');
 export const reactions = signal({}); // target message id -> [{ id, pubkey, emoji }]
 export const contacts = signal([]);
+export const drafts = signal({}); // chat key -> unsent text
 export const readMarks = signal({}); // chat key (peer hex or room address) -> last read created_at
 let readSince = 0; // messages before first use of this device count as read // pubkeys from the private contact list
 let contactList = null; // { event } once loaded, so we never overwrite a list we haven't read
@@ -61,6 +62,7 @@ export async function login(signer, remember) {
   nostr.enableAuth(signer);
   if (remember) storage.set('lite:session', nostr.serializeSigner(signer));
   readMarks.value = storage.get(`lite:read:${signer.pubkey}`, {});
+  drafts.value = storage.get(`lite:drafts:${signer.pubkey}`, {});
   readSince = storage.get(`lite:read-since:${signer.pubkey}`, 0);
   if (!readSince) storage.set(`lite:read-since:${signer.pubkey}`, (readSince = nostr.now()));
   const starter = nostr.starterRoom();
@@ -104,6 +106,21 @@ export function logout() {
     inboxRelays.value = null;
   });
   go('');
+}
+
+// ---------- Drafts ----------
+
+let draftTimer;
+export function setDraft(key, text) {
+  if (!me.value || !key || (drafts.value[key] ?? '') === text) return;
+  const next = { ...drafts.value };
+  if (text.trim()) next[key] = text;
+  else delete next[key];
+  drafts.value = next;
+  // Debounce storage writes while typing.
+  clearTimeout(draftTimer);
+  const account = me.value.pubkey;
+  draftTimer = setTimeout(() => storage.set(`lite:drafts:${account}`, drafts.value), 300);
 }
 
 // ---------- Unread ----------
