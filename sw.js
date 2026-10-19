@@ -1,5 +1,5 @@
 // Offline shell: network first for the app's own files, cache first for pinned CDN modules.
-const CACHE = 'anagram-lite-v1';
+const CACHE = 'anagram-lite-v2';
 
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (e) =>
@@ -26,8 +26,10 @@ self.addEventListener('fetch', (e) => {
       ),
     );
   } else if (url.origin === location.origin) {
+    // Revalidate with the server every time (GitHub Pages sends max-age=600),
+    // so a deploy is picked up on the next reload; the cache is the offline fallback.
     e.respondWith(
-      fetch(e.request)
+      fetch(e.request.url, { cache: 'no-cache', credentials: 'same-origin' })
         .then((res) => {
           if (res.ok) caches.open(CACHE).then((c) => c.put(e.request, res.clone()));
           return res;

@@ -913,4 +913,15 @@ const root = document.getElementById('app');
 render(html`<p class="boot muted">Loading…</p>`, root);
 store.restoreSession().finally(() => render(html`<${App} />`, root));
 
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+if ('serviceWorker' in navigator) {
+  // When an updated worker takes over an already-controlled page, reload once to run the new code.
+  const hadController = !!navigator.serviceWorker.controller;
+  let reloaded = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (hadController && !reloaded) {
+      reloaded = true;
+      location.reload();
+    }
+  });
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
