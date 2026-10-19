@@ -1036,3 +1036,58 @@ mark {
 .targets button.item:hover {
   background: var(--bg);
 }
+
+/* Emoji picker */
+.composer {
+  position: relative;
+}
+.composer button.icon {
+  border: 0;
+  background: none;
+  font-size: 22px;
+  padding: 4px;
+  line-height: 1;
+}
+.emoji-panel {
+  position: absolute;
+  left: 10px;
+  bottom: calc(100% + 6px);
+  z-index: 15;
+  width: min(330px, calc(100vw - 20px));
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.18);
+}
+.emoji-tabs {
+  display: flex;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--line);
+}
+.emoji-tabs button,
+.emoji-grid button {
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  padding: 4px;
+  font-size: 20px;
+  line-height: 1.2;
+}
+.emoji-tabs button.on {
+  background: var(--bg);
+}
+.emoji-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  max-height: 260px;
+  overflow-y: auto;
+  padding: 6px;
+}
+.emoji-grid button:hover {
+  background: var(--bg);
+  transform: scale(1.15);
+}
+.menu .quick .more {
+  font-size: 16px;
+  color: var(--muted);
+}

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useLayoutEffect } from 'preact/hooks';
 import htm from 'htm';
 import * as nostr from './nostr.js';
 import * as store from './store.js';
+import { EMOJI_GROUPS } from './emoji.js';
 
 const html = htm.bind(h);
 const { me, route, profiles, conversations, dms, joinedRooms, roomState, inboxRelays, syncing, toast, reactions } = store;
@@ -426,7 +427,53 @@ const sameRun = (a, b) => a && b && a.pubkey === b.pubkey && dayKey(a.created_at
 const react = (context) => (message, emoji) =>
   store.toggleReaction(context, message, emoji).catch((e) => store.notify(`Reaction failed: ${e.message}`));
 
-function MessageMenu({ menu, onClose, onReply, onReact, onEdit, onDelete }) {
+// Emoji panel used by the composer and for reactions. Recent picks come first.
+function recentEmoji() {
+  try {
+    return JSON.parse(localStorage.getItem('lite:recent-emoji')) ?? [];
+  } catch {
+    return [];
+  }
+}
+function rememberEmoji(e) {
+  try {
+    localStorage.setItem('lite:recent-emoji', JSON.stringify([e, ...recentEmoji().filter((x) => x !== e)].slice(0, 24)));
+  } catch {}
+}
+
+function EmojiPanel({ onPick, onClose, style = '' }) {
+  const recent = recentEmoji();
+  const groups = recent.length ? [{ icon: '🕘', emoji: recent }, ...EMOJI_GROUPS] : EMOJI_GROUPS;
+  const [tab, setTab] = useState(0);
+  const ref = useRef();
+  useEffect(() => {
+    const close = (e) => !ref.current?.contains(e.target) && !e.target.closest?.('.emoji-toggle') && onClose();
+    const key = (e) => e.key === 'Escape' && onClose();
+    addEventListener('pointerdown', close, true);
+    addEventListener('keydown', key);
+    return () => {
+      removeEventListener('pointerdown', close, true);
+      removeEventListener('keydown', key);
+    };
+  }, []);
+  return html`<div class="emoji-panel" ref=${ref} style=${style}>
+    <div class="emoji-tabs">
+      ${groups.map((g, i) => html`<button class=${i === tab ? 'on' : ''} onClick=${() => setTab(i)}>${g.icon}</button>`)}
+    </div>
+    <div class="emoji-grid">
+      ${groups[tab].emoji.map(
+        (e) => html`<button
+          onClick=${() => {
+            rememberEmoji(e);
+            onPick(e);
+          }}
+        >${e}</button>`,
+      )}
+    </div>
+  </div>`;
+}
+
+function MessageMenu({ menu, onClose, onReply, onReact, onEdit, onDelete, onMoreReactions }) {
   const ref = useRef();
   const [confirming, setConfirming] = useState(false);
   useEffect(() => {
@@ -457,6 +504,7 @@ function MessageMenu({ menu, onClose, onReply, onReact, onEdit, onDelete }) {
     ${onReact &&
     html`<div class="quick">
       ${QUICK_REACTIONS.map((e) => html`<button title=${`React ${e}`} onClick=${act(() => onReact(m, e))}>${e}</button>`)}
+      <button class="more" title="More reactions" onClick=${act(() => onMoreReactions(m, menu.x, menu.y))}>＋</button>
     </div>`}
     ${onReply && html`<button role="menuitem" onClick=${act(() => onReply(m))}>↩ Reply</button>`}
     <button role="menuitem" onClick=${act(() => (forwarding.value = m))}>↪ Forward</button>
@@ -502,6 +550,7 @@ function MessageList({ messages, policy = () => 'trusted', badge = () => '', med
   const stick = useRef(true);
   const touch = useRef(null);
   const [menu, setMenu] = useState(null);
+  const [reactPicker, setReactPicker] = useState(null); // { message, x, y }
   const [away, setAway] = useState(null); // message count when the user scrolled up, else null
   const byId = Object.fromEntries(messages.map((m) => [m.id, m]));
   useLayoutEffect(() => {
@@ -610,7 +659,24 @@ function MessageList({ messages, policy = () => 'trusted', badge = () => '', med
         </div>`;
     })}
     ${footer}
-    ${menu && html`<${MessageMenu} menu=${menu} onReply=${onReply} onReact=${onReact} onEdit=${onEdit} onDelete=${onDelete} onClose=${() => setMenu(null)} />`}
+    ${menu && html`<${MessageMenu}
+      menu=${menu}
+      onReply=${onReply}
+      onReact=${onReact}
+      onEdit=${onEdit}
+      onDelete=${onDelete}
+      onMoreReactions=${(message, x, y) => setReactPicker({ message, x, y })}
+      onClose=${() => setMenu(null)}
+    />`}
+    ${reactPicker &&
+    html`<${EmojiPanel}
+      style=${`position:fixed;bottom:auto;left:${Math.max(8, Math.min(reactPicker.x, innerWidth - 330))}px;top:${Math.max(8, Math.min(reactPicker.y, innerHeight - 330))}px`}
+      onPick=${(e) => {
+        onReact(reactPicker.message, e);
+        setReactPicker(null);
+      }}
+      onClose=${() => setReactPicker(null)}
+    />`}
   </div>
   ${away !== null &&
   html`<button class="to-bottom" title="Jump to latest" onClick=${toBottom}>
@@ -656,7 +722,19 @@ function Composer({ onSend, placeholder, replyTo, onCancelReply, editing, onEdit
     });
   };
   const context = editing ?? replyTo;
+  const [emojiOpen, setEmojiOpen] = useState(false);
+  const insert = (e) => {
+    const el = input.current;
+    const start = el?.selectionStart ?? text.length;
+    const end = el?.selectionEnd ?? text.length;
+    setText(text.slice(0, start) + e + text.slice(end));
+    requestAnimationFrame(() => {
+      el?.focus();
+      el?.setSelectionRange(start + e.length, start + e.length);
+    });
+  };
   return html`<footer class="composer">
+    ${emojiOpen && html`<${EmojiPanel} onPick=${insert} onClose=${() => setEmojiOpen(false)} />`}
     ${context &&
     html`<div class="replying">
       <span class="what">${editing ? '✎ Edit message' : `↩ Reply to ${store.displayName(replyTo.pubkey)}`}</span>
@@ -665,6 +743,7 @@ function Composer({ onSend, placeholder, replyTo, onCancelReply, editing, onEdit
     </div>`}
     ${error && html`<p class="error">${error}</p>`}
     <div class="row">
+      <button class="icon emoji-toggle" title="Emoji" onClick=${() => setEmojiOpen(!emojiOpen)}>🙂</button>
       <textarea
         ref=${input}
         rows="1"
