@@ -109,7 +109,13 @@ function snippet(content, q) {
 }
 
 // Media URLs from the text plus NIP-92 imeta attachments.
+// Parsing is cached per message object (messages are immutable; edits create new objects).
+const mediaCache = new WeakMap();
 function mediaOf(message) {
+  if (!mediaCache.has(message)) mediaCache.set(message, extractMedia(message));
+  return mediaCache.get(message);
+}
+function extractMedia(message) {
   const urls = new Set((message.content.match(URL_RE) ?? []).filter((u) => IMAGE_RE.test(u) || VIDEO_RE.test(u)));
   for (const t of message.tags ?? [])
     if (t[0] === 'imeta') {
@@ -616,6 +622,9 @@ function MessageList({ messages, policy = () => 'trusted', badge = () => '', med
   const [menu, setMenu] = useState(null);
   const [reactPicker, setReactPicker] = useState(null); // { message, x, y }
   const [away, setAway] = useState(null); // id of the newest message when the user scrolled up, else null
+  // Only the newest PAGE rows are rendered; scrolling near the top reveals more.
+  const PAGE = 200;
+  const [limit, setLimit] = useState(PAGE);
   const inner = useRef();
   const prev = useRef({ last: null });
   const anchor = useRef(null); // { id, top } of the first visible message while scrolled up
@@ -642,7 +651,7 @@ function MessageList({ messages, policy = () => 'trusted', badge = () => '', med
     if (stick.current) el.scrollTop = el.scrollHeight;
     else restoreAnchor();
     prev.current = { last: lastMsg?.id };
-  }, [messages.length, first, lastMsg?.id]);
+  }, [messages.length, first, lastMsg?.id, limit]);
   // Images and media that load later grow the list; stay pinned to the bottom if you were there.
   useEffect(() => {
     const observer = new ResizeObserver(() => {
@@ -661,6 +670,7 @@ function MessageList({ messages, policy = () => 'trusted', badge = () => '', med
     else if (el.scrollTop < lastTop.current - 2) stick.current = false;
     lastTop.current = el.scrollTop;
     if (!stick.current) saveAnchor();
+    if (el.scrollTop < 400 && limit < visibleCount) setLimit((n) => n + PAGE);
     if (stick.current && away !== null) setAway(null);
     else if (!stick.current && away === null) setAway(lastMsg?.id ?? '');
     if (menu) setMenu(null);
@@ -681,12 +691,16 @@ function MessageList({ messages, policy = () => 'trusted', badge = () => '', med
   };
   const focus = focusMessage.value;
   useEffect(() => {
-    if (focus && messages.some((m) => m.id === focus)) {
-      stick.current = false;
-      jumpTo(focus);
-      focusMessage.value = null;
-    }
-  }, [focus, messages.length]);
+    if (!focus) return;
+    const index = messages.findIndex((m) => m.id === focus || m.prev?.includes(focus));
+    if (index < 0) return;
+    // Widen the window first if the target is older than what is rendered.
+    const needed = messages.length - index + 20;
+    if (needed > limit) return setLimit(needed);
+    stick.current = false;
+    jumpTo(messages[index].id);
+    focusMessage.value = null;
+  }, [focus, messages.length, limit]);
   const openMenu = (message, x, y) => setMenu({ message, x, y });
   // Touch: long-press opens the menu, swipe right replies (Telegram mobile).
   const touchStart = (m) => (e) => {
@@ -719,7 +733,9 @@ function MessageList({ messages, policy = () => 'trusted', badge = () => '', med
     s.el.classList.remove('will-reply');
     if (s.dx > 60) onReply(s.m);
   };
-  const visible = messages.filter((m) => policy(m.pubkey) !== 'blocked');
+  const allVisible = messages.filter((m) => policy(m.pubkey) !== 'blocked');
+  const visibleCount = allVisible.length;
+  const visible = allVisible.length > limit ? allVisible.slice(-limit) : allVisible;
   // New messages from others since you scrolled up (older pages loading above don't count).
   const awayIndex = away === null ? -1 : messages.findIndex((m) => m.id === away);
   const below = awayIndex < 0 ? 0 : messages.slice(awayIndex + 1).filter((m) => m.pubkey !== me.value.pubkey).length;
@@ -754,7 +770,7 @@ function MessageList({ messages, policy = () => 'trusted', badge = () => '', med
           <div class="bubble">
             ${first && !mine && html`<div class="who" style=${`--name-color:${nameColor(m.pubkey)}`}>${store.displayName(m.pubkey)}${tag && html`<span class="badge">${tag}</span>`}</div>`}
             ${quote &&
-            html`<button class="quote" onClick=${() => jumpTo(quote.id)}>
+            html`<button class="quote" onClick=${() => (focusMessage.value = quote.id)}>
               <b>${store.displayName(quote.pubkey)}</b>${previewText(quote.content).slice(0, 140)}
             </button>`}
             ${policy(m.pubkey) === 'trusted' && html`<${Media} message=${m} auto=${mine || mediaAuto(m.pubkey)} />`}
@@ -794,10 +810,26 @@ function MessageList({ messages, policy = () => 'trusted', badge = () => '', med
 function Composer({ onSend, placeholder, replyTo, onCancelReply, editing, onEdit, onCancelEdit, draftKey }) {
   const [text, setTextState] = useState(() => store.drafts.value[draftKey] ?? '');
   // Keep the per-chat draft in step with what is typed (not while editing a sent message).
+  // Drafts reach the store after a pause in typing, so each keystroke doesn't re-render the sidebar.
+  const draftTimer = useRef();
+  const pendingDraft = useRef(null);
   const setText = (value) => {
     setTextState(value);
-    if (!editing) store.setDraft(draftKey, value);
+    if (editing) return;
+    pendingDraft.current = value;
+    clearTimeout(draftTimer.current);
+    draftTimer.current = setTimeout(() => {
+      store.setDraft(draftKey, value);
+      pendingDraft.current = null;
+    }, 400);
   };
+  useEffect(
+    () => () => {
+      clearTimeout(draftTimer.current);
+      if (pendingDraft.current !== null) store.setDraft(draftKey, pendingDraft.current);
+    },
+    [draftKey],
+  );
   const input = useRef();
   const { busy, error, run } = useAction();
   useEffect(() => {

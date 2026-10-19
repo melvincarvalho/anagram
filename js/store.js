@@ -86,6 +86,9 @@ function rememberAccount(signer) {
 
 // Stop everything belonging to the current account without forgetting it.
 function teardown() {
+  clearTimeout(incomingTimer);
+  incomingTimer = undefined;
+  incoming = { messages: [], reactions: [] };
   flushSaves();
   if (draftTimer) {
     clearTimeout(draftTimer);
@@ -486,7 +489,7 @@ async function handleWrap(wrap) {
     rumor = await nostr.unwrap(signer, wrap);
   } catch (e) {
     // Bad data is final; signer trouble (locked extension, bunker timeout) retries next session.
-    if (e.permanent) db.markWraps(signer.pubkey, [wrap.id]).catch(() => {});
+    if (e.permanent) markWrapDone(signer.pubkey, wrap.id);
     else db.markWrapFailure(signer.pubkey, wrap.id).catch(() => {});
     return;
   }
@@ -498,7 +501,7 @@ async function handleWrap(wrap) {
     for (const id of ids) queueSave({ account: signer.pubkey, id, deletedBy: rumor.pubkey });
   } else if (peer && rumor.kind === 7 && reactionTarget(rumor)) {
     const r = { account: signer.pubkey, id: rumor.id, peer, pubkey: rumor.pubkey, kind: 7, target: reactionTarget(rumor), emoji: nostr.normalizeEmoji(rumor.content), created_at: rumor.created_at };
-    addReactions([r]);
+    batchIncoming({ reaction: r });
     queueSave(r);
   } else if (peer && (rumor.kind === 14 || rumor.kind === 15) && rumor.content) {
     if (deleted.get(rumor.id) !== rumor.pubkey) {
@@ -516,13 +519,47 @@ async function handleWrap(wrap) {
         reply,
         edited,
       };
-      addMessages([m]);
-      queueSave(current(m));
+      batchIncoming({ message: m });
       requestProfiles([peer]);
       if (!edited) emitIncoming({ peer }, m);
     }
   }
-  db.markWraps(signer.pubkey, [wrap.id]).catch(() => {});
+  markWrapDone(signer.pubkey, wrap.id);
+}
+
+// Decrypted gift wraps are applied in batches: one state update (copy, sort, edit merge)
+// per burst instead of per message, which matters when syncing thousands of DMs.
+let incoming = { messages: [], reactions: [] };
+let incomingTimer;
+function batchIncoming({ message, reaction }) {
+  if (message) incoming.messages.push(message);
+  if (reaction) incoming.reactions.push(reaction);
+  incomingTimer ??= setTimeout(flushIncoming, 30);
+}
+function flushIncoming() {
+  incomingTimer = undefined;
+  const { messages, reactions: rs } = incoming;
+  incoming = { messages: [], reactions: [] };
+  const live = messages.filter((m) => deleted.get(m.id) !== m.pubkey);
+  batch(() => {
+    addMessages(live);
+    addReactions(rs);
+  });
+  for (const m of live) queueSave(current(m));
+}
+
+let doneWraps = [];
+let doneTimer;
+function markWrapDone(account, id) {
+  doneWraps.push(id);
+  // Only mark wraps done after their messages are on disk, or a reload in between loses them.
+  doneTimer ??= setTimeout(() => {
+    doneTimer = undefined;
+    const ids = doneWraps;
+    doneWraps = [];
+    flushIncoming();
+    flushSaves().then(() => db.markWraps(account, ids).catch(() => {}));
+  }, 300);
 }
 
 const enqueue = (wrap) => (queue = queue.then(() => handleWrap(wrap)).catch(() => {}));
@@ -561,6 +598,7 @@ async function startInbox() {
       oneose: () =>
         queue.then(() => {
           if (me.value !== signer) return;
+          flushIncoming();
           syncing.value = false;
           storage.set(syncKey, nostr.now());
         }),
@@ -601,6 +639,7 @@ export async function loadOlderDirectMessages() {
     if (me.value !== signer) return;
     events.forEach(enqueue);
     await queue;
+    flushIncoming();
     dmHistoryDone.value = finished;
   } finally {
     syncing.value = false;
