@@ -548,7 +548,14 @@ export function verifiedNip05(pk) {
 // ---------- Direct messages ----------
 
 const seenWraps = new Set();
-const deleted = new Map(); // message id -> deleter pubkey
+// Deletion requests seen, keyed by message id -> the pubkeys that asked. A deletion only
+// counts when the asker is the message's author, so a stranger's kind 5 for someone
+// else's id can never hide (or later resurrect) that message.
+const deleted = new Map();
+const isDeleted = (id, author) => deleted.get(id)?.has(author) ?? false;
+const markDeleted = (id, author) => (deleted.get(id) ?? deleted.set(id, new Set()).get(id)).add(author);
+// Tombstone rows live under their own key so they can never overwrite a message row.
+const tombstone = (account, id, author) => ({ account, id: `del:${id}:${author}`, target: id, deletedBy: author });
 let queue = Promise.resolve();
 let pendingRows = [];
 let flushTimer;
@@ -570,7 +577,7 @@ function collapseEdits(thread, onMerged) {
     const target = editTarget(m);
     if (!target || m.prev?.includes(target) || thread.some((x) => x.id === target)) return m;
     const gone = removedById.get(target);
-    if (deleted.get(target) !== m.pubkey && !(gone && gone.pubkey === m.pubkey)) return m;
+    if (!isDeleted(target, m.pubkey) && !(gone && gone.pubkey === m.pubkey)) return m;
     const merged = { ...m, prev: nostr.uniq([...(gone?.prev ?? []), target, ...(m.prev ?? [])]), reply: m.reply ?? gone?.reply };
     onMerged?.(merged);
     return merged;
@@ -634,7 +641,7 @@ function addReactions(list) {
   const next = { ...reactions.value };
   let changed = false;
   for (const r of list) {
-    if (deleted.get(r.id) === r.pubkey) continue;
+    if (isDeleted(r.id, r.pubkey)) continue;
     const current = next[r.target] ?? [];
     if (current.some((x) => x.id === r.id)) continue;
     next[r.target] = [...current, { id: r.id, pubkey: r.pubkey, emoji: r.emoji }];
@@ -645,7 +652,7 @@ function addReactions(list) {
 
 // Apply deletion requests; only the original author can delete.
 function applyDeletions(ids, author) {
-  for (const id of ids) deleted.set(id, author);
+  for (const id of ids) markDeleted(id, author);
   const gone = new Set(ids);
   const next = {};
   for (const [target, list] of Object.entries(reactions.value))
@@ -704,13 +711,13 @@ async function handleWrap(wrap) {
   if (peer && rumor.kind === 5) {
     const ids = rumor.tags.filter((t) => t[0] === 'e').map((t) => t[1]);
     applyDeletions(ids, rumor.pubkey);
-    for (const id of ids) queueSave({ account: signer.pubkey, id, deletedBy: rumor.pubkey });
+    for (const id of ids) queueSave(tombstone(signer.pubkey, id, rumor.pubkey));
   } else if (peer && rumor.kind === 7 && reactionTarget(rumor)) {
     const r = { account: signer.pubkey, id: rumor.id, peer, pubkey: rumor.pubkey, kind: 7, target: reactionTarget(rumor), emoji: nostr.normalizeEmoji(rumor.content), created_at: rumor.created_at };
     batchIncoming({ reaction: r });
     queueSave(r);
   } else if (peer && (rumor.kind === 14 || rumor.kind === 15) && rumor.content) {
-    if (deleted.get(rumor.id) !== rumor.pubkey) {
+    if (!isDeleted(rumor.id, rumor.pubkey)) {
       const reply = rumor.tags.find((t) => t[0] === 'e' && t[3] === 'reply')?.[1];
       const edited = nostr.isEdited(rumor.tags);
       const m = {
@@ -746,7 +753,7 @@ function flushIncoming() {
   incomingTimer = undefined;
   const { messages, reactions: rs } = incoming;
   incoming = { messages: [], reactions: [] };
-  const live = messages.filter((m) => deleted.get(m.id) !== m.pubkey);
+  const live = messages.filter((m) => !isDeleted(m.id, m.pubkey));
   batch(() => {
     addMessages(live);
     addReactions(rs);
@@ -776,12 +783,12 @@ async function startInbox() {
   const messages = [];
   const saved = [];
   for (const r of rows) {
-    if (r.deletedBy) deleted.set(r.id, r.deletedBy);
+    if (r.deletedBy) markDeleted(r.target ?? r.id, r.deletedBy); // r.target: new tombstone rows; r.id: old ones
     else if (r.kind === 7) saved.push(r);
     else messages.push(r);
   }
   if (me.value !== signer) return; // switched account while loading
-  addMessages(messages.filter((m) => deleted.get(m.id) !== m.pubkey));
+  addMessages(messages.filter((m) => !isDeleted(m.id, m.pubkey)));
   addReactions(saved);
   for (const m of messages) if (m.status === 'pending' && m.tags) resumePending(m);
   requestProfiles(Object.keys(dms.value));
@@ -1047,7 +1054,7 @@ function addRoomMessages(address, events, { fromCache = false } = {}) {
   const current = roomState.value[address]?.messages ?? [];
   const ids = new Set(current.flatMap(knownIds));
   const fresh = events.filter(
-    (e) => !ids.has(e.id) && deleted.get(e.id) !== e.pubkey && nostr.validRoomMessage(e, address),
+    (e) => !ids.has(e.id) && !isDeleted(e.id, e.pubkey) && nostr.validRoomMessage(e, address),
   );
   if (!fresh.length) return;
   setRoom(address, {
@@ -1140,7 +1147,7 @@ function roomActivity(address, event) {
 
 // Undo a local deletion (used when publishing it failed).
 function undoDeletions(ids, author, restore) {
-  for (const id of ids) if (deleted.get(id) === author) deleted.delete(id);
+  for (const id of ids) deleted.get(id)?.delete(author);
   restore();
 }
 
@@ -1176,7 +1183,7 @@ export async function toggleReaction(context, message, emoji) {
     nostr.sendRumor(signer, peer, kind, content, [['p', peer], ...tags], inboxOf(peer), inboxRelays.value ?? [], nostr.now(), onRumor);
   if (mine.length) {
     applyDeletions(ids, signer.pubkey);
-    for (const id of ids) queueSave({ account: signer.pubkey, id, deletedBy: signer.pubkey });
+    for (const id of ids) queueSave(tombstone(signer.pubkey, id, signer.pubkey));
     send(5, '', [...ids.map((id) => ['e', id]), ['k', '7']]).catch(
       fail('Removing reaction', () =>
         undoDeletions(ids, signer.pubkey, () => {
@@ -1194,7 +1201,7 @@ export async function toggleReaction(context, message, emoji) {
     }).catch(
       fail('Reaction', () => {
         applyDeletions([added.id], signer.pubkey);
-        queueSave({ account: signer.pubkey, id: added.id, deletedBy: signer.pubkey });
+        queueSave(tombstone(signer.pubkey, added.id, signer.pubkey));
       }),
     );
   }
@@ -1308,7 +1315,7 @@ export async function deleteMessage(context, message, { onlyCurrent = false, bac
   } else {
     const peer = context.peer;
     applyDeletions(ids, signer.pubkey);
-    for (const id of ids) queueSave({ account: signer.pubkey, id, deletedBy: signer.pubkey });
+    for (const id of ids) queueSave(tombstone(signer.pubkey, id, signer.pubkey));
     publishing = nostr.sendRumor(signer, peer, 5, '', [['p', peer], ...ids.map((id) => ['e', id]), ['k', String(message.kind ?? 14)]], inboxOf(peer), inboxRelays.value ?? []);
   }
   if (!background) return publishing;
