@@ -54,6 +54,29 @@ const IMAGE_RE = /\.(?:png|jpe?g|gif|webp|avif|svg)(?:[?#]|$)/i;
 const VIDEO_RE = /\.(?:mp4|webm|mov|m4v)(?:[?#]|$)/i;
 const viewer = signal(null); // full-screen media url
 const infoOpen = signal(false); // chat info panel
+const chatSearch = signal(false); // in-chat search bar open
+const focusMessage = signal(null); // message id to scroll to and flash once it is rendered
+
+function Highlight({ text, q }) {
+  if (!q) return text;
+  const lower = text.toLowerCase();
+  const out = [];
+  let i = 0;
+  for (let at = lower.indexOf(q); at !== -1 && out.length < 20; at = lower.indexOf(q, i)) {
+    out.push(text.slice(i, at), html`<mark>${text.slice(at, at + q.length)}</mark>`);
+    i = at + q.length;
+  }
+  out.push(text.slice(i));
+  return out;
+}
+
+// Snippet centred on the first match.
+function snippet(content, q) {
+  const text = previewText(content).replace(/\s+/g, ' ');
+  const at = text.toLowerCase().indexOf(q);
+  const start = Math.max(0, at - 30);
+  return (start ? '…' : '') + text.slice(start, start + 90);
+}
 
 // Media URLs from the text plus NIP-92 imeta attachments.
 function mediaOf(message) {
@@ -259,6 +282,7 @@ function Sidebar() {
       })}
       <h2>Chats ${syncing.value && html`<span class="spinner" title="Syncing" />`} <a class="add" href="#/new" title="New chat">+</a></h2>
       ${chats.length === 0 && html`<p class="muted small pad">${q ? 'No matches.' : 'No conversations yet.'}</p>`}
+      ${q.length >= 2 && html`<${MessageResults} q=${q} />`}
       ${chats.map(({ peer, last }) => {
         const id = nostr.did(peer);
         return html`<a class=${'item' + (r.kind === 'dm' && r.id === id ? ' on' : '')} href=${`#/dm/${id}`}>
@@ -277,6 +301,66 @@ function Sidebar() {
       })}
     </nav>
   </aside>`;
+}
+
+function MessageResults({ q }) {
+  const hits = store.searchMessages(q);
+  return html`<h2>Messages <small class="muted">${hits.length === 50 ? '50+' : hits.length}</small></h2>
+    ${hits.length === 0 && html`<p class="muted small pad">No messages match.</p>`}
+    ${hits.map(({ chat, m }) => {
+      const href = chat.room ? `#/room/${nostr.encodeRoomLink(chat.room)}` : `#/dm/${nostr.did(chat.peer)}`;
+      const title = chat.room ? chat.room.name : chat.peer === me.value.pubkey ? 'Note to self' : store.displayName(chat.peer);
+      return html`<a class="item result" href=${href} onClick=${() => (focusMessage.value = m.id)}>
+        ${chat.room ? html`<${RoomAvatar} room=${chat.room} />` : html`<${Avatar} pubkey=${chat.peer} />`}
+        <span class="label">
+          <span class="line"><b>${title}</b><time>${shortTime(m.created_at)}</time></span>
+          <small>${chat.room || m.pubkey === me.value.pubkey ? `${m.pubkey === me.value.pubkey ? 'You' : store.displayName(m.pubkey)}: ` : ''}<${Highlight} text=${snippet(m.content, q)} q=${q} /></small>
+        </span>
+      </a>`;
+    })}
+    <h2>Chats</h2>`;
+}
+
+// In-chat search bar: ↑/↓ or Enter step through matches, newest first.
+function ChatSearch({ messages, onClose }) {
+  const [query, setQuery] = useState('');
+  const [index, setIndex] = useState(0);
+  const input = useRef();
+  useEffect(() => input.current?.focus(), []);
+  const q = query.trim().toLowerCase();
+  const matches = q.length >= 2 ? messages.filter((m) => m.content.toLowerCase().includes(q)).reverse() : [];
+  const go = (i) => {
+    if (!matches.length) return;
+    const next = (i + matches.length) % matches.length;
+    setIndex(next);
+    focusMessage.value = matches[next].id;
+  };
+  useEffect(() => {
+    setIndex(0);
+    if (matches.length) focusMessage.value = matches[0].id;
+  }, [q]);
+  return html`<div class="chat-search">
+    <input
+      ref=${input}
+      type="search"
+      placeholder="Search this chat"
+      value=${query}
+      onInput=${(e) => setQuery(e.target.value)}
+      onKeyDown=${(e) => {
+        if (e.key === 'Enter' || e.key === 'ArrowDown') {
+          e.preventDefault();
+          go(index + (e.shiftKey ? -1 : 1));
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          go(index - 1);
+        } else if (e.key === 'Escape') onClose();
+      }}
+    />
+    <span class="muted small">${q.length < 2 ? '' : matches.length ? `${index + 1} of ${matches.length}` : 'No results'}</span>
+    <button class="link" title="Older match" disabled=${!matches.length} onClick=${() => go(index + 1)}>↑</button>
+    <button class="link" title="Newer match" disabled=${!matches.length} onClick=${() => go(index - 1)}>↓</button>
+    <button class="link" title="Close search" onClick=${onClose}>✕</button>
+  </div>`;
 }
 
 // ---------- Messages ----------
@@ -384,7 +468,16 @@ function MessageList({ messages, policy = () => 'trusted', badge = () => '', med
     el.classList.remove('flash');
     void el.offsetWidth;
     el.classList.add('flash');
+    el.addEventListener('animationend', () => el.classList.remove('flash'), { once: true });
   };
+  const focus = focusMessage.value;
+  useEffect(() => {
+    if (focus && messages.some((m) => m.id === focus)) {
+      stick.current = false;
+      jumpTo(focus);
+      focusMessage.value = null;
+    }
+  }, [focus, messages.length]);
   const openMenu = (message, x, y) => setMenu({ message, x, y });
   // Touch: long-press opens the menu, swipe right replies (Telegram mobile).
   const touchStart = (m) => (e) => {
@@ -686,7 +779,9 @@ function DirectChat({ id }) {
         <b>${peer === me.value.pubkey ? 'Note to self' : store.displayName(peer)}</b>
         <small class="mono">${profiles.value[peer]?.nip05 || nostr.shortKey(peer)}</small>
       </button>
+      <button class="icon" title="Search (Ctrl+F)" onClick=${() => (chatSearch.value = !chatSearch.value)}>🔍</button>
     </header>
+    ${chatSearch.value && html`<${ChatSearch} messages=${messages} onClose=${() => (chatSearch.value = false)} />`}
     <${InfoPanel}><${PersonInfo} pubkey=${peer} messages=${messages} /></${InfoPanel}>
     <${MessageList}
       ...${actions.list}
@@ -740,11 +835,13 @@ function RoomChat({ id }) {
         <b>${room.name}</b>
         <small>${room.about || `by ${store.displayName(room.owner)}`}</small>
       </button>
+<button class="icon" title="Search (Ctrl+F)" onClick=${() => (chatSearch.value = !chatSearch.value)}>🔍</button>
       <button class="wide-only" onClick=${() => copy(`${location.origin}${location.pathname}#/room/${nostr.encodeRoomLink(room)}`, 'Room link copied')}>Share</button>
       ${joined
         ? html`<button class="wide-only" onClick=${() => store.leaveRoom(room.address)}>Leave</button>`
         : html`<button class="primary" onClick=${() => store.joinRoom(room)}>Join</button>`}
     </header>
+    ${chatSearch.value && html`<${ChatSearch} messages=${state.messages} onClose=${() => (chatSearch.value = false)} />`}
     <${InfoPanel}><${RoomInfo} room=${room} messages=${state.messages} /></${InfoPanel}>
     ${state.pinnedEvent &&
     policy(state.pinnedEvent.pubkey) !== 'blocked' &&
@@ -885,7 +982,18 @@ function App() {
   const routeKey = `${route.value.kind}:${route.value.id ?? ''}`;
   useEffect(() => {
     infoOpen.value = false;
+    chatSearch.value = false;
   }, [routeKey]);
+  useEffect(() => {
+    const key = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'f' && ['dm', 'room'].includes(route.value.kind)) {
+        e.preventDefault();
+        chatSearch.value = true;
+      }
+    };
+    addEventListener('keydown', key);
+    return () => removeEventListener('keydown', key);
+  }, []);
   useEffect(() => {
     document.title = unread ? `(${unread}) Anagram lite` : 'Anagram lite';
   }, [unread]);

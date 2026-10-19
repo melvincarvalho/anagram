@@ -941,3 +941,36 @@ button.tick.failed {
 button.wide {
   width: 100%;
 }
+
+/* Search */
+mark {
+  background: #ffe066;
+  color: #111;
+  border-radius: 2px;
+}
+.bar button.icon {
+  border: 0;
+  background: none;
+  font-size: 16px;
+  padding: 6px;
+}
+.chat-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+}
+.chat-search input {
+  flex: 1;
+  padding: 6px 10px;
+}
+.chat-search button.link {
+  font-size: 16px;
+  padding: 0 4px;
+}
+.sidebar h2 small {
+  font-weight: 400;
+  text-transform: none;
+}

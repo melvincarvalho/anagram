@@ -129,6 +129,21 @@ export const totalUnread = computed(() => {
   return n;
 });
 
+// ---------- Search ----------
+
+// Newest-first message matches across DMs and joined rooms (what is loaded locally).
+export function searchMessages(query, limit = 50) {
+  const q = query.trim().toLowerCase();
+  if (q.length < 2) return [];
+  const hits = [];
+  for (const [peer, thread] of Object.entries(dms.value))
+    for (const m of thread) if (m.content.toLowerCase().includes(q)) hits.push({ chat: { peer }, m });
+  for (const room of joinedRooms.value)
+    for (const m of roomState.value[room.address]?.messages ?? [])
+      if (m.content.toLowerCase().includes(q)) hits.push({ chat: { room }, m });
+  return hits.sort((a, b) => b.m.created_at - a.m.created_at).slice(0, limit);
+}
+
 // ---------- Profiles ----------
 
 const pendingProfiles = new Set();
