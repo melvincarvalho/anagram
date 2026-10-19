@@ -244,7 +244,7 @@ function Login() {
   ];
   return html`<main class="login">
     <form class="card" onSubmit=${submit}>
-      <h1>Anagram <small>lite</small></h1>
+      <h1>nostr.chat</h1>
       <p class="muted">Private Nostr DMs and public chat rooms.</p>
       <div class="tabs">
         ${tabs.map(
@@ -1363,7 +1363,7 @@ function ForwardPicker() {
 function Home() {
   return html`<section class="main empty">
     <div>
-      <h2>Anagram lite</h2>
+      <h2>nostr.chat</h2>
       <p class="muted">Pick a conversation, or <a href="#/new">start a new one</a>.</p>
     </div>
   </section>`;
@@ -1387,7 +1387,7 @@ function App() {
     return () => removeEventListener('keydown', key);
   }, []);
   useEffect(() => {
-    document.title = unread ? `(${unread}) Anagram lite` : 'Anagram lite';
+    document.title = unread ? `(${unread}) nostr.chat` : 'nostr.chat';
   }, [unread]);
   if (!me.value || store.addingAccount.value) return html`<${Login} />`;
   const r = route.value;

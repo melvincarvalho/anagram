@@ -3,14 +3,71 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>Anagram lite</title>
-    <meta name="description" content="Private Nostr DMs and public chat rooms. Compatible with Anagram." />
+    <title>nostr.chat — private chat on Nostr</title>
+    <meta
+      name="description"
+      content="Telegram-style chat on Nostr: end-to-end encrypted DMs and public rooms, with no phone number and no account server. Your identity is your key (did:nostr). Compatible with Anagram."
+    />
+    <link rel="canonical" href="https://nostr.chat/" />
+    <meta name="application-name" content="nostr.chat" />
+    <meta name="apple-mobile-web-app-title" content="nostr.chat" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="color-scheme" content="light dark" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="nostr.chat" />
+    <meta property="og:url" content="https://nostr.chat/" />
+    <meta property="og:title" content="nostr.chat — Chat freely. Own your identity." />
+    <meta
+      property="og:description"
+      content="End-to-end encrypted messages and public rooms on Nostr. No phone number, no account server — just your key. Open it in any browser."
+    />
+    <meta property="og:image" content="https://nostr.chat/og-image.png" />
+    <meta property="og:image:secure_url" content="https://nostr.chat/og-image.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="nostr.chat — Chat freely. Own your identity. A phone showing an encrypted chat with replies, reactions and read ticks."
+    />
+    <meta property="og:locale" content="en_US" />
+
+    <!-- Twitter / X -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="nostr.chat — Chat freely. Own your identity." />
+    <meta
+      name="twitter:description"
+      content="End-to-end encrypted messages and public rooms on Nostr. No phone number, no account server — just your key."
+    />
+    <meta name="twitter:image" content="https://nostr.chat/og-image.png" />
+    <meta name="twitter:image:alt" content="nostr.chat — a phone showing an encrypted Telegram-style chat on Nostr." />
+
+    <!-- Structured data (a data block, not executed, so CSP doesn't apply) -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "nostr.chat",
+        "alternateName": "Anagram lite",
+        "url": "https://nostr.chat/",
+        "description": "Telegram-style chat on Nostr: end-to-end encrypted DMs and public rooms, no phone number, no account server.",
+        "applicationCategory": "CommunicationApplication",
+        "operatingSystem": "Any (web browser)",
+        "image": "https://nostr.chat/og-image.png",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "codeRepository": "https://github.com/melvincarvalho/anagram"
+      }
+    </script>
     <!-- Hashes cover the two inline scripts below; recompute if either changes. -->
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-1dzQkz7YEfGTXPftOsMbxv5s0/ry8bKCY72wulVUEAE=' 'sha256-jnBSk72zqbi0a5LCa/ibHVaDg1o2MqR3+gtt8tzNXNI='; style-src 'self' 'unsafe-inline'; img-src 'self' https: data: blob:; media-src https: blob:; connect-src 'self' https: wss:; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'" />
     <meta name="referrer" content="no-referrer" />
-    <meta name="theme-color" content="#14161a" />
+    <meta name="theme-color" content="#5b5bd6" />
     <link rel="manifest" href="manifest.webmanifest" />
     <link rel="icon" href="icon.svg" type="image/svg+xml" />
+    <link rel="icon" href="icon-192.png" type="image/png" sizes="192x192" />
+    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
     <link rel="stylesheet" href="style.css" />
     <script>
       // Apply a chosen theme before first paint so there is no flash.
