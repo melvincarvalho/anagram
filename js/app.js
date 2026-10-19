@@ -1777,6 +1777,37 @@ function NewThing() {
   </section>`;
 }
 
+function MessagingDevices({ owner }) {
+  const [state, setState] = useState({ owner, loading: true, devices: [], error: '' });
+  const request = useRef(0);
+  const refresh = async () => {
+    const current = ++request.current;
+    setState({ owner, loading: true, devices: [], error: '' });
+    try {
+      const { loadMessagingDevices } = await import('./messaging-devices.js');
+      const devices = await loadMessagingDevices(owner, { relays: nostr.uniq([...(inboxRelays.value ?? []), ...nostr.NDR_RELAYS]) });
+      if (request.current === current) setState({ owner, loading: false, devices, error: '' });
+    } catch {
+      if (request.current === current) setState({ owner, loading: false, devices: [], error: 'Could not load devices. Try refreshing.' });
+    }
+  };
+  useEffect(() => {
+    refresh();
+    return () => { request.current++; };
+  }, [owner]);
+  const visible = state.owner === owner ? state : { loading: true, devices: [], error: '' };
+  return html`<div data-testid="messaging-devices">
+    <h4>Messaging devices</h4>
+    ${visible.loading ? html`<p class="muted small" role="status">Loading devices…</p>`
+      : visible.error ? html`<p class="muted small" role="status">${visible.error}</p>`
+      : visible.devices.length ? html`<ul>${visible.devices.map((device) => html`<li key=${device.pubkey}>
+          ${device.current ? 'This browser · ' : ''}<span class="mono" title=${device.pubkey}>${device.pubkey.slice(0, 8)}…${device.pubkey.slice(-8)}</span>
+        </li>`)}</ul>`
+      : html`<p class="muted small">No authorized messaging devices found.</p>`}
+    <button class="link" disabled=${visible.loading} onClick=${refresh}>Refresh devices</button>
+  </div>`;
+}
+
 function Settings() {
   const signer = me.value;
   const [showKey, setShowKey] = useState(false);
@@ -1809,6 +1840,7 @@ function Settings() {
         <label class="check"><input type="checkbox" checked=${store.preferDoubleRatchet.value}
           onChange=${(e) => store.setPreferDoubleRatchet(e.target.checked)} /> Prefer double ratchet when available</label>
         <p class="muted small">For Auto chats. Existing chats keep their encryption; change it in chat info. Double-ratchet chats never switch back automatically.</p>
+        <${MessagingDevices} owner=${signer.pubkey} />
       </div>
       <div class="card">
         <h3>DM inbox relays</h3>

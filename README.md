@@ -27,6 +27,9 @@ messages. Sending does not poll relays. NDR discovery and session traffic also u
 automatically downgrades, including after failure or disabling the preference.
 Existing NIP-17 conversations upgrade only after choosing Auto or Double ratchet.
 The header's tooltip shows the current transport; a message's menu shows its own transport.
+Settings also lists the account's authorized messaging devices, marking this browser
+when its local identity is known. Opening or refreshing the list only reads the
+signed roster and local public identity; it does not create or authorize a device.
 
 The optional transport supports direct text messages, replies, reactions, edits and
 NIP-92 attachment tags. Both people need a compatible client, such as Iris. New
