@@ -16,6 +16,10 @@ A no-build Preact client for private Nostr DMs and public chat rooms, wire-compa
 
 Relays are the interim transport. The plan is NIP-98-authenticated HTTP ([nip98.com](https://nip98.com)): one base URL where `query`/`subscribe`/`publish` become `GET`/`SSE`/`POST` with the scope as a parameter and a signed kind 27235 `Authorization` header from the account's signer. That swap is a change to `transport.js` alone; the scopes, the signers and everything in `store.js` stay as they are. It must cover the `'ndr'` scope too: the double-ratchet runtime (`js/ndr.js`) only ever calls `transport.subscribe`, `transport.queryConfirmed` and `transport.publish`, so roster discovery and session envelopes move with the rest, but `queryConfirmed` needs an HTTP equivalent of "a real end-of-stored-events, not a timeout" before a device may be registered.
 
+## Interoperability
+
+[docs/SPEC.md](docs/SPEC.md) is the wire profile: every kind, tag and rule this client sends and accepts (identity, transport scopes, NIP-17 DMs, Anagram rooms, private lists and settings sync, media, the double-ratchet binding, trust and policy), with a conformance summary for other clients and bots. Keep it in step with code changes.
+
 ## Privacy
 
 What leaves your device, and to whom. Nothing here is hidden from you; this is the list (also at [nostr.chat/privacy](https://nostr.chat/privacy), with [nostr.chat/security](https://nostr.chat/security) alongside).
