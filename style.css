@@ -1742,12 +1742,22 @@ mark {
   margin: 8px 0 0;
   color: var(--muted);
 }
+.landing-partners {
+  margin: 40px 0 0;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+}
+.landing-partners a {
+  color: inherit;
+  text-decoration: underline;
+}
 .landing-foot {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
   gap: 10px 20px;
-  margin-top: 40px;
+  margin-top: 16px;
   padding-top: 16px;
   border-top: 1px solid var(--line);
   color: var(--muted);

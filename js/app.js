@@ -540,6 +540,7 @@ function Login() {
         <details><summary>What about double ratchet?</summary><p>It adds Signal-style forward secrecy for chats with Iris users, and such chats stay in this browser. By default the app only checks whether the other person supports it (a lookup on relay.snort.social) and asks before turning it on; "Never" in Settings stops the lookups. Everyone else keeps standard NIP-17.</p></details>
         <details><summary>What leaves my device?</summary><p>Only what the <a href="https://github.com/melvincarvalho/anagram#privacy" target="_blank" rel="noopener">Privacy section</a> lists: relay traffic, profile lookups on nostr.social, and files you choose to upload.</p></details>
       </section>
+      <p class="landing-partners">Works with <a href="https://github.com/lnbits/anagram" target="_blank" rel="noopener">Anagram</a>, <a href="https://irischat.org" target="_blank" rel="noopener">Iris</a> and other Nostr apps. One key, one network, your choice of app.</p>
       <footer class="landing-foot">
         <span>nostr.chat is free software. Encrypted with NIP-44 and NIP-17 gift wrap; optional double ratchet over Nostr.</span>
         <nav>
