@@ -1299,6 +1299,7 @@ function Composer({ onSend, placeholder, replyTo, onCancelReply, editing, onEdit
       try {
         const wire = expandMentions(value); // @Name -> nostr:nprofile… (Anagram's mention format)
         await (editing ? onEdit(editing, wire) : onSend(wire, attachmentsFor(value)));
+        if (!editing) playSound('sent');
       } catch (e) {
         setText(value);
         throw e;
@@ -1353,6 +1354,7 @@ function Composer({ onSend, placeholder, replyTo, onCancelReply, editing, onEdit
       try {
         const tag = await store.uploadMedia(file);
         await onSend(tag[1].slice(4), [tag]);
+        playSound('sent');
       } catch (e) {
         store.notify(`Voice note failed: ${e.message}`);
       } finally {
@@ -2405,7 +2407,8 @@ function NotificationSettings() {
         <option value="off">Off</option>
       </select>
     </label>
-    <label class="check"><input type="checkbox" checked=${n.sound} onChange=${(e) => store.setNotifySettings({ sound: e.target.checked })} /> Sound</label>
+    <label class="check"><input type="checkbox" checked=${n.sound} onChange=${(e) => store.setNotifySettings({ sound: e.target.checked })} /> Sounds
+      <button type="button" class="link" title="Play the message sound" onClick=${() => playSound('dm', { force: true })}>Preview</button></label>
     ${permission === 'granted'
       ? html`<p class="muted small">Desktop notifications are on (shown when the tab is in the background).</p>`
       : permission === 'denied'
@@ -2418,21 +2421,57 @@ function NotificationSettings() {
 
 // ---------- In-tab notifications ----------
 
+// ---------- Sounds ----------
+// Synthesised in code, no audio files: soft bells with a quiet overtone. Browsers keep
+// an AudioContext silent until the page has been touched, so it is created and resumed
+// on the first gesture rather than on the first message.
 let audio;
-function beep() {
+function primeAudio() {
   try {
     audio ??= new AudioContext();
-    const osc = audio.createOscillator();
-    const gain = audio.createGain();
+    if (audio.state === 'suspended') audio.resume().catch(() => {});
+  } catch {}
+}
+addEventListener('pointerdown', primeAudio, { capture: true, passive: true });
+addEventListener('keydown', primeAudio, { capture: true, passive: true });
+
+// One bell note: fast attack, exponential decay, optional octave overtone that fades sooner.
+function note(ctx, at, freq, { length = 0.3, peak = 0.15, overtone = 0.2 } = {}) {
+  const play = (f, g, len) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
     osc.type = 'sine';
-    osc.frequency.setValueAtTime(880, audio.currentTime);
-    osc.frequency.setValueAtTime(1320, audio.currentTime + 0.08);
-    gain.gain.setValueAtTime(0.0001, audio.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.15, audio.currentTime + 0.01);
-    gain.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + 0.25);
-    osc.connect(gain).connect(audio.destination);
-    osc.start();
-    osc.stop(audio.currentTime + 0.26);
+    osc.frequency.value = f;
+    gain.gain.setValueAtTime(0.0001, at);
+    gain.gain.exponentialRampToValueAtTime(g, at + 0.008);
+    gain.gain.exponentialRampToValueAtTime(0.0001, at + len);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(at);
+    osc.stop(at + len + 0.02);
+  };
+  play(freq, peak, length);
+  if (overtone) play(freq * 2, peak * overtone, length * 0.5);
+}
+const SOUNDS = {
+  // Direct message: two rising notes, A5 then E6.
+  dm: (ctx, t) => {
+    note(ctx, t, 880);
+    note(ctx, t + 0.09, 1318.5, { length: 0.34 });
+  },
+  // Room message or mention: one lower note, E5.
+  room: (ctx, t) => note(ctx, t, 659.25, { length: 0.22, peak: 0.12 }),
+  // Sent: a short falling tick, C6 to G5, quieter.
+  sent: (ctx, t) => {
+    note(ctx, t, 1046.5, { length: 0.07, peak: 0.07, overtone: 0 });
+    note(ctx, t + 0.05, 784, { length: 0.09, peak: 0.06, overtone: 0 });
+  },
+};
+function playSound(name, { force = false } = {}) {
+  if (!force && !store.notifySettings.value.sound) return;
+  try {
+    primeAudio();
+    if (!audio || audio.state !== 'running') return;
+    SOUNDS[name](audio, audio.currentTime);
   } catch {}
 }
 
@@ -2455,7 +2494,7 @@ store.onIncoming((chat, m) => {
   if (viewing(chat)) return;
   if (store.notifySettings.value.sound && Date.now() - lastBeep > 1500) {
     lastBeep = Date.now();
-    beep();
+    playSound(chat.room ? 'room' : 'dm');
   }
   if (typeof Notification === 'undefined' || Notification.permission !== 'granted' || !document.hidden) return;
   const who = store.displayName(m.pubkey);
