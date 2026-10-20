@@ -1145,9 +1145,9 @@ function MessageList({ messages, policy = () => 'trusted', badge = () => '', med
           ontouchend=${touchEnd}
           ontouchcancel=${touchEnd}
         >
-          ${showNames && html`<div class="slot">${last && !mine && html`<${Avatar} pubkey=${m.pubkey} size=${32} />`}</div>`}
+          ${showNames && html`<div class="slot">${last && !mine && html`<button class="person" title=${nostr.did(m.pubkey)} aria-label=${`Profile of ${store.displayName(m.pubkey)}`} onClick=${(e) => { e.stopPropagation(); openProfile(m.pubkey); }}><${Avatar} pubkey=${m.pubkey} size=${32} /></button>`}</div>`}
           <div class="bubble">
-            ${showNames && first && !mine && html`<div class="who" style=${`--name-color:${nameColor(m.pubkey)}`}>${store.displayName(m.pubkey)}${tag && html`<span class="badge">${tag}</span>`}</div>`}
+            ${showNames && first && !mine && html`<div class="who" style=${`--name-color:${nameColor(m.pubkey)}`}><button class="person" title=${nostr.did(m.pubkey)} onClick=${(e) => { e.stopPropagation(); openProfile(m.pubkey); }}>${store.displayName(m.pubkey)}</button>${tag && html`<span class="badge">${tag}</span>`}</div>`}
             ${quote &&
             html`<button class="quote" onClick=${() => (byId[quote.id] || !jumpOlder ? (focusMessage.value = quote.id) : jumpOlder(quote.id))}>
               <b>${store.displayName(quote.pubkey)}</b>${previewText(quote.content).slice(0, 140)}
