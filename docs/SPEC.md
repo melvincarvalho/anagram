@@ -57,8 +57,8 @@ the hex key. Service entries, `alsoKnownAs` and `follows` are read from it when 
 ## 2. Relays and the transport scopes
 
 2.1 All relay access goes through one module (`js/transport.js`). Code above it names a
-**scope**, never a relay list. A future HTTP transport (NIP-98 signed requests to one
-base URL) must offer the same scopes; nothing above the transport changes.
+**scope**, never a relay list. Any other transport (for example NIP-98 signed HTTP
+requests) must offer the same scopes; nothing above the transport changes.
 
 | Scope | Resolves to | Used for |
 |---|---|---|
@@ -347,6 +347,6 @@ unknown tags everywhere.
 - A device registered later does not receive earlier ratchet history (7.5). Iris fills
   this with a device-to-device history reconciliation (Negentropy over a ratchet session
   between one's own devices); this client does not implement it yet.
-- There is no server of ours yet; sections 2.1–2.5 are the contract the planned NIP-98
-  HTTP transport has to meet, including a confirmed-empty read for 7.3.
+- There is no server of ours; sections 2.1–2.5 are the contract any replacement
+  transport has to meet, including a confirmed-empty read for 7.3.
 - No push notifications while the tab is closed.
