@@ -1,0 +1,22 @@
+name: Tests
+
+on:
+  push:
+    branches: [gh-pages]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Syntax-check every module the site serves
+        run: for f in js/*.js sw.js; do node --check "$f"; done
+      - name: Vendored files match their recorded checksums
+        run: cd vendor && sha256sum -c SHA256SUMS
+      - run: npm test

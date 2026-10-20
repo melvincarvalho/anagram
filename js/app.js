@@ -1633,10 +1633,7 @@ function PersonInfo({ pubkey, messages }) {
       <${Field} label="npub" value=${nostr.shortKey(pubkey)} onCopy=${() => copy(nostr.npub(pubkey), 'npub copied')} />
       ${p.website && html`<${Field} label="Website" value=${p.website.replace(/^https:\/\//, '')} href=${p.website} />`}
     </section>
-    <section>
-      <h4>Message encryption</h4>
-      <p class="muted small">${store.directProtocol(pubkey) === 'ndr' ? 'Double ratchet' : 'NIP-17'}</p>
-    </section>
+    <${EncryptionChoice} peer=${pubkey} />
     <${DidIdentity} pubkey=${pubkey} />
     <${ChatToggles} chatKey=${pubkey} />
     ${pubkey !== me.value.pubkey &&
@@ -1650,6 +1647,39 @@ function PersonInfo({ pubkey, messages }) {
       }} />
     </section>`}
     <${SharedMedia} messages=${messages} allowed=${() => true} />`;
+}
+
+// Which transport new messages in this chat use. "Auto" follows the account setting and
+// upgrades when the other person has a double-ratchet device; the explicit choices override it.
+function EncryptionChoice({ peer }) {
+  const current = store.directProtocol(peer);
+  const choice = store.directPreference(peer);
+  const [busy, setBusy] = useState(false);
+  const change = async (e) => {
+    setBusy(true);
+    try {
+      await store.setDirectProtocol(peer, e.target.value);
+    } catch (err) {
+      store.notify(`Encryption: ${err.message}`);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return html`<section>
+    <h4>Message encryption</h4>
+    <p class="muted small">
+      ${current === 'ndr'
+        ? 'New messages use double ratchet (Iris-compatible). Only clients that support it can read them, and this history is kept in this browser only.'
+        : 'New messages use NIP-17 gift wrap, readable in Anagram and other NIP-17 clients.'}
+    </p>
+    ${peer !== me.value.pubkey && html`<label class="check">
+      <select value=${choice} disabled=${busy} onChange=${change}>
+        <option value="auto">Auto${choice === 'auto' ? ` (${current === 'ndr' ? 'double ratchet' : 'NIP-17'})` : ''}</option>
+        <option value="nip17">NIP-17 only</option>
+        <option value="ndr">Double ratchet only</option>
+      </select>
+    </label>`}
+  </section>`;
 }
 
 // Owner-only: edit the room's name, description and picture (re-signs the definition).
@@ -1843,12 +1873,18 @@ function DirectChat({ id }) {
       <button class="primary" onClick=${() => store.acceptRequest(peer).catch(fail('Accept'))}>Accept</button>
       <${ConfirmButton} label="Block" confirm="Confirm block" onConfirm=${() => store.toggleBlock(peer).catch(fail('Block'))} />
     </div>`}
+    ${store.ndrOffer.value === peer && !store.isBlocked(peer) &&
+    html`<div class="request-bar">
+      <span><b>${store.displayName(peer)}</b> can receive double-ratchet (Iris) messages. Turning it on registers this browser as a messaging device on your account (a signed event) and keeps such chats in this browser only.</span>
+      <button class="primary" onClick=${() => store.setDoubleRatchetMode('on')}>Turn on</button>
+      <button onClick=${() => store.dismissNdrOffer(peer)}>Not now</button>
+    </div>`}
     ${store.isBlocked(peer)
       ? html`<footer class="composer blocked-bar">You blocked this person.
           <button onClick=${() => store.toggleBlock(peer).catch(fail('Unblock'))}>Unblock</button></footer>`
       : html`<${Composer}
       ...${actions.composer}
-      placeholder=${store.protocolChecking.value === peer ? 'Checking encryption…' : 'Encrypted message'}
+      placeholder=${store.protocolChecking.value === peer ? 'Checking encryption…' : store.directProtocol(peer) === 'ndr' ? 'Double-ratchet message' : 'Encrypted message'}
       draftKey=${peer}
       mentionables=${[peer]}
       onSend=${async (text, tags) => {
@@ -2111,9 +2147,14 @@ function Settings() {
       </div>
       <div class="card">
         <h3>Messaging</h3>
-        <label class="check"><input type="checkbox" checked=${store.preferDoubleRatchet.value}
-          onChange=${(e) => store.setPreferDoubleRatchet(e.target.checked)} /> Prefer double ratchet when available</label>
-        <p class="muted small">Automatically use double ratchet when a compatible device is found. Existing double-ratchet chats keep their encryption.</p>
+        <label class="check">Double ratchet (Iris-compatible)
+          <select value=${store.doubleRatchetMode.value} onChange=${(e) => store.setDoubleRatchetMode(e.target.value)}>
+            <option value="ask">Ask me when someone supports it</option>
+            <option value="on">Use it whenever available</option>
+            <option value="off">Never</option>
+          </select>
+        </label>
+        <p class="muted small">Double-ratchet chats are readable only in clients that support it (Iris and this app), not in Anagram. Their history is kept in this browser only: it is not synced to your other devices and is lost if this browser's data is cleared. Turning it on registers this browser as a messaging device on your account, which publishes a signed event. Chats that already use it keep it; each chat's info panel can override this.</p>
         <${MessagingDevices} owner=${signer.pubkey} />
       </div>
       <div class="card">

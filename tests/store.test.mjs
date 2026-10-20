@@ -144,6 +144,7 @@ test('Auto discovers delayed support, caches sends, respects overrides and never
   };
   try {
     await store.login(alice, false);
+    store.setDoubleRatchetMode('on'); // the default 'ask' only offers (tested separately)
     const count = clients.length;
     assert.equal(store.directPreference(bob.pubkey), 'auto');
     store.openDirectChat(bob.pubkey);
@@ -221,6 +222,63 @@ test('existing NIP-17 history stays selected, settings and Auto selection persis
   assert.equal(store.directPreference(bob.pubkey), 'auto');
   assert.equal(store.directProtocol(bob.pubkey), 'nip17');
   await store.logout();
+});
+
+test('by default a compatible peer only raises an offer; accepting registers and upgrades, Never stops discovery', async () => {
+  const alice = nostr.newKeySigner(), bob = nostr.newKeySigner(), subscriptions = [];
+  localStorage.setItem(`lite:rooms:${alice.pubkey}`, '[]');
+  const original = transport.pool.subscribe;
+  transport.pool.subscribe = (relays, filter, callbacks) => {
+    if (filter.kinds.includes(37368)) {
+      const entry = { callbacks, closed: false };
+      subscriptions.push(entry);
+      queueMicrotask(() => callbacks.oneose());
+      return { close() { entry.closed = true; } };
+    }
+    return original(relays, filter, callbacks);
+  };
+  const roster = (createdAt) => bob.sign(new AppKeys([{ identityPubkey: nostr.newKeySigner().pubkey, createdAt }]).getEvent({ ownerPubkey: bob.pubkey, createdAt }));
+  const t = nostr.now();
+  try {
+    await store.login(alice, false);
+    assert.equal(store.doubleRatchetMode.value, 'ask');
+    const count = clients.length;
+    store.openDirectChat(bob.pubkey);
+    await store.prepareDirectProtocol(bob.pubkey);
+    subscriptions.at(-1).callbacks.onevent(await roster(t));
+    await eventually(() => store.ndrOffer.value === bob.pubkey);
+    assert.equal(store.directProtocol(bob.pubkey), 'nip17'); // nothing changed yet
+    assert.equal(clients.length, count); // no device registered without consent
+    store.dismissNdrOffer(bob.pubkey);
+    assert.equal(store.ndrOffer.value, null);
+    subscriptions.at(-1).callbacks.onevent(await roster(t + 1));
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    assert.equal(store.ndrOffer.value, null); // not asked again this session
+    assert.equal(clients.length, count);
+    store.setDoubleRatchetMode('on');
+    assert.equal(store.doubleRatchetMode.value, 'on');
+    await eventually(() => subscriptions.length === 2); // the open chat is rechecked
+    subscriptions.at(-1).callbacks.onevent(await roster(t + 2));
+    await eventually(() => store.directProtocol(bob.pubkey) === 'ndr');
+    assert.equal(clients.length, count + 1);
+    store.setDoubleRatchetMode('off');
+    const unknown = nostr.newKeySigner().pubkey;
+    store.openDirectChat(unknown);
+    await store.prepareDirectProtocol(unknown);
+    assert.equal(subscriptions.length, 2); // Never: no roster lookups at all
+    assert.equal(store.directProtocol(bob.pubkey), 'ndr'); // never downgrades
+    await store.login(alice, false);
+    assert.equal(store.doubleRatchetMode.value, 'off'); // persisted per account
+    store.setDoubleRatchetMode('ask');
+    await store.login(alice, false);
+    assert.equal(store.doubleRatchetMode.value, 'ask'); // an explicit 'ask' survives an activated account
+    const other = nostr.newKeySigner();
+    localStorage.setItem(`lite:rooms:${other.pubkey}`, '[]');
+    localStorage.setItem(`lite:prefer-ndr:${other.pubkey}`, 'true'); // setting from an earlier build
+    await store.login(other, false);
+    assert.equal(store.doubleRatchetMode.value, 'on');
+    await store.logout();
+  } finally { transport.pool.subscribe = original; }
 });
 
 test('Auto discovery and NDR fetch, subscription and publishing share Iris relay coverage', async () => {
@@ -334,6 +392,7 @@ test('a new incoming NIP-17 conversation remains Auto and can upgrade later', as
     assert.equal(store.directProtocol(bob.pubkey), 'nip17');
     await store.login(alice, false);
     assert.equal(store.directPreference(bob.pubkey), 'auto'); // not mistaken for legacy cache on reload
+    store.setDoubleRatchetMode('on');
     store.openDirectChat(bob.pubkey);
     await store.prepareDirectProtocol(bob.pubkey);
     assert.equal(rosters.length, 1);

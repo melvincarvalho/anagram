@@ -124,6 +124,9 @@ async function teardown() {
   directProtocols.value = {};
   autoProtocols.value = {};
   preferDoubleRatchet.value = true;
+  ndrDecided.value = false;
+  ndrOffer.value = null;
+  offerDismissed.clear();
   ndrEdits.clear();
   ndrDeletions.clear();
   for (const timer of ndrExpiryTimers.values()) clearTimeout(timer);
@@ -187,7 +190,13 @@ export async function login(signer, remember) {
   loadMuteList();
   directProtocols.value = storage.get(`lite:protocols:${signer.pubkey}`, {});
   autoProtocols.value = storage.get(`lite:auto-protocols:${signer.pubkey}`, {});
-  preferDoubleRatchet.value = storage.get(`lite:prefer-ndr:${signer.pubkey}`, true);
+  // Unset = "ask me": discovery runs, but the first compatible peer brings up an offer
+  // instead of silently registering this browser as a device.
+  const ndrSetting = storage.get(`lite:prefer-ndr:${signer.pubkey}`); // 'ask' | 'on' | 'off'; true/false from earlier builds
+  applyDoubleRatchetMode(
+    ndrSetting === true ? 'on' : ndrSetting === false ? 'off' : ['ask', 'on', 'off'].includes(ndrSetting) ? ndrSetting
+      : storage.get(`lite:ndr:${signer.pubkey}`, false) ? 'on' : 'ask', // already activated before the offer existed
+  );
   loadMyFollows(signer);
   await startInbox();
   if (me.value === signer && storage.get(`lite:ndr:${signer.pubkey}`, false))
@@ -763,6 +772,12 @@ export function verifiedNip05(pk) {
 
 export const directProtocols = signal({}); // peer -> Auto or explicit override
 export const preferDoubleRatchet = signal(true);
+// Until the person has decided (Settings → Messaging, or the in-chat offer), a compatible
+// peer only raises an offer: registering a device publishes a signed event in their name.
+export const ndrDecided = signal(false);
+export const ndrOffer = signal(null); // peer found compatible while undecided
+const offerDismissed = new Set(); // "Not now" peers, for this session
+export const doubleRatchetMode = computed(() => (!ndrDecided.value ? 'ask' : preferDoubleRatchet.value ? 'on' : 'off'));
 const autoProtocols = signal({}); // Auto can upgrade to NDR, never silently downgrade
 export const protocolChecking = signal(null);
 export const directPreference = (peer) => directProtocols.value[peer] ?? 'auto';
@@ -803,12 +818,26 @@ export function openDirectChat(peer) {
   void historyReady.then(() => { if (directChatPeer === peer) return prepareDirectProtocol(peer); });
   return () => { if (directChatPeer === peer) closeDirectChat(); };
 }
-export function setPreferDoubleRatchet(enabled) {
-  preferDoubleRatchet.value = !!enabled;
-  storage.set(`lite:prefer-ndr:${me.value.pubkey}`, !!enabled);
+// 'ask' (default): look for compatible devices, offer before registering this browser.
+// 'on': upgrade Auto chats as soon as a compatible device is found. 'off': never look.
+function applyDoubleRatchetMode(mode) {
+  ndrDecided.value = mode !== 'ask';
+  preferDoubleRatchet.value = mode !== 'off';
+}
+export function setDoubleRatchetMode(mode) {
+  if (!['ask', 'on', 'off'].includes(mode)) throw new Error('Unknown double-ratchet setting');
+  applyDoubleRatchetMode(mode);
+  storage.set(`lite:prefer-ndr:${me.value.pubkey}`, mode);
+  ndrOffer.value = null;
+  offerDismissed.clear();
   protocolChecks.clear();
   stopDiscovery();
   if (directChatPeer) void prepareDirectProtocol(directChatPeer);
+}
+export const setPreferDoubleRatchet = (enabled) => setDoubleRatchetMode(enabled ? 'on' : 'off');
+export function dismissNdrOffer(peer) {
+  offerDismissed.add(peer);
+  if (ndrOffer.value === peer) ndrOffer.value = null;
 }
 export async function prepareDirectProtocol(peer) {
   const account = me.value;
@@ -829,6 +858,10 @@ export async function prepareDirectProtocol(peer) {
     },
     onCapability: (supported) => {
       if (!active() || !supported) return;
+      if (!ndrDecided.value) {
+        if (!offerDismissed.has(peer)) ndrOffer.value = peer;
+        return;
+      }
       chooseAutoNdr(peer);
       startNdr().catch((error) => { if (active()) notify(`Encrypted messaging unavailable: ${error.message}`); });
     },
@@ -942,6 +975,7 @@ export async function setDirectProtocol(peer, protocol) {
   // A failed device registration must not undo the user's encryption choice.
   saveDirectPreference(peer, protocol);
   if (protocol === 'ndr') chooseAutoNdr(peer);
+  if (ndrOffer.value === peer) ndrOffer.value = null;
   protocolChecks.delete(peer);
   if (directChatPeer === peer) stopDiscovery();
   if (protocol === 'ndr') await startNdr();
