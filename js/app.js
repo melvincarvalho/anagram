@@ -538,7 +538,7 @@ function Login() {
         <h2>Questions</h2>
         <details><summary>Is this Anagram?</summary><p>It is a lighter client for the same protocol. Chats and rooms work across both; Anagram is the fuller app from LNbits.</p></details>
         <details><summary>Where are my messages?</summary><p>Encrypted copies sit on the relays you choose; decrypted copies are cached in this browser only. There is no server of ours in the middle.</p></details>
-        <details><summary>What about double ratchet?</summary><p>It adds Signal-style forward secrecy for chats with Iris users, and such chats stay in this browser. By default the app only checks whether the other person supports it (a lookup on relay.snort.social) and asks before turning it on; "Never" in Settings stops the lookups. Everyone else keeps standard NIP-17.</p></details>
+        <details><summary>What about double ratchet?</summary><p>It adds Signal-style forward secrecy for chats with Iris users. Such chats reach every device you have registered, but a device added later does not receive earlier history. By default the app only checks whether the other person supports it (a lookup on relay.snort.social) and asks before turning it on; "Never" in Settings stops the lookups. Everyone else keeps standard NIP-17.</p></details>
         <details><summary>What leaves my device?</summary><p>Only what the <a href="privacy">Privacy page</a> lists: relay traffic, profile lookups on nostr.social, and files you choose to upload.</p></details>
       </section>
       <p class="landing-partners">Works with <a href="https://github.com/lnbits/anagram" target="_blank" rel="noopener">Anagram</a>, <a href="https://irischat.org" target="_blank" rel="noopener">Iris</a> and other Nostr apps. One key, one network, your choice of app.</p>
@@ -1724,7 +1724,7 @@ function EncryptionChoice({ peer }) {
     <h4>Message encryption</h4>
     <p class="muted small">
       ${current === 'ndr'
-        ? 'New messages use double ratchet (Iris-compatible). Only clients that support it can read them, and this history is kept in this browser only.'
+        ? 'New messages use double ratchet (Iris-compatible). Only clients that support it can read them; a device you register later will not see earlier messages.'
         : 'New messages use NIP-17 gift wrap, readable in Anagram and other NIP-17 clients.'}
     </p>
     ${peer !== me.value.pubkey && html`<label class="check">
@@ -1734,7 +1734,7 @@ function EncryptionChoice({ peer }) {
         <option value="ndr">Double ratchet only</option>
       </select>
     </label>`}
-    ${confirming && html`<p class="muted small">This registers this browser as a messaging device on your account (a signed event) and keeps this chat's history in this browser only. The other person needs an Iris-compatible client.</p>
+    ${confirming && html`<p class="muted small">This registers this browser as a messaging device on your account (a signed event) Devices you register later will not receive this chat's earlier messages. The other person needs an Iris-compatible client.</p>
       <div class="actions"><button class="primary" onClick=${() => apply('ndr')}>Register and use double ratchet</button><button onClick=${() => setConfirming(false)}>Cancel</button></div>`}
   </section>`;
 }
@@ -1932,7 +1932,7 @@ function DirectChat({ id }) {
     </div>`}
     ${store.ndrOffer.value === peer && peer !== me.value.pubkey && !store.isBlocked(peer) &&
     html`<div class="request-bar">
-      <span><b>${store.displayName(peer)}</b> can receive double-ratchet (Iris) messages. Turning it on applies to every chat where it is available: it registers this browser as a messaging device on your account (a signed event) and keeps such chats in this browser only.</span>
+      <span><b>${store.displayName(peer)}</b> can receive double-ratchet (Iris) messages. Turning it on applies to every chat where it is available: it registers this browser as a messaging device on your account (a signed event). Devices you register later will not receive earlier messages.</span>
       <button class="primary" onClick=${() => store.acceptNdrOffer(peer)}>Turn on</button>
       <button onClick=${() => store.dismissNdrOffer(peer)}>Not now</button>
     </div>`}
@@ -2223,7 +2223,7 @@ function Settings() {
             <option value="off">Never</option>
           </select>
         </label>
-        <p class="muted small">Double-ratchet chats are readable only in clients that support it (Iris and this app), not in Anagram. Their history is kept in this browser only: it is not synced to your other devices and is lost if this browser's data is cleared. Turning it on registers this browser as a messaging device on your account, which publishes a signed event. Chats that already use it keep it, and once registered this browser keeps its sessions running even under "Never"; each chat's info panel can override this.</p>
+        <p class="muted small">Double-ratchet chats are readable only in clients that support it (Iris and this app), not in Anagram. Messages reach every device you have registered, but a device registered later does not receive earlier history, and clearing this browser's data loses what it holds. Turning it on registers this browser as a messaging device on your account, which publishes a signed event. Chats that already use it keep it, and once registered this browser keeps its sessions running even under "Never"; each chat's info panel can override this.</p>
         <${MessagingDevices} owner=${signer.pubkey} />
       </div>
       <div class="card">

@@ -294,7 +294,7 @@ future. Rumors with an `l` tag (private groups) are ignored.
 Reactions, edits and deletions always use the transport of the message they refer to.
 A failed ratchet send is queued durably and retried; it never falls back to NIP-17.
 The ✓ tick on a ratchet message means a relay accepted an envelope, not a read receipt.
-Session state and history live only in the browser that registered.
+Session state lives in the browser that registered. New messages (sent and received) are also delivered to the account's other registered devices by the protocol; a device registered later does not receive earlier history.
 
 7.6 **Relays.** Discovery, registration and envelopes use the `'ndr'` scope
 (own inbox relays, app relays, relay.snort.social, plus the recipient's inbox relays for
@@ -344,8 +344,9 @@ unknown tags everywhere.
 
 - Group DMs (more than one other `p` tag) are dropped (3.4).
 - Kind 15 files are received, not sent (3.9); Blossom delete is not in the UI (6.3).
-- Ratchet history does not sync between devices (7.5); that is a property of the
-  protocol's current state, not of this binding.
+- A device registered later does not receive earlier ratchet history (7.5). Iris fills
+  this with a device-to-device history reconciliation (Negentropy over a ratchet session
+  between one's own devices); this client does not implement it yet.
 - There is no server of ours yet; sections 2.1–2.5 are the contract the planned NIP-98
   HTTP transport has to meet, including a confirmed-empty read for 7.3.
 - No push notifications while the tab is closed.
