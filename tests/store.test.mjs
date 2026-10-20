@@ -47,7 +47,7 @@ await build({
           const events = filters.some(filter => filter.kinds?.includes(37368))
             ? await Promise.all(options.relays.map(url => globalThis.ndrTestQuery(url, filters)))
             : await Promise.all(filters.map(filter => globalThis.ndrTestRead(options.relays, filter)));
-          return { events: events.flat(), sources: [{ complete: true }] };
+          return { events: events.flat(), sources: options.relays.map(() => ({ complete: true })) };
         }, async close() {}
       }; }
     `, resolveDir: process.cwd() }));

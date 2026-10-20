@@ -104,3 +104,28 @@ test('DR sends, sibling copies, retries and discovery use separate anonymous AUT
     await new Promise(resolve => server.close(resolve));
   }
 });
+
+test('empty private device discovery retains the two-relay registration quorum', async () => {
+  const servers = [new WebSocketServer({host: '127.0.0.1', port: 0}), new WebSocketServer({host: '127.0.0.1', port: 0})];
+  await Promise.all(servers.map(server => new Promise(resolve => server.once('listening', resolve))));
+  let complete = false;
+  servers.forEach((server, index) => server.on('connection', socket => socket.on('message', bytes => {
+    const [type, id] = JSON.parse(bytes.toString());
+    if (type === 'REQ') socket.send(JSON.stringify(index === 0 || complete ? ['EOSE', id] : ['CLOSED', id, 'unavailable']));
+  })));
+  const previous = [...transport.NDR_RELAYS];
+  transport.NDR_RELAYS.splice(0, transport.NDR_RELAYS.length, ...servers.map(server => `ws://127.0.0.1:${server.address().port}/`));
+  try {
+    const filter = {kinds: [37368], authors: [getPublicKey(generateSecretKey())]};
+    await assert.rejects(transport.queryConfirmed('ndr', filter), /enough relays/);
+    complete = true;
+    assert.deepEqual(await transport.queryConfirmed('ndr', filter), []);
+  } finally {
+    transport.reset();
+    transport.NDR_RELAYS.splice(0, transport.NDR_RELAYS.length, ...previous);
+    for (const server of servers) {
+      for (const socket of server.clients) socket.terminate();
+      await new Promise(resolve => server.close(resolve));
+    }
+  }
+});

@@ -40,7 +40,7 @@ test('NIP-17 still requires a recipient relay ACK while ratchet publications ret
   } finally { transport.pool.publish = original; }
 });
 
-test('an empty roster is only authoritative with two confirming relays', async () => {
+test('an empty confirmed read requires two available relays', async () => {
   const original = transport.pool.ensureRelay;
   let n = 0;
   transport.pool.ensureRelay = async () => {
@@ -51,7 +51,7 @@ test('an empty roster is only authoritative with two confirming relays', async (
     } };
   };
   try {
-    await assert.rejects(transport.queryConfirmed('ndr', { kinds: [37368], limit: 10 }), /enough relays/);
+    await assert.rejects(transport.queryConfirmed('ndr', { kinds: [1], limit: 10 }), /enough relays/);
   } finally { transport.pool.ensureRelay = original; }
 });
 

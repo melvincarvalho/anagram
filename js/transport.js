@@ -87,6 +87,8 @@ export async function queryConfirmed(scope, filter) {
       ...split.discovery.map(async filters => {
         const result = await discovery().query(filters, { relays: resolve(scope), cache: 'network-only', deadline: Date.now() + 5000 });
         if (!result.sources.some(source => source.complete)) throw new Error('Connect to a relay before enabling encrypted messaging.');
+        if (!result.events.length && result.sources.filter(source => source.complete).length < Math.min(2, resolve(scope).length))
+          throw new Error('Could not confirm your device list with enough relays. Try again.');
         return result.events.map(protocolEvent);
       }),
     ]);
