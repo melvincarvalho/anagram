@@ -16,7 +16,7 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Syntax-check every module the site serves
-        run: for f in js/*.js sw.js; do node --check "$f"; done
+        run: for f in js/*.js js/store/*.js js/ui/*.js sw.js; do node --check "$f"; done
       - name: Vendored files match their recorded checksums
         run: cd vendor && sha256sum -c SHA256SUMS
       - run: npm test

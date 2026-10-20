@@ -34,7 +34,9 @@ What leaves your device, and to whom. Nothing here is hidden from you; this is t
 
 ## Run
 
-Serve the folder with any static server, e.g. `python3 -m http.server`, and open it. Preact, signals, htm and nostr-tools are vendored as pinned ES modules in `vendor/` (see its README) and wired up by the import map in `index.html`, so no third-party code runs and the CSP allows only same-origin scripts. The `gh-pages` branch is the site.
+Serve the folder with any static server, e.g. `python3 -m http.server`, and open it.
+
+Code layout (plain ES modules, no build): `js/app.js` is the root (routing, shortcuts, mounting); `js/ui/` holds the views by feature (`login`, `sidebar`, `messages`, `composer`, `info`, `chats`, `new`, `settings`, `text`, `sounds`, `notifications`, `forward`, with shared pieces in `common`); `js/store.js` is the public state and action surface, implemented in `js/store/` by feature (`core`, `accounts`, `prefs`, `people`, `messages`, `dms`, `rooms`, `ratchet`, `media`); `js/nostr.js` holds the protocol helpers, `js/transport.js` the only relay access, `js/db.js` the IndexedDB cache. Preact, signals, htm and nostr-tools are vendored as pinned ES modules in `vendor/` (see its README) and wired up by the import map in `index.html`, so no third-party code runs and the CSP allows only same-origin scripts. The `gh-pages` branch is the site.
 
 Not included yet: calls, private groups (NIP-171), push notifications when the tab is closed.
 
