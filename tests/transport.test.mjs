@@ -40,6 +40,21 @@ test('NIP-17 still requires a recipient relay ACK while ratchet publications ret
   } finally { transport.pool.publish = original; }
 });
 
+test('an empty roster is only authoritative with two confirming relays', async () => {
+  const original = transport.pool.ensureRelay;
+  let n = 0;
+  transport.pool.ensureRelay = async () => {
+    const i = n++;
+    return { subscribe(_filters, callbacks) {
+      queueMicrotask(() => (i === 0 ? callbacks.oneose() : callbacks.onclose()));
+      return { close() {} };
+    } };
+  };
+  try {
+    await assert.rejects(transport.queryConfirmed('ndr', { kinds: [37368], limit: 10 }), /enough relays/);
+  } finally { transport.pool.ensureRelay = original; }
+});
+
 test('nostr-tools synthesized EOSE cannot authorize a silent connected relay', async (t) => {
   t.mock.timers.enable({ apis: ['setTimeout'] });
   const original = transport.pool.ensureRelay;

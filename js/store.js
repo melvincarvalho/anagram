@@ -126,6 +126,7 @@ async function teardown() {
   preferDoubleRatchet.value = true;
   ndrDecided.value = false;
   ndrOffer.value = null;
+  ndrActivated.value = false;
   offerDismissed.clear();
   ndrEdits.clear();
   ndrDeletions.clear();
@@ -197,10 +198,12 @@ export async function login(signer, remember) {
     ndrSetting === true ? 'on' : ndrSetting === false ? 'off' : ['ask', 'on', 'off'].includes(ndrSetting) ? ndrSetting
       : storage.get(`lite:ndr:${signer.pubkey}`, false) ? 'on' : 'ask', // already activated before the offer existed
   );
+  for (const peer of storage.get(`lite:ndr-dismissed:${signer.pubkey}`, [])) offerDismissed.add(peer);
+  ndrActivated.value = storage.get(`lite:ndr:${signer.pubkey}`, false);
   loadMyFollows(signer);
   await startInbox();
-  if (me.value === signer && storage.get(`lite:ndr:${signer.pubkey}`, false))
-    startNdr().catch((e) => notify(`Encrypted messaging unavailable: ${e.message}`));
+  if (me.value === signer && ndrActivated.value)
+    startNdr().catch((e) => (e.locked ? console.warn(`[ndr] ${e.message}`) : notify(`Encrypted messaging unavailable: ${e.message}`)));
   loadSettingsSync(signer);
 }
 
@@ -776,7 +779,8 @@ export const preferDoubleRatchet = signal(true);
 // peer only raises an offer: registering a device publishes a signed event in their name.
 export const ndrDecided = signal(false);
 export const ndrOffer = signal(null); // peer found compatible while undecided
-const offerDismissed = new Set(); // "Not now" peers, for this session
+export const ndrActivated = signal(false); // this browser has registered as a device for the account
+const offerDismissed = new Set(); // "Not now" peers (persisted per account)
 export const doubleRatchetMode = computed(() => (!ndrDecided.value ? 'ask' : preferDoubleRatchet.value ? 'on' : 'off'));
 const autoProtocols = signal({}); // Auto can upgrade to NDR, never silently downgrade
 export const protocolChecking = signal(null);
@@ -824,20 +828,36 @@ function applyDoubleRatchetMode(mode) {
   ndrDecided.value = mode !== 'ask';
   preferDoubleRatchet.value = mode !== 'off';
 }
+const persistDoubleRatchetMode = () => storage.set(`lite:prefer-ndr:${me.value.pubkey}`, doubleRatchetMode.value);
 export function setDoubleRatchetMode(mode) {
   if (!['ask', 'on', 'off'].includes(mode)) throw new Error('Unknown double-ratchet setting');
   applyDoubleRatchetMode(mode);
-  storage.set(`lite:prefer-ndr:${me.value.pubkey}`, mode);
+  persistDoubleRatchetMode();
   ndrOffer.value = null;
   offerDismissed.clear();
+  storage.set(`lite:ndr-dismissed:${me.value.pubkey}`, undefined);
   protocolChecks.clear();
   stopDiscovery();
   if (directChatPeer) void prepareDirectProtocol(directChatPeer);
 }
 export const setPreferDoubleRatchet = (enabled) => setDoubleRatchetMode(enabled ? 'on' : 'off');
+// "Not now" is remembered per account, so the bar does not come back every session.
 export function dismissNdrOffer(peer) {
   offerDismissed.add(peer);
+  storage.set(`lite:ndr-dismissed:${me.value.pubkey}`, [...offerDismissed]);
   if (ndrOffer.value === peer) ndrOffer.value = null;
+}
+// "Turn on" from the offer bar: account-wide 'on', and this chat upgrades at once
+// rather than waiting for a second discovery round.
+export function acceptNdrOffer(peer) {
+  applyDoubleRatchetMode('on');
+  persistDoubleRatchetMode();
+  ndrOffer.value = null;
+  offerDismissed.clear();
+  storage.set(`lite:ndr-dismissed:${me.value.pubkey}`, undefined);
+  stopDiscovery();
+  if (directPreference(peer) === 'auto') chooseAutoNdr(peer);
+  return startNdr().catch((e) => notify(`Encrypted messaging unavailable: ${e.message}`));
 }
 export async function prepareDirectProtocol(peer) {
   const account = me.value;
@@ -900,7 +920,7 @@ async function lockNdr(account) {
   if (!navigator.locks) throw new Error('This browser cannot safely store encrypted chats. Try an up-to-date browser.');
   return new Promise((resolve, reject) => {
     navigator.locks.request(`anagram-lite:ndr:${account}`, { ifAvailable: true }, async (lock) => {
-      if (!lock) { reject(new Error('Encrypted messaging is active in another tab. Close it and try again.')); return; }
+      if (!lock) { reject(Object.assign(new Error('Encrypted messaging is active in another tab. Close it and try again.'), { locked: true })); return; }
       await new Promise((release) => resolve(release));
     }).catch(reject);
   });
@@ -955,6 +975,7 @@ function startNdr() {
       await client.start();
       if (!active()) throw new Error('Account changed');
       storage.set(`lite:ndr:${signer.pubkey}`, true);
+      ndrActivated.value = true;
       return client;
     } catch (error) {
       await client.close();
@@ -978,6 +999,9 @@ export async function setDirectProtocol(peer, protocol) {
   if (ndrOffer.value === peer) ndrOffer.value = null;
   protocolChecks.delete(peer);
   if (directChatPeer === peer) stopDiscovery();
+  // A per-chat choice is not an account-wide one: pin the current mode so the
+  // "already activated" fallback at login can't turn 'ask' into 'on'.
+  if (protocol === 'ndr') persistDoubleRatchetMode();
   if (protocol === 'ndr') await startNdr();
   if (protocol === 'auto') await prepareDirectProtocol(peer);
 }
@@ -1049,7 +1073,8 @@ async function receiveNdr(signer, event, peer) {
     await db.saveDirectMessages([row]);
     if (me.value !== signer) return;
     if (directProtocols.value[peer] === undefined) saveDirectPreference(peer, 'auto');
-    if (directPreference(peer) === 'auto') chooseAutoNdr(peer);
+    // Under "Never", an incoming ratchet message is shown but does not pin the chat.
+    if (directPreference(peer) === 'auto' && preferDoubleRatchet.value) chooseAutoNdr(peer);
     const seen = dms.value[peer]?.some((m) => m.id === row.id);
     addMessages([row]);
     requestProfiles([peer]);
@@ -1459,7 +1484,11 @@ function markSent(m) {
 
 export async function sendDirectMessage(peer, text, reply, edit, extraTags = []) {
   const account = me.value;
-  if (!edit && directPreference(peer) === 'auto') await prepareDirectProtocol(peer);
+  if (!edit && directPreference(peer) === 'auto') {
+    // Undecided ('ask'): discovery can only raise an offer, so don't hold the send for it.
+    const prepared = prepareDirectProtocol(peer).catch(() => {});
+    if (ndrDecided.value) await prepared;
+  }
   if (me.value !== account) throw new Error('Account changed');
   if ((edit ? edit.protocol ?? 'nip17' : directProtocol(peer)) === 'ndr')
     return sendNdrMessage(peer, text, reply, extraTags);

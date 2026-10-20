@@ -267,11 +267,39 @@ test('by default a compatible peer only raises an offer; accepting registers and
     await store.prepareDirectProtocol(unknown);
     assert.equal(subscriptions.length, 2); // Never: no roster lookups at all
     assert.equal(store.directProtocol(bob.pubkey), 'ndr'); // never downgrades
+    // Never: an incoming ratchet message from a new person is shown but does not pin the chat.
+    const carol = nostr.newKeySigner();
+    await clients.at(-1).options.receive(nostr.makeRumor(carol.pubkey, 14, 'Hi from Iris', [['p', alice.pubkey]]), carol.pubkey);
+    assert.ok(store.dms.value[carol.pubkey]?.some((m) => m.content === 'Hi from Iris'));
+    assert.equal(store.directProtocol(carol.pubkey), 'nip17');
     await store.login(alice, false);
     assert.equal(store.doubleRatchetMode.value, 'off'); // persisted per account
     store.setDoubleRatchetMode('ask');
     await store.login(alice, false);
     assert.equal(store.doubleRatchetMode.value, 'ask'); // an explicit 'ask' survives an activated account
+    // A per-chat "double ratchet only" choice must not become an account-wide 'on' at the next login.
+    const fresh = nostr.newKeySigner();
+    localStorage.setItem(`lite:rooms:${fresh.pubkey}`, '[]');
+    await store.login(fresh, false);
+    assert.equal(store.doubleRatchetMode.value, 'ask');
+    await store.setDirectProtocol(bob.pubkey, 'ndr');
+    await store.login(fresh, false);
+    assert.equal(store.doubleRatchetMode.value, 'ask');
+    assert.equal(store.directProtocol(bob.pubkey), 'ndr');
+    // "Not now" is remembered across sessions for that person.
+    const dave = nostr.newKeySigner();
+    store.openDirectChat(dave.pubkey);
+    await store.prepareDirectProtocol(dave.pubkey);
+    subscriptions.at(-1).callbacks.onevent(await dave.sign(new AppKeys([{ identityPubkey: nostr.newKeySigner().pubkey, createdAt: t }]).getEvent({ ownerPubkey: dave.pubkey, createdAt: t })));
+    await eventually(() => store.ndrOffer.value === dave.pubkey);
+    store.dismissNdrOffer(dave.pubkey);
+    await store.login(fresh, false);
+    store.openDirectChat(dave.pubkey);
+    await store.prepareDirectProtocol(dave.pubkey);
+    subscriptions.at(-1).callbacks.onevent(await dave.sign(new AppKeys([{ identityPubkey: nostr.newKeySigner().pubkey, createdAt: t + 1 }]).getEvent({ ownerPubkey: dave.pubkey, createdAt: t + 1 })));
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    assert.equal(store.ndrOffer.value, null);
+    await store.login(alice, false);
     const other = nostr.newKeySigner();
     localStorage.setItem(`lite:rooms:${other.pubkey}`, '[]');
     localStorage.setItem(`lite:prefer-ndr:${other.pubkey}`, 'true'); // setting from an earlier build

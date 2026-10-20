@@ -83,7 +83,13 @@ export async function queryConfirmed(scope, filter) {
   }));
   const available = results.filter((result) => result.status === 'fulfilled');
   if (!available.length) throw new Error('Connect to a relay before enabling encrypted messaging.');
-  return available.flatMap((result) => result.value);
+  const events = available.flatMap((result) => result.value);
+  // An empty answer is only authoritative with a quorum: one reachable relay that
+  // happens not to carry the roster must not lead to a registration that drops the
+  // devices other relays know about.
+  if (!events.length && available.length < Math.min(2, results.length))
+    throw new Error('Could not confirm your device list with enough relays. Try again.');
+  return events;
 }
 
 // Live subscription; returns { close() }.

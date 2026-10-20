@@ -57,7 +57,7 @@ export function createNdrClient({ owner, sign, storage, subscribe, fetch, publis
   // once the application's cache is durable; replay after a crash is idempotent.
   runtime.onDurableSessionEvent([5, 7, 14, 1009], async (event, from, meta) => {
     assertOpen();
-    if (!meta?.senderOwnerPubkey || meta.senderOwnerPubkey !== from || getEventHash(event) !== event.id) return;
+    if (!meta?.senderOwnerPubkey || meta.senderOwnerPubkey !== from || event.pubkey !== from || getEventHash(event) !== event.id) return;
     if (event.tags.some((tag) => tag[0] === 'l')) return; // private groups are separate
     const author = meta.senderOwnerPubkey;
     const peer = author === owner
