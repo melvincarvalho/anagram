@@ -869,6 +869,7 @@ function MessageMenu({ menu, onClose, onReply, onReact, onEdit, onDelete, onHide
       ${QUICK_REACTIONS.map((e) => html`<button title=${`React ${e}`} onClick=${act(() => onReact(m, e))}>${e}</button>`)}
       <button class="more" title="More reactions" onClick=${act(() => onMoreReactions(m, menu.x, menu.y))}>＋</button>
     </div>`}
+    ${m.peer && html`<p class="muted small">${m.protocol === 'ndr' ? 'Double ratchet' : 'NIP-17'}</p>`}
     ${onReply && html`<button role="menuitem" onClick=${act(() => onReply(m))}>↩ Reply</button>`}
     <button role="menuitem" onClick=${act(() => (forwarding.value = m))}>↪ Forward</button>
     <button role="menuitem" onClick=${act(() => copy(m.content, 'Text copied'))}>⧉ Copy text</button>
@@ -907,6 +908,7 @@ function Reactions({ message, onReact }) {
 
 function Tick({ id }) {
   const status = store.sendStatus.value[id];
+  if (status === 'queued') return html`<button class="tick" title="Queued for double-ratchet delivery — tap to retry" onClick=${() => store.retrySend(id)}>🕓</button>`;
   if (status === 'sending') return html`<span class="tick" title="Sending">🕓</span>`;
   if (status === 'failed')
     return html`<button class="tick failed" title="Not sent — tap to retry" onClick=${() => store.retrySend(id)}>⚠</button>`;
@@ -1631,6 +1633,10 @@ function PersonInfo({ pubkey, messages }) {
       <${Field} label="npub" value=${nostr.shortKey(pubkey)} onCopy=${() => copy(nostr.npub(pubkey), 'npub copied')} />
       ${p.website && html`<${Field} label="Website" value=${p.website.replace(/^https:\/\//, '')} href=${p.website} />`}
     </section>
+    <section>
+      <h4>Message encryption</h4>
+      <p class="muted small">${store.directProtocol(pubkey) === 'ndr' ? 'Double ratchet' : 'NIP-17'}</p>
+    </section>
     <${DidIdentity} pubkey=${pubkey} />
     <${ChatToggles} chatKey=${pubkey} />
     ${pubkey !== me.value.pubkey &&
@@ -1802,8 +1808,9 @@ function DirectChat({ id }) {
   const [unreadAfter] = useState(() => (peer ? store.readPoint(peer) : Infinity));
   useMarkRead(peer, messages);
   useEffect(() => peer && store.requestProfiles([peer]), [peer]);
+  useEffect(() => peer ? store.openDirectChat(peer) : undefined, [peer]);
   if (!peer) return html`<section class="main empty"><p class="error">Invalid contact.</p></section>`;
-  return html`<section class="main">
+  return html`<section class="main" data-testid="direct-chat" data-protocol=${store.directProtocol(peer)}>
     <header class="bar">
       <a class="back" href="#">‹</a>
       <${Avatar} pubkey=${peer} size=${32} />
@@ -1841,7 +1848,7 @@ function DirectChat({ id }) {
           <button onClick=${() => store.toggleBlock(peer).catch(fail('Unblock'))}>Unblock</button></footer>`
       : html`<${Composer}
       ...${actions.composer}
-      placeholder="Encrypted message"
+      placeholder=${store.protocolChecking.value === peer ? 'Checking encryption…' : 'Encrypted message'}
       draftKey=${peer}
       mentionables=${[peer]}
       onSend=${async (text, tags) => {
@@ -2044,6 +2051,37 @@ function NewThing() {
   </section>`;
 }
 
+function MessagingDevices({ owner }) {
+  const [state, setState] = useState({ owner, loading: true, devices: [], error: '' });
+  const request = useRef(0);
+  const refresh = async () => {
+    const current = ++request.current;
+    setState({ owner, loading: true, devices: [], error: '' });
+    try {
+      const { loadMessagingDevices } = await import('./messaging-devices.js');
+      const devices = await loadMessagingDevices(owner);
+      if (request.current === current) setState({ owner, loading: false, devices, error: '' });
+    } catch {
+      if (request.current === current) setState({ owner, loading: false, devices: [], error: 'Could not load devices. Try refreshing.' });
+    }
+  };
+  useEffect(() => {
+    refresh();
+    return () => { request.current++; };
+  }, [owner]);
+  const visible = state.owner === owner ? state : { loading: true, devices: [], error: '' };
+  return html`<div data-testid="messaging-devices">
+    <h4>Messaging devices</h4>
+    ${visible.loading ? html`<p class="muted small" role="status">Loading devices…</p>`
+      : visible.error ? html`<p class="muted small" role="status">${visible.error}</p>`
+      : visible.devices.length ? html`<ul>${visible.devices.map((device) => html`<li key=${device.pubkey}>
+          ${device.current ? 'This browser · ' : ''}<span class="mono" title=${device.pubkey}>${device.pubkey.slice(0, 8)}…${device.pubkey.slice(-8)}</span>
+        </li>`)}</ul>`
+      : html`<p class="muted small">No authorized messaging devices found.</p>`}
+    <button class="link" disabled=${visible.loading} onClick=${refresh}>Refresh devices</button>
+  </div>`;
+}
+
 function Settings() {
   const signer = me.value;
   const [showKey, setShowKey] = useState(false);
@@ -2070,6 +2108,13 @@ function Settings() {
             ? html`<p class="mono wrap secret">${nostr.exportNsec(signer)}</p>`
             : html`<button onClick=${() => setShowKey(true)}>Reveal private key (nsec)</button>`}
         </div>`}
+      </div>
+      <div class="card">
+        <h3>Messaging</h3>
+        <label class="check"><input type="checkbox" checked=${store.preferDoubleRatchet.value}
+          onChange=${(e) => store.setPreferDoubleRatchet(e.target.checked)} /> Prefer double ratchet when available</label>
+        <p class="muted small">Automatically use double ratchet when a compatible device is found. Existing double-ratchet chats keep their encryption.</p>
+        <${MessagingDevices} owner=${signer.pubkey} />
       </div>
       <div class="card">
         <h3>DM inbox relays</h3>

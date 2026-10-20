@@ -6,6 +6,7 @@
 //   'app'                  the shared app relays
 //   'index'                app relays + indexers (profiles, follow and relay lists of anyone)
 //   'self'                 your own inbox relays + app relays + indexers (your lists and settings)
+//   'ndr' | { ndr: true, relays? } your inbox + shared ratchet relays, optionally a recipient's inbox
 //   { room }               a public room's relays + app relays
 //   { peer, relays }       a DM recipient: their inbox relays (+ app relays); a publish
 //                          succeeds only if one of THEIR relays accepts (partial otherwise)
@@ -20,6 +21,8 @@ export const APP_RELAYS = [
   'wss://nos.lol',
 ];
 export const INDEXERS = ['wss://purplepag.es', 'wss://indexer.coracle.social', 'wss://relay.nos.social'];
+// Shared with Iris for device discovery and ratcheted messages only.
+export const NDR_RELAYS = [...APP_RELAYS, 'wss://relay.snort.social'];
 
 export const uniq = (list) => [...new Set(list.filter(Boolean))];
 
@@ -39,6 +42,7 @@ export function resolve(scope) {
   if (scope === 'app') return [...APP_RELAYS];
   if (scope === 'index') return uniq([...APP_RELAYS, ...INDEXERS]);
   if (scope === 'self') return uniq([...ownRelays, ...APP_RELAYS, ...INDEXERS]);
+  if (scope === 'ndr' || scope?.ndr) return uniq([...ownRelays, ...NDR_RELAYS, ...(scope.relays ?? [])]);
   if (scope?.room) return uniq([...scope.room.relays, ...APP_RELAYS]);
   if (scope?.peer) return uniq([...(scope.relays ?? []), ...APP_RELAYS]);
   if (scope?.relays) return uniq([...scope.relays, ...APP_RELAYS, ...(scope.index ? INDEXERS : [])]);
@@ -49,6 +53,38 @@ const withWait = (params) => ({ maxWait: RELAY_WAIT, ...(params ?? {}) });
 
 export const get = (scope, filter, params) => pool.get(resolve(scope), filter, withWait(params));
 export const query = (scope, filter, params) => pool.querySync(resolve(scope), filter, withWait(params));
+
+// Device registration must distinguish an empty roster from unavailable relays.
+// Only a real EOSE counts; a failed connection or timeout cannot authorize it.
+export async function queryConfirmed(scope, filter) {
+  const results = await Promise.allSettled(resolve(scope).map(async (url) => {
+    const relay = await pool.ensureRelay(url, { connectionTimeout: 5000 });
+    return new Promise((resolve, reject) => {
+      const events = [];
+      let sub, settled = false;
+      const finish = (error) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        clearTimeout(sub?.eoseTimeoutHandle);
+        sub?.close();
+        if (error) reject(error); else resolve(events);
+      };
+      const timer = setTimeout(() => finish(new Error('Relay discovery timed out')), 5000);
+      sub = relay.subscribe([filter], {
+        // nostr-tools otherwise synthesizes EOSE after 4.4s; our own deadline
+        // must reject that silent connection instead of accepting an empty roster.
+        eoseTimeout: 2147483647,
+        onevent: (event) => events.push(event),
+        oneose: () => finish(),
+        onclose: () => finish(new Error('Relay discovery unavailable')),
+      });
+    });
+  }));
+  const available = results.filter((result) => result.status === 'fulfilled');
+  if (!available.length) throw new Error('Connect to a relay before enabling encrypted messaging.');
+  return available.flatMap((result) => result.value);
+}
 
 // Live subscription; returns { close() }.
 export const subscribe = (scope, filter, { onevent, oneose } = {}) => pool.subscribe(resolve(scope), filter, { onevent, oneose });

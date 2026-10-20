@@ -1,0 +1,14 @@
+{
+  "name": "anagram-lite",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "vendor:ndr": "node scripts/vendor-ndr.mjs",
+    "test": "node --test tests/*.test.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.12",
+    "fake-indexeddb": "6.2.4",
+    "nostr-double-ratchet": "0.0.179"
+  }
+}

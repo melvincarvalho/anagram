@@ -4,17 +4,18 @@ let opening;
 
 function open() {
   return (opening ??= new Promise((resolve, reject) => {
-    const req = indexedDB.open('anagram-lite', 2);
-    req.onupgradeneeded = (e) => {
+    const req = indexedDB.open('anagram-lite', 3);
+    req.onupgradeneeded = () => {
       const db = req.result;
-      if (e.oldVersion < 1) {
+      // Version 2 existed with room history upstream and with NDR in early PR
+      // builds. Preserve either layout and add only its missing stores.
+      if (!db.objectStoreNames.contains('dms'))
         db.createObjectStore('dms', { keyPath: ['account', 'id'] }).createIndex('account', 'account');
-        db.createObjectStore('wraps', { keyPath: ['account', 'id'] });
-        db.createObjectStore('profiles', { keyPath: 'pubkey' });
-      }
-      if (e.oldVersion < 2)
-        // Public signed kind 9 events, shared across accounts; index by room + time.
+      if (!db.objectStoreNames.contains('wraps')) db.createObjectStore('wraps', { keyPath: ['account', 'id'] });
+      if (!db.objectStoreNames.contains('profiles')) db.createObjectStore('profiles', { keyPath: 'pubkey' });
+      if (!db.objectStoreNames.contains('roomMessages'))
         db.createObjectStore('roomMessages', { keyPath: 'id' }).createIndex('room', ['room', 'created_at']);
+      if (!db.objectStoreNames.contains('ndr')) db.createObjectStore('ndr', { keyPath: ['account', 'key'] });
     };
     // Another tab still holds an older version open; its upgrade can't proceed until it closes.
     req.onblocked = () => blockedListeners.forEach((fn) => fn());
@@ -66,6 +67,9 @@ export async function markWrapFailure(account, id) {
 
 export const markWraps = (account, ids) =>
   run('wraps', 'readwrite', (s) => ids.forEach((id) => s.put({ account, id })));
+
+export const deleteDirectMessage = (account, id) =>
+  run('dms', 'readwrite', (s) => s.delete([account, id]));
 
 export const loadProfiles = () => run('profiles', 'readonly', (s) => s.getAll());
 
@@ -124,11 +128,23 @@ export const deleteRoomMessages = (ids) => run('roomMessages', 'readwrite', (s) 
 export async function clearAccount(account) {
   const db = await open();
   await new Promise((resolve, reject) => {
-    const tx = db.transaction(['dms', 'wraps'], 'readwrite');
+    const tx = db.transaction(['dms', 'wraps', 'ndr'], 'readwrite');
     const range = IDBKeyRange.bound([account, ''], [account, '￿']);
     tx.objectStore('dms').delete(range);
     tx.objectStore('wraps').delete(range);
+    tx.objectStore('ndr').delete(range);
     tx.oncomplete = resolve;
     tx.onerror = () => reject(tx.error);
   });
 }
+
+// Account-scoped keys, sessions and signed outbox envelopes. IndexedDB preserves
+// Uint8Array keys without a lossy JSON conversion.
+export const ndrStorage = (account) => ({
+  get: (key) => run('ndr', 'readonly', (s) => s.get([account, key])).then((r) => r?.value),
+  put: (key, value) => run('ndr', 'readwrite', (s) => s.put({ account, key, value })).then(() => {}),
+  del: (key) => run('ndr', 'readwrite', (s) => s.delete([account, key])),
+  list: (prefix = '') => run('ndr', 'readonly', (s) => s.getAllKeys(
+    IDBKeyRange.bound([account, prefix], [account, `${prefix}￿`]),
+  )).then((keys) => keys.map((key) => key[1])),
+});

@@ -414,6 +414,11 @@ async function giftWrap(signer, rumor, recipient) {
 
 // Wrap any rumor kind (14 message, 7 reaction, 5 deletion) to the recipient and to ourselves.
 // recipientRelays may be a promise, so the rumor can be shown (onRumor) before relay lookup finishes.
+export function makeRumor(pubkey, kind, content, tags, createdAt = now()) {
+  const rumor = { pubkey, created_at: createdAt, kind, tags, content };
+  return { ...rumor, id: getEventHash(rumor) };
+}
+
 export async function sendRumor(signer, recipient, kind, content, tags, recipientRelays, createdAt = now(), onRumor) {
   const rumor = { pubkey: signer.pubkey, created_at: createdAt, kind, tags, content };
   rumor.id = getEventHash(rumor);
