@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Security — nostr.chat</title>
+    <meta name="description" content="How nostr.chat protects messages, keys and the code it runs, and what it cannot protect." />
+    <meta name="referrer" content="no-referrer" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="canonical" href="https://nostr.chat/security" />
+    <link rel="icon" href="icon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="style.css" />
+    <script>
+      try {
+        const t = JSON.parse(localStorage.getItem('lite:theme'));
+        if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+      } catch {}
+    </script>
+  </head>
+  <body class="doc">
+    <main class="doc-wrap">
+      <p class="doc-nav"><a href="/">nostr.chat</a> · <a href="privacy">Privacy</a></p>
+      <h1>Security</h1>
+      <p class="lead">Plain statements about what protects you, what does not, and how to report a problem.</p>
+
+      <h2>Messages</h2>
+      <p>Direct messages use NIP-17: the message is sealed and gift-wrapped with NIP-44 encryption, so relays carry only an opaque envelope from a throwaway key. Only the recipient and you can read it. Optionally, chats with Iris-compatible contacts can use a Signal-style double ratchet, which adds forward secrecy: a key stolen later cannot decrypt earlier messages. Public rooms are public; anyone can read them.</p>
+
+      <h2>Identity and keys</h2>
+      <p>You are a key pair. The private key never leaves your browser, extension or remote signer, and we cannot reset or recover it. Anyone with your private key is you; keep the backup from Settings safe. A profile's NIP-05 address is only shown as verified after a direct check against that domain.</p>
+
+      <h2>The code you run</h2>
+      <p>nostr.chat is static files with no build step. Every library is vendored and pinned, with recorded checksums that are checked in continuous integration, and the page's Content Security Policy allows scripts from this origin only. There is no runtime dependency on a CDN. All events from relays and directories are signature-verified on your device before anything trusts them.</p>
+
+      <h2>Deletion</h2>
+      <p>Deleting your own message publishes a standard deletion request that well-behaved relays and clients honour, but it cannot force every copy to disappear. "Delete for me" hides a message on your devices only. Only the author's own deletion request removes a message from view; nobody else's can.</p>
+
+      <h2>Rooms</h2>
+      <p>A room's owner decides who is trusted and who is blocked. Links from untrusted members are shown as plain text and their media is not loaded, which limits what a stranger can make your browser fetch.</p>
+
+      <h2>Limits you should know</h2>
+      <ul>
+        <li>Relays see your IP address and when you are online. nostr.chat is not an anonymity tool; use it over a VPN or Tor if that matters to you.</li>
+        <li>Standard NIP-17 messages have no forward secrecy: a private key stolen later can decrypt past envelopes still held on relays.</li>
+        <li>Double-ratchet history lives in one browser. Clearing its storage loses it.</li>
+        <li>A compromised device, browser extension or signer can read what you can read.</li>
+        <li>There are no push notifications while the tab is closed.</li>
+      </ul>
+
+      <h2>Reporting</h2>
+      <p>Found a vulnerability? Please open an issue at <a href="https://github.com/melvincarvalho/anagram/issues">github.com/melvincarvalho/anagram/issues</a>, or, for something sensitive, send the maintainer an encrypted direct message from inside nostr.chat.</p>
+
+      <p class="muted small">Source: <a href="https://github.com/melvincarvalho/anagram">github.com/melvincarvalho/anagram</a>.</p>
+    </main>
+  </body>
+</html>

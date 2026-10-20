@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Privacy — nostr.chat</title>
+    <meta name="description" content="What leaves your device when you use nostr.chat, and to whom." />
+    <meta name="referrer" content="no-referrer" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="canonical" href="https://nostr.chat/privacy" />
+    <link rel="icon" href="icon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="style.css" />
+    <script>
+      try {
+        const t = JSON.parse(localStorage.getItem('lite:theme'));
+        if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+      } catch {}
+    </script>
+  </head>
+  <body class="doc">
+    <main class="doc-wrap">
+      <p class="doc-nav"><a href="/">nostr.chat</a> · <a href="security">Security</a></p>
+      <h1>Privacy</h1>
+      <p class="lead">What leaves your device, and to whom. Nothing here is hidden from you; this is the whole list. There is no account server, no analytics and no third-party script.</p>
+
+      <h2>Relays</h2>
+      <p>The shared app relays, the inbox relays people publish for themselves, and a room's own relays see your IP address, the gift-wrapped direct messages you send and receive, and your public room messages. Direct message content is encrypted end to end with NIP-44; a relay sees only a wrapped event with a random throwaway sender key, not who is writing to whom.</p>
+
+      <h2>relay.snort.social</h2>
+      <p>When you open a chat whose encryption is set to Auto, this relay (shared with Iris) is additionally asked whether the other person has registered a double-ratchet device. Once a chat uses double ratchet, it also carries those envelopes. It therefore sees your IP and which public keys you open chats with. Choosing "Never" under Settings → Messaging stops these lookups.</p>
+
+      <h2>nostr.social</h2>
+      <p>The did:nostr directory is asked for the profiles of people you chat with and of room posters, for people search, and for follow lists on the New message screen. It sees your IP and which public keys you look up. Everything it returns is a signed Nostr event that is verified on your device; nothing is sent to it other than those lookups.</p>
+
+      <h2>Media server</h2>
+      <p>Files you choose to upload go to a Blossom server (blossom.nostr.build by default, changeable in Settings) with an authorisation event signed by your key. The server learns your public key, your IP and the file.</p>
+
+      <h2>Avatars and media hosts</h2>
+      <p>Profile pictures load automatically from wherever a profile points, without a referrer. Images, video and audio inside messages load automatically only from trusted room members and your contacts; for anyone else you tap "Show media" first, because loading a file tells its host your IP.</p>
+
+      <h2>NIP-05 addresses</h2>
+      <p>An address like name@domain is verified by fetching that domain's well-known file. This happens automatically for yourself, your contacts and people you have messaged. For anyone else the address is shown unverified with a "verify" tap.</p>
+
+      <h2>Your key</h2>
+      <p>Your private key stays in this browser's local storage, or in your signer extension or remote signer. We never see it. Decrypted messages are cached in this browser only. Signing out removes this account's cached messages and settings from the device.</p>
+
+      <h2>Double-ratchet chats</h2>
+      <p>If you turn on double ratchet, this browser registers as a messaging device on your account by publishing a signed public event, and the history of those chats is kept in this browser only. It is not synced to your other devices and is lost if this browser's data is cleared.</p>
+
+      <h2>What we do not have</h2>
+      <p>No server of ours sees your messages, contacts or usage. The site is static files; the hosting provider (GitHub Pages) sees the ordinary web requests for those files.</p>
+
+      <p class="muted small">Source: <a href="https://github.com/melvincarvalho/anagram">github.com/melvincarvalho/anagram</a>. The README's Privacy section is kept in step with this page.</p>
+    </main>
+  </body>
+</html>

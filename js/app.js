@@ -234,7 +234,8 @@ function PlainText({ content, links = true }) {
       ? html`<${Mentions} text=${part} />`
       : links
         ? html`<a href=${part} target="_blank" rel="noopener noreferrer nofollow">${part}</a>`
-        : '[link removed]',
+        : // Untrusted room author: the words stay, nothing is clickable (Anagram drops the URL).
+          html`<span class="plain-link" title="Links from untrusted members are not clickable">${part}</span>`,
   );
 }
 
@@ -538,14 +539,15 @@ function Login() {
         <details><summary>Is this Anagram?</summary><p>It is a lighter client for the same protocol. Chats and rooms work across both; Anagram is the fuller app from LNbits.</p></details>
         <details><summary>Where are my messages?</summary><p>Encrypted copies sit on the relays you choose; decrypted copies are cached in this browser only. There is no server of ours in the middle.</p></details>
         <details><summary>What about double ratchet?</summary><p>It adds Signal-style forward secrecy for chats with Iris users, and such chats stay in this browser. By default the app only checks whether the other person supports it (a lookup on relay.snort.social) and asks before turning it on; "Never" in Settings stops the lookups. Everyone else keeps standard NIP-17.</p></details>
-        <details><summary>What leaves my device?</summary><p>Only what the <a href="https://github.com/melvincarvalho/anagram#privacy" target="_blank" rel="noopener">Privacy section</a> lists: relay traffic, profile lookups on nostr.social, and files you choose to upload.</p></details>
+        <details><summary>What leaves my device?</summary><p>Only what the <a href="privacy">Privacy page</a> lists: relay traffic, profile lookups on nostr.social, and files you choose to upload.</p></details>
       </section>
       <p class="landing-partners">Works with <a href="https://github.com/lnbits/anagram" target="_blank" rel="noopener">Anagram</a>, <a href="https://irischat.org" target="_blank" rel="noopener">Iris</a> and other Nostr apps. One key, one network, your choice of app.</p>
       <footer class="landing-foot">
         <span>nostr.chat is free software. Encrypted with NIP-44 and NIP-17 gift wrap; optional double ratchet over Nostr.</span>
         <nav>
           <a href="https://github.com/melvincarvalho/anagram" target="_blank" rel="noopener">Source</a>
-          <a href="https://github.com/melvincarvalho/anagram#privacy" target="_blank" rel="noopener">Privacy</a>
+          <a href="privacy">Privacy</a>
+          <a href="security">Security</a>
           <a href="https://nostr.social" target="_blank" rel="noopener">nostr.social</a>
           <a href="https://did-nostr.com" target="_blank" rel="noopener">did:nostr</a>
         </nav>
@@ -2027,6 +2029,8 @@ function RoomChat({ id }) {
             </button>`}
       </div>`}
     />
+    ${nostr.roomPolicy(room, me.value.pubkey) === 'plain' &&
+    html`<p class="composer-note muted small">Links and media you post here show as plain text until the room owner trusts you.</p>`}
     <${Composer}
       ...${actions.composer}
       mentionables=${nostr.uniq(state.messages.map((m) => m.pubkey).reverse())}

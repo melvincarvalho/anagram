@@ -1783,3 +1783,55 @@ mark {
     grid-template-columns: 1fr;
   }
 }
+
+/* Room composer note for members the owner hasn't trusted yet. */
+.composer-note {
+  margin: 0;
+  padding: 6px 14px 0;
+  border-top: 1px solid var(--line);
+  background: var(--panel);
+}
+.composer-note + .composer {
+  border-top: 0;
+}
+.plain-link {
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+}
+
+/* ---------- Static pages (privacy, security) ---------- */
+body.doc {
+  height: auto;
+  min-height: 100%;
+}
+.doc-wrap {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+.doc-nav {
+  margin: 0 0 24px;
+  color: var(--muted);
+  font-size: 14px;
+}
+.doc-wrap h1 {
+  font-size: 32px;
+  margin: 0 0 8px;
+}
+.doc-wrap .lead {
+  color: var(--muted);
+  font-size: 17px;
+  margin: 0 0 24px;
+}
+.doc-wrap h2 {
+  font-size: 18px;
+  margin: 24px 0 6px;
+}
+.doc-wrap p,
+.doc-wrap li {
+  margin: 0 0 10px;
+  line-height: 1.55;
+}
+.doc-wrap ul {
+  padding-left: 20px;
+}

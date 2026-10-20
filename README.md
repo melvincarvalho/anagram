@@ -6,7 +6,7 @@ A no-build Preact client for private Nostr DMs and public chat rooms, wire-compa
 - **DMs:** NIP-17 kind 14 rumors, sealed (kind 13) and gift-wrapped (kind 1059) with NIP-44. Sent to the recipient's kind 10050 inbox relays plus the default relays. Decrypted messages are cached in IndexedDB.
 - **Iris-compatible DMs:** new chats use **Auto**, preferring `nostr-double-ratchet` when the peer advertises a compatible device and using NIP-17 otherwise. Existing chats retain their encryption. Settings → Messaging is per account: **Ask me** (default: a compatible contact brings up an offer before this browser registers as a device), **Use it whenever available**, or **Never** (no roster lookups; sessions that already exist keep running). Chat info shows the current protocol and can pin a chat to NIP-17 only or double ratchet only. Both transports are received side by side. The optional library loads only for activation or a verified compatible roster candidate; device registration uses your existing signer. Device keys, sessions and queued encrypted events stay in IndexedDB.
 - **Contacts:** Anagram's private contact list (kind 30000, `d=contacts`, NIP-44 to self), read on login and extended when you message someone new.
-- **Rooms:** Anagram's public groups, i.e. NIP-72 `kind:34550` definitions with NIP-C7 `kind:9` messages and `q` replies. The owner's `trusted`/`blocked` tags are honoured: blocked authors are hidden, and only trusted authors get clickable links. "Anagram rants" is preloaded.
+- **Rooms:** Anagram's public groups, i.e. NIP-72 `kind:34550` definitions with NIP-C7 `kind:9` messages and `q` replies. The owner's `trusted`/`blocked` tags are honoured: blocked authors are hidden; links from untrusted authors are shown as plain text (not clickable) and their media is not loaded. "Anagram rants" is preloaded.
 - **Media:** photos, video and audio upload to a Blossom server (default `blossom.nostr.build`, as Anagram) with a kind 24242 auth event, and are sent as NIP-92 `imeta` attachments. In rooms only trusted members may post media.
 - **Login:** nsec (kept in localStorage), NIP-07 extension (needs NIP-44), or a NIP-46 `bunker://` signer.
 
@@ -18,7 +18,7 @@ Relays are the interim transport. The plan is NIP-98-authenticated HTTP ([nip98.
 
 ## Privacy
 
-What leaves your device, and to whom. Nothing here is hidden from you; this is the list.
+What leaves your device, and to whom. Nothing here is hidden from you; this is the list (also at [nostr.chat/privacy](https://nostr.chat/privacy), with [nostr.chat/security](https://nostr.chat/security) alongside).
 
 - **Relays** (`APP_RELAYS` in `js/transport.js`, plus the inbox relays people publish in kind 10050 and a room's own relays) see your IP, the gift-wrapped DMs you send and receive (not their contents), and your public room messages. DM content is NIP-44 encrypted end to end; relays see only wrapped events with a random throwaway sender key.
 - **relay.snort.social** (`NDR_RELAYS` in `js/transport.js`, shared with Iris) is additionally asked, when you open a chat in "Auto" encryption mode, whether that person has registered a double-ratchet device (their public kind 37368 roster), and carries double-ratchet envelopes once a chat uses them. It therefore sees your IP and which public keys you open chats with. Choosing "Never" under Settings → Messaging stops these lookups.
