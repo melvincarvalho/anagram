@@ -12,6 +12,8 @@
 //                          succeeds only if one of THEIR relays accepts (partial otherwise)
 //   { relays, index? }     an explicit list (+ app relays, + indexers when index: true)
 import { SimplePool } from 'nostr-tools';
+import { createPrivateRelayPublisher, createAnonymousRelayDiscovery, isPrivateRelayEvent,
+  splitRelayDiscoveryFilters } from '../vendor/nostr-relay-privacy.mjs';
 
 export const APP_RELAYS = [
   'wss://relay.nostr.com',
@@ -33,6 +35,13 @@ const RELAY_WAIT = 6000;
 export const pool = new SimplePool({ enableReconnect: true });
 
 let ownRelays = []; // the account's inbox relays (kind 10050), set by the store
+const privatePublishers = new Set();
+let anonymousDiscovery;
+const isNdrScope = (scope) => scope === 'ndr' || scope?.ndr;
+const discovery = () => anonymousDiscovery ??= createAnonymousRelayDiscovery({ historyTimeoutMs: 5000 });
+// Protocol libraries cache signature checks on events; do not pass the SDK's
+// frozen event objects across separately bundled nostr-tools copies.
+const protocolEvent = event => structuredClone(event);
 
 export function setOwnRelays(list) {
   ownRelays = uniq(list ?? []);
@@ -51,12 +60,40 @@ export function resolve(scope) {
 
 const withWait = (params) => ({ maxWait: RELAY_WAIT, ...(params ?? {}) });
 
-export const get = (scope, filter, params) => pool.get(resolve(scope), filter, withWait(params));
-export const query = (scope, filter, params) => pool.querySync(resolve(scope), filter, withWait(params));
+export const get = async (scope, filter, params) => {
+  const split = splitRelayDiscoveryFilters([filter]);
+  if (!split.discovery.length) return pool.get(resolve(scope), filter, withWait(params));
+  return (await query(scope, filter, params)).sort((a, b) => b.created_at - a.created_at || a.id.localeCompare(b.id))[0] ?? null;
+};
+export const query = async (scope, filter, params) => {
+  const split = splitRelayDiscoveryFilters([filter]);
+  const relays = resolve(scope);
+  const results = await Promise.all([
+    ...split.receiver.map(filter => pool.querySync(relays, filter, withWait(params))),
+    ...split.discovery.map(async filters => (await discovery().query(filters, {
+      relays, cache: 'network-only', deadline: Date.now() + (params?.maxWait ?? RELAY_WAIT),
+    })).events.map(protocolEvent)),
+  ]);
+  return [...new Map(results.flat().map(event => [event.id, event])).values()];
+};
 
 // Device registration must distinguish an empty roster from unavailable relays.
 // Only a real EOSE counts; a failed connection or timeout cannot authorize it.
 export async function queryConfirmed(scope, filter) {
+  const split = splitRelayDiscoveryFilters([filter]);
+  if (split.discovery.length) {
+    const reports = await Promise.all([
+      ...split.receiver.map(filter => queryConfirmed(scope, filter)),
+      ...split.discovery.map(async filters => {
+        const result = await discovery().query(filters, { relays: resolve(scope), cache: 'network-only', deadline: Date.now() + 5000 });
+        if (!result.sources.some(source => source.complete)) throw new Error('Connect to a relay before enabling encrypted messaging.');
+        if (!result.events.length && result.sources.filter(source => source.complete).length < Math.min(2, resolve(scope).length))
+          throw new Error('Could not confirm your device list with enough relays. Try again.');
+        return result.events.map(protocolEvent);
+      }),
+    ]);
+    return [...new Map(reports.flat().map(event => [event.id, event])).values()];
+  }
   const results = await Promise.allSettled(resolve(scope).map(async (url) => {
     const relay = await pool.ensureRelay(url, { connectionTimeout: 5000 });
     return new Promise((resolve, reject) => {
@@ -93,7 +130,34 @@ export async function queryConfirmed(scope, filter) {
 }
 
 // Live subscription; returns { close() }.
-export const subscribe = (scope, filter, { onevent, oneose } = {}) => pool.subscribe(resolve(scope), filter, { onevent, oneose });
+export const subscribe = (scope, filter, { onevent, oneose, onclose } = {}) => {
+  const split = splitRelayDiscoveryFilters([filter]);
+  if (split.discovery.length) {
+    let closed = false;
+    const ready = new Set(), opened = [];
+    const count = split.discovery.length + split.receiver.length;
+    const completed = index => {
+      if (closed) return;
+      ready.add(index);
+      if (ready.size === count) oneose?.();
+    };
+    try {
+      for (const [index, filters] of split.discovery.entries()) opened.push(discovery().subscribe(filters, {
+        onEvent: event => { if (!closed) return onevent?.(protocolEvent(event)); },
+        onEose: status => {
+          if (closed) return;
+          if (status.sources.some(source => source.complete)) completed(index);
+          else onclose?.();
+        },
+      }, { relays: resolve(scope), cache: 'network-only' }));
+      for (const [index, filter] of split.receiver.entries()) opened.push(pool.subscribe(resolve(scope), filter, {
+        onevent, oneose: () => completed(split.discovery.length + index),
+      }));
+    } catch (error) { opened.forEach(sub => sub.close()); throw error; }
+    return { close() { closed = true; opened.forEach(sub => sub.close()); } };
+  }
+  return pool.subscribe(resolve(scope), filter, { onevent, oneose });
+};
 
 // Publish to every relay in scope and resolve as soon as one accepts (the rest carry on).
 // For a { peer } scope, success means one of the recipient's own relays accepted: if only
@@ -101,9 +165,18 @@ export const subscribe = (scope, filter, { onevent, oneose } = {}) => pool.subsc
 // not where the recipient reads).
 export async function publish(scope, event, signer) {
   const relays = resolve(scope);
+  if (event.kind === 21117) throw new Error('Call controls require an encrypted session.');
   const required = scope?.peer ? uniq(scope.relays ?? []) : [];
   const onauth = signer ? (t) => signer.sign(t) : undefined;
-  const attempts = pool.publish(relays, event, { onauth }).map((p, i) => p.then(() => relays[i]));
+  const attempts = isPrivateRelayEvent(event) ? relays.map(async url => {
+    const sender = createPrivateRelayPublisher();
+    privatePublishers.add(sender);
+    try {
+      const result = await sender.publish(event, { relays: [url], requireAck: true, queue: false });
+      if (!result.remoteAccepted) throw new Error('No relay accepted the event.');
+      return url;
+    } finally { privatePublishers.delete(sender); await sender.close(); }
+  }) : pool.publish(relays, event, { onauth }).map((p, i) => p.then(() => relays[i]));
   const needed = required.length ? attempts.filter((_, i) => required.includes(relays[i])) : attempts;
   try {
     await Promise.any(needed.length ? needed : attempts);
@@ -174,6 +247,9 @@ export function setAuthSigner(signer) {
 // Drop every connection and cursor: used when switching accounts, since open
 // connections carry the old account's AUTH and would link the two.
 export function reset() {
+  for (const sender of privatePublishers) void sender.close();
+  void anonymousDiscovery?.close();
+  anonymousDiscovery = undefined;
   pool.close([...pool.relays.keys()]);
   paging.clear();
   ownRelays = [];
