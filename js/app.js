@@ -101,10 +101,12 @@ function App() {
 }
 
 const root = document.getElementById('app');
-// A failed relay AUTH exchange (our signer failing, or the relay refusing the answer, e.g.
-// "relay needs serviceUrl to be configured") is rethrown by nostr-tools with nothing to
-// catch it. Log it once and keep it out of the console; publishes that needed AUTH still
-// fail normally through their own promises.
+// A failed relay AUTH exchange (our signer failing, or the relay refusing the answer) is
+// rethrown by nostr-tools with nothing to catch it. Log it once and keep it out of the
+// console; publishes that needed AUTH still fail normally through their own promises.
+// Known case (Oct 2026): relay.damus.io demands AUTH for inbox reads and then answers
+// every AUTH with "relay needs serviceUrl to be configured before AUTH can work", a
+// misconfiguration on its side; other relays in the scope still serve the read.
 let authRejectionLogged = false;
 addEventListener('unhandledrejection', (e) => {
   const reason = e.reason;

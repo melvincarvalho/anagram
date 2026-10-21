@@ -162,8 +162,9 @@ let authWarned = false;
 export function setAuthSigner(signer) {
   pool.automaticallyAuth = signer
     ? (relay) => (t) =>
+        // nostr-tools 2.25 passes the relay URL here, older versions the relay object.
         signer.sign(t).catch((e) => {
-          if (!authWarned) console.warn(`[nostr] could not answer AUTH for ${relay.url}: ${e.message}`);
+          if (!authWarned) console.warn(`[nostr] could not answer AUTH for ${relay?.url ?? relay}: ${e.message}`);
           authWarned = true;
           e.relayAuth = true;
           throw e;
