@@ -88,6 +88,7 @@ export {
   requests,
 } from './store/people.js';
 export {
+  deleteMedia,
   mediaServer,
   setMediaServer,
   uploadMedia,

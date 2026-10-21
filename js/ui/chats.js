@@ -160,6 +160,7 @@ export function RoomChat({ id }) {
       mentionables=${nostr.uniq(state.messages.map((m) => m.pubkey).reverse())}
       placeholder="Public message — anyone can read this"
       draftKey=${room.address}
+      maxLength=${nostr.ROOM_MAX_LENGTH}
       canUpload=${nostr.roomPolicy(room, me.value.pubkey) === 'trusted'}
       onSend=${async (text, tags) => {
         await store.sendRoomMessage(room.address, text, actions.composer.replyTo, tags);

@@ -6,7 +6,7 @@ import * as transport from '../transport.js';
 import * as db from '../db.js';
 import { dms, inboxRelays, me, notify, storage, syncing } from './core.js';
 import { emitIncoming } from './prefs.js';
-import { addContact, requestProfiles } from './people.js';
+import { addContact, displayName, requestProfiles } from './people.js';
 import { addMessages, addReactions, applyDeletions, current, flushSaves, isDeleted, isMessageDeleted, markDeleted, markSent, queueSave, reactionTarget, resumePending, rootId, tombstone, track } from './messages.js';
 import { directPreference, directProtocol, directProtocols, historyLoaded, ndrDecided, ndrDeletions, prepareDirectProtocol, preserveCachedProtocols, rememberNdrEdit, saveDirectPreference, sendNdrMessage } from './ratchet.js';
 
@@ -38,6 +38,18 @@ function peerOf(rumor, self) {
   return others[0] ?? self;
 }
 
+// Group DMs are dropped (3.4), but silently losing a message is worse than a notice:
+// say so once per sender per session, for messages newer than this session only, so a
+// first sync on a new device does not replay old group chatter as toasts.
+let sessionStart = 0;
+const groupNoticed = new Set();
+function noticeGroupMessage(rumor) {
+  if (rumor.created_at < sessionStart || rumor.pubkey === me.value?.pubkey || groupNoticed.has(rumor.pubkey)) return;
+  groupNoticed.add(rumor.pubkey);
+  requestProfiles([rumor.pubkey]);
+  notify(`${displayName(rumor.pubkey)} sent a group message, which nostr.chat does not show yet.`);
+}
+
 async function handleWrap(wrap) {
   const signer = me.value;
   if (!signer || seenWraps.has(wrap.id)) return;
@@ -54,6 +66,7 @@ async function handleWrap(wrap) {
   }
   if (me.value !== signer) return;
   const peer = peerOf(rumor, signer.pubkey);
+  if (!peer && (rumor.kind === 14 || rumor.kind === 15)) noticeGroupMessage(rumor);
   if (peer && rumor.kind === 5) {
     const ids = rumor.tags.filter((t) => t[0] === 'e').map((t) => t[1]);
     applyDeletions(ids, rumor.pubkey);
@@ -128,6 +141,8 @@ function markWrapDone(account, id) {
 const enqueue = (wrap) => (queue = queue.then(() => handleWrap(wrap)).catch(() => {}));
 
 export async function start(signer) {
+  sessionStart = nostr.now();
+  groupNoticed.clear();
   const rows = await db.loadDirectMessages(signer.pubkey).catch(() => []);
   const messages = [];
   const saved = [];

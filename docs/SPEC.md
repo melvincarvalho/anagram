@@ -123,7 +123,9 @@ that fails because the signer was unavailable is retried next session.
 
 3.4 **Peer.** The chat a rumor belongs to is the one key among `{ rumor.pubkey, all p tags }`
 that is not the account. If there is more than one such key the rumor is dropped: group
-DMs are out of scope. A rumor with no other key is the note-to-self chat.
+DMs are out of scope. The client does tell the user, once per sender per session and only
+for rumors newer than the session, that a group message was not shown. A rumor with no
+other key is the note-to-self chat.
 
 3.5 **Text message (kind 14).** Tags, in this order:
 `['p', recipient]`; `['e', <id>, '', 'reply']` when replying; `['e', <previous id>, '', 'edit']`
@@ -181,8 +183,10 @@ are shown as non-clickable plain text and attachments are not loaded; only `trus
 authors may post media from this client. A room definition that cannot be refreshed is
 used from cache, and the client still goes live on its relays.
 
-4.4 **Message**: kind 9 with exactly one `['a', <room address>]`, content 1–8000 chars,
-`created_at` no more than 60 s in the future. Replies carry
+4.4 **Message**: kind 9 with exactly one `['a', <room address>]`, content 1–8000 chars
+accepted, `created_at` no more than 60 s in the future. This client sends and edits at
+most 4,000 UTF-16 code units, which is Anagram's own limit since 0.9.6, and shows a
+counter near it. Replies carry
 `['q', <id of the root message>, <first room relay or ''>, <author>]`. Edits follow 3.6
 with the same `created_at` as the original, `['e', <current id>, '', 'edit']`, plus
 `['e', <root id>]` when the root differs, and copy the original's `q` and `imeta` tags.
@@ -249,8 +253,10 @@ rendering, `imeta` mime types are authoritative (so `audio/webm` is audio); a ba
 in text is classified by extension. Voice notes are `audio/webm` sent this way.
 
 6.3 **Delete**: `DELETE /<sha256>` with a kind 24242 auth whose tags are
-`['t', 'delete']`, `['expiration', …]`, `['x', sha256]` (used by tests; not exposed in
-the UI yet).
+`['t', 'delete']`, `['expiration', …]`, `['x', sha256]`, sent to the origin of the file's
+URL. The message menu offers "Remove file from server" on the user's own messages that
+carry an `imeta` with an `x` hash; the message itself is left in place. A 404 counts as
+done.
 
 6.4 Media and avatars load with `Referrer-Policy: no-referrer`. Inline media loads
 automatically only from contacts and trusted room members; otherwise on tap.
@@ -343,7 +349,7 @@ unknown tags everywhere.
 ## 10. Known gaps
 
 - Group DMs (more than one other `p` tag) are dropped (3.4).
-- Kind 15 files are received, not sent (3.9); Blossom delete is not in the UI (6.3).
+- Kind 15 files are received, not sent (3.9).
 - A device registered later does not receive earlier ratchet history (7.5). Iris fills
   this with a device-to-device history reconciliation (Negentropy over a ratchet session
   between one's own devices); this client does not implement it yet.

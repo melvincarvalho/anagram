@@ -114,8 +114,28 @@ addEventListener('unhandledrejection', (e) => {
   e.preventDefault();
 });
 
-render(html`<${App} />`, root);
-store.restoreSession();
+// GitHub Pages sends no frame-ancestors header and a meta CSP cannot set one, so refuse to
+// run inside another site's frame (clickjacking) and point at the real page instead.
+const framed = (() => {
+  try {
+    return window.top !== window.self;
+  } catch {
+    return true;
+  }
+})();
+if (framed) {
+  const note = document.createElement('p');
+  note.className = 'boot muted';
+  const link = document.createElement('a');
+  link.href = location.href;
+  link.target = '_top';
+  link.textContent = 'Open nostr.chat directly';
+  note.append('nostr.chat does not run inside other sites. ', link);
+  root.replaceChildren(note);
+} else {
+  render(html`<${App} />`, root);
+  store.restoreSession();
+}
 
 if ('serviceWorker' in navigator) {
   // When an updated worker takes over an already-controlled page, reload once to run the new code.

@@ -108,6 +108,10 @@ function MessageMenu({ menu, onClose, onReply, onReact, onEdit, onDelete, onHide
     ${m.pubkey !== me.value.pubkey &&
     html`<${ConfirmButton} role="menuitem" label=${`⛔ Block ${store.displayName(m.pubkey)}`} confirm="Tap again to block" onConfirm=${act(() => store.toggleBlock(m.pubkey).catch(fail('Block')))} />`}
     ${m.pubkey === me.value.pubkey &&
+    nostr.uploadsOf(m).length > 0 &&
+    html`<${ConfirmButton} role="menuitem" className="" label="🧹 Remove file from server" confirm="Tap again to remove the file"
+      onConfirm=${act(() => store.deleteMedia(m).then((n) => store.notify(n > 1 ? 'Files removed from the server.' : 'File removed from the server.')).catch(fail('Remove file')))} />`}
+    ${m.pubkey === me.value.pubkey &&
     onDelete &&
     (confirming
       ? html`<button role="menuitem" class="danger" onClick=${act(() => onDelete(m))}>🗑 Tap again to delete for everyone</button>`

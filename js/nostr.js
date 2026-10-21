@@ -653,6 +653,10 @@ export async function updateRoom(signer, room, changes) {
   return next;
 }
 
+// What we send and edit in rooms: Anagram's own limit (since 0.9.6, UTF-16 code units).
+// Receiving stays lenient up to 8,000 for older posts and other clients.
+export const ROOM_MAX_LENGTH = 4000;
+
 export function validRoomMessage(event, address) {
   const refs = event.tags.filter((t) => t[0] === 'a');
   return (
@@ -894,6 +898,46 @@ export async function uploadBlossom(signer, file, server = DEFAULT_BLOSSOM) {
   const blob = await res.json().catch(() => null);
   if (!blob?.url?.startsWith('https://')) throw new Error(`${host} returned an invalid upload response.`);
   return ['imeta', `url ${blob.url}`, `m ${blob.type || file.type}`, `size ${blob.size ?? file.size}`, `x ${blob.sha256 || sha256}`];
+}
+
+// Ask the server a file lives on to delete it (Blossom BUD-02): DELETE /<sha256> with a
+// kind 24242 auth. Only the uploader's key can do this, so it only works for our own files.
+// A 404 means it is already gone, which is the outcome we wanted.
+export async function deleteBlossom(signer, url, sha256) {
+  const origin = normalizeBlossomServer(new URL(url).origin);
+  if (!origin) throw new Error('The file is not on an https:// server.');
+  const host = new URL(origin).host;
+  const created = now();
+  const auth = await signer.sign({
+    kind: 24242,
+    created_at: created,
+    content: `Delete media from ${host}`,
+    tags: [
+      ['t', 'delete'],
+      ['expiration', String(created + 15 * 60)],
+      ['x', sha256],
+    ],
+  });
+  const bytes = new TextEncoder().encode(JSON.stringify(auth));
+  const res = await fetch(`${origin}/${sha256}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Nostr ${btoa(String.fromCharCode(...bytes))}` },
+    referrerPolicy: 'no-referrer',
+  });
+  if (!res.ok && res.status !== 404)
+    throw new Error(res.headers.get('X-Reason') || (await res.text().catch(() => '')) || `${host} refused (${res.status})`);
+}
+
+// The uploaded files a message carries: [{ url, sha256 }] from its imeta tags.
+export function uploadsOf(message) {
+  return (message.tags ?? [])
+    .filter((t) => t[0] === 'imeta')
+    .map((t) => {
+      const url = t.find((s) => s.startsWith('url https://'))?.slice(4);
+      const sha256 = t.find((s) => /^x [0-9a-f]{64}$/.test(s))?.slice(2);
+      return url && sha256 ? { url, sha256 } : null;
+    })
+    .filter(Boolean);
 }
 
 export const enableAuth = (signer) => transport.setAuthSigner(signer);

@@ -506,6 +506,16 @@ button.link {
   max-height: 160px;
   field-sizing: content;
 }
+.composer .count {
+  align-self: center;
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.composer .count.over {
+  color: var(--danger, #d33);
+  font-weight: 600;
+}
 .replying {
   display: flex;
   justify-content: space-between;

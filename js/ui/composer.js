@@ -67,7 +67,8 @@ function useRecorder() {
 
 const canRecordVoice = () => typeof MediaRecorder !== 'undefined' && !!navigator.mediaDevices?.getUserMedia;
 
-export function Composer({ onSend, placeholder, replyTo, onCancelReply, editing, onEdit, onCancelEdit, draftKey, canUpload = true, mentionables = [] }) {
+// maxLength: a hard cap on the wire text (UTF-16 code units), shown as a counter when near.
+export function Composer({ onSend, placeholder, replyTo, onCancelReply, editing, onEdit, onCancelEdit, draftKey, canUpload = true, mentionables = [], maxLength = 0 }) {
   const [text, setTextState] = useState(() => store.drafts.value[draftKey] ?? '');
   // Keep the per-chat draft in step with what is typed (not while editing a sent message).
   // Drafts reach the store after a pause in typing, so each keystroke doesn't re-render the sidebar.
@@ -108,14 +109,16 @@ export function Composer({ onSend, placeholder, replyTo, onCancelReply, editing,
   const send = () => {
     const value = text.trim();
     if (!value || busy) return;
-    if (editing && expandMentions(value) === editing.content.trim()) return cancel();
+    const wire = expandMentions(value); // @Name -> nostr:nprofile… (Anagram's mention format)
+    if (editing && wire === editing.content.trim()) return cancel();
+    if (maxLength && wire.length > maxLength)
+      return store.notify(`Too long: ${wire.length.toLocaleString()} of ${maxLength.toLocaleString()} characters (mentions count in full).`);
     // Clear at once like Telegram; put the text back if sending fails outright.
     // After an edit, bring back whatever draft was there before.
     if (editing) setTextState(store.drafts.value[draftKey] ?? '');
     else setText('');
     run(async () => {
       try {
-        const wire = expandMentions(value); // @Name -> nostr:nprofile… (Anagram's mention format)
         await (editing ? onEdit(editing, wire) : onSend(wire, attachmentsFor(value)));
         if (!editing) playSound('sent');
       } catch (e) {
@@ -327,6 +330,8 @@ export function Composer({ onSend, placeholder, replyTo, onCancelReply, editing,
           else if (e.key === 'ArrowUp' && !text && onEdit) onEdit(null);
         }}
       />
+      ${maxLength > 0 && text.length > maxLength - 500 &&
+      html`<span class=${`count${text.length > maxLength ? ' over' : ''}`} aria-live="polite">${text.length.toLocaleString()}/${maxLength.toLocaleString()}</span>`}
       ${!editing && !text.trim() && canRecordVoice()
         ? html`<button class="primary mic" disabled=${busy || voice.recording} title="Record a voice note" aria-label="Record a voice note" onClick=${startVoice}>
             ${busy ? '…' : '🎤'}
