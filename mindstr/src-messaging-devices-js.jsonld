@@ -19,7 +19,7 @@
       "bgColor": "#ebc573"
     },
     {
-      "@id": "#7cw6cg",
+      "@id": "#qhb5iq",
       "name": "exports",
       "x": 250,
       "y": 0,
@@ -27,16 +27,16 @@
       "parent": "#this"
     },
     {
-      "@id": "#a54nev",
+      "@id": "#nvqaxu",
       "name": "loadMessagingDevices()",
       "x": 500,
       "y": 0,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/messaging-devices.js#L6",
       "bgColor": "#daeeff",
-      "parent": "#7cw6cg"
+      "parent": "#qhb5iq"
     },
     {
-      "@id": "#qhb5iq",
+      "@id": "#9n2fi8",
       "name": "37 lines",
       "x": -125,
       "y": 184,
@@ -45,7 +45,7 @@
       "parent": "#this"
     },
     {
-      "@id": "#nvqaxu",
+      "@id": "#27czbt",
       "name": "← js",
       "x": -125,
       "y": -184,

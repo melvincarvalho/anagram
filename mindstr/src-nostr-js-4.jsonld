@@ -19,7 +19,7 @@
       "bgColor": "#ebc573"
     },
     {
-      "@id": "#4q7gbw",
+      "@id": "#x5dcei",
       "name": "exports 1/3",
       "x": 253,
       "y": -38,
@@ -27,61 +27,61 @@
       "parent": "#this"
     },
     {
-      "@id": "#98geuv",
+      "@id": "#uchvmk",
       "name": "fetchEvent()",
       "x": 352,
       "y": -301,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js#L731",
       "bgColor": "#daeeff",
-      "parent": "#4q7gbw"
+      "parent": "#x5dcei"
     },
     {
-      "@id": "#x5dcei",
+      "@id": "#72kqt7",
       "name": "fetchContactList()",
       "x": 506,
       "y": -259,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js#L735",
       "bgColor": "#daeeff",
-      "parent": "#4q7gbw"
+      "parent": "#x5dcei"
     },
     {
-      "@id": "#uchvmk",
+      "@id": "#vbasu4",
       "name": "fetchMuteList()",
       "x": 478,
       "y": -126,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js#L749",
       "bgColor": "#daeeff",
-      "parent": "#4q7gbw"
+      "parent": "#x5dcei"
     },
     {
-      "@id": "#72kqt7",
+      "@id": "#8gars2",
       "name": "publishMuteList()",
       "x": 589,
       "y": -28,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js#L761",
       "bgColor": "#daeeff",
-      "parent": "#4q7gbw"
+      "parent": "#x5dcei"
     },
     {
-      "@id": "#vbasu4",
+      "@id": "#ttudn3",
       "name": "SETTINGS_D()",
       "x": 491,
       "y": 79,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js#L778",
       "bgColor": "#daeeff",
-      "parent": "#4q7gbw"
+      "parent": "#x5dcei"
     },
     {
-      "@id": "#8gars2",
+      "@id": "#nm9jmm",
       "name": "fetchSettings()",
       "x": 536,
       "y": 209,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js#L780",
       "bgColor": "#daeeff",
-      "parent": "#4q7gbw"
+      "parent": "#x5dcei"
     },
     {
-      "@id": "#ttudn3",
+      "@id": "#fcu6nk",
       "name": "exports 2/3",
       "x": -17,
       "y": 212,
@@ -89,61 +89,61 @@
       "parent": "#this"
     },
     {
-      "@id": "#nm9jmm",
+      "@id": "#im3caa",
       "name": "parseSettings()",
       "x": 281,
       "y": 352,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js#L785",
       "bgColor": "#fce3f3",
-      "parent": "#ttudn3"
+      "parent": "#fcu6nk"
     },
     {
-      "@id": "#fcu6nk",
+      "@id": "#up5tww",
       "name": "publishSettings()",
       "x": 193,
       "y": 474,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js#L795",
       "bgColor": "#fce3f3",
-      "parent": "#ttudn3"
+      "parent": "#fcu6nk"
     },
     {
-      "@id": "#im3caa",
+      "@id": "#w7nqyt",
       "name": "publishContactList()",
       "x": 31,
       "y": 424,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js#L806",
       "bgColor": "#fce3f3",
-      "parent": "#ttudn3"
+      "parent": "#fcu6nk"
     },
     {
-      "@id": "#up5tww",
+      "@id": "#csuere",
       "name": "signRoomReaction()",
       "x": -122,
       "y": 491,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js#L820",
       "bgColor": "#fce3f3",
-      "parent": "#ttudn3"
+      "parent": "#fcu6nk"
     },
     {
-      "@id": "#w7nqyt",
+      "@id": "#vb2ctp",
       "name": "signRoomDeletion()",
       "x": -222,
       "y": 379,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js#L835",
       "bgColor": "#fce3f3",
-      "parent": "#ttudn3"
+      "parent": "#fcu6nk"
     },
     {
-      "@id": "#csuere",
+      "@id": "#gfdcab",
       "name": "sendRoomDeletion()",
       "x": -399,
       "y": 372,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js#L844",
       "bgColor": "#fce3f3",
-      "parent": "#ttudn3"
+      "parent": "#fcu6nk"
     },
     {
-      "@id": "#vb2ctp",
+      "@id": "#u3dr42",
       "name": "exports 3/3",
       "x": -234,
       "y": -75,
@@ -151,61 +151,61 @@
       "parent": "#this"
     },
     {
-      "@id": "#gfdcab",
+      "@id": "#hjxwny",
       "name": "DEFAULT_BLOSSOM()",
       "x": -480,
       "y": 119,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js#L850",
       "bgColor": "#fbe8d3",
-      "parent": "#vb2ctp"
+      "parent": "#u3dr42"
     },
     {
-      "@id": "#u3dr42",
+      "@id": "#u49sh5",
       "name": "normalizeBlossomServer()",
       "x": -590,
       "y": 5,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js#L854",
       "bgColor": "#fbe8d3",
-      "parent": "#vb2ctp"
+      "parent": "#u3dr42"
     },
     {
-      "@id": "#hjxwny",
+      "@id": "#xdk3d5",
       "name": "uploadBlossom()",
       "x": -483,
       "y": -110,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js#L865",
       "bgColor": "#fbe8d3",
-      "parent": "#vb2ctp"
+      "parent": "#u3dr42"
     },
     {
-      "@id": "#u49sh5",
+      "@id": "#f4wxnt",
       "name": "deleteBlossom()",
       "x": -515,
       "y": -244,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js#L906",
       "bgColor": "#fbe8d3",
-      "parent": "#vb2ctp"
+      "parent": "#u3dr42"
     },
     {
-      "@id": "#xdk3d5",
+      "@id": "#izya3w",
       "name": "uploadsOf()",
       "x": -364,
       "y": -291,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js#L932",
       "bgColor": "#fbe8d3",
-      "parent": "#vb2ctp"
+      "parent": "#u3dr42"
     },
     {
-      "@id": "#f4wxnt",
+      "@id": "#wpzfj8",
       "name": "enableAuth()",
       "x": -319,
       "y": -422,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js#L943",
       "bgColor": "#fbe8d3",
-      "parent": "#vb2ctp"
+      "parent": "#u3dr42"
     },
     {
-      "@id": "#izya3w",
+      "@id": "#fdyzb2",
       "name": "← nostr.js",
       "x": 28,
       "y": -211,

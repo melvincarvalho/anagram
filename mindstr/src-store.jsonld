@@ -20,35 +20,35 @@
     },
     {
       "@id": "#spatem",
-      "name": "a–m · 5",
-      "x": 240,
-      "y": 59,
+      "name": "around core.js · 6",
+      "x": 213,
+      "y": 111,
       "bgColor": "#acd5ff",
       "parent": "#this"
     },
     {
       "@id": "#twzhxn",
-      "name": "accounts.js · 7 ›",
-      "x": 409,
-      "y": -244,
-      "link": "./src-store-accounts-js.jsonld",
+      "name": "core.js · 20 ›",
+      "x": 421,
+      "y": -229,
+      "link": "./src-store-core-js.jsonld",
       "bgColor": "#daeeff",
       "parent": "#spatem"
     },
     {
       "@id": "#ir6eif",
-      "name": "core.js · 20 ›",
-      "x": 582,
-      "y": -83,
-      "link": "./src-store-core-js.jsonld",
+      "name": "accounts.js · 7 ›",
+      "x": 586,
+      "y": -61,
+      "link": "./src-store-accounts-js.jsonld",
       "bgColor": "#daeeff",
       "parent": "#spatem"
     },
     {
       "@id": "#bwj4g5",
       "name": "dms.js · 7 ›",
-      "x": 480,
-      "y": 118,
+      "x": 474,
+      "y": 136,
       "link": "./src-store-dms-js.jsonld",
       "bgColor": "#daeeff",
       "parent": "#spatem"
@@ -56,8 +56,8 @@
     {
       "@id": "#9fjvd8",
       "name": "media.js · 4 ›",
-      "x": 441,
-      "y": 333,
+      "x": 423,
+      "y": 350,
       "link": "./src-store-media-js.jsonld",
       "bgColor": "#daeeff",
       "parent": "#spatem"
@@ -65,55 +65,55 @@
     {
       "@id": "#6fwnzy",
       "name": "messages.js · 29 ›",
-      "x": 194,
-      "y": 392,
+      "x": 172,
+      "y": 399,
       "link": "./src-store-messages-js.jsonld",
       "bgColor": "#daeeff",
       "parent": "#spatem"
     },
     {
       "@id": "#rtnzsk",
-      "name": "p–r · 4",
-      "x": -223,
-      "y": 97,
+      "name": "people.js · 30 ›",
+      "x": -56,
+      "y": 499,
+      "link": "./src-store-people-js.jsonld",
+      "bgColor": "#daeeff",
+      "parent": "#spatem"
+    },
+    {
+      "@id": "#v8phzs",
+      "name": "around prefs.js · 3",
+      "x": -245,
+      "y": 43,
       "bgColor": "#febdc6",
       "parent": "#this"
     },
     {
-      "@id": "#v8phzs",
-      "name": "people.js · 30 ›",
-      "x": -208,
-      "y": 386,
-      "link": "./src-store-people-js.jsonld",
-      "bgColor": "#ffe2e6",
-      "parent": "#rtnzsk"
-    },
-    {
       "@id": "#izxsmt",
       "name": "prefs.js · 23 ›",
-      "x": -453,
-      "y": 321,
+      "x": -398,
+      "y": 257,
       "link": "./src-store-prefs-js.jsonld",
       "bgColor": "#ffe2e6",
-      "parent": "#rtnzsk"
+      "parent": "#v8phzs"
     },
     {
       "@id": "#er3xwg",
-      "name": "ratchet.js · 34 ›",
-      "x": -484,
-      "y": 105,
-      "link": "./src-store-ratchet-js.jsonld",
+      "name": "rooms.js · 19 ›",
+      "x": -578,
+      "y": 102,
+      "link": "./src-store-rooms-js.jsonld",
       "bgColor": "#ffe2e6",
-      "parent": "#rtnzsk"
+      "parent": "#v8phzs"
     },
     {
       "@id": "#3p4wn2",
-      "name": "rooms.js · 19 ›",
-      "x": -579,
-      "y": -97,
-      "link": "./src-store-rooms-js.jsonld",
+      "name": "ratchet.js · 34 ›",
+      "x": -486,
+      "y": -100,
+      "link": "./src-store-ratchet-js.jsonld",
       "bgColor": "#ffe2e6",
-      "parent": "#rtnzsk"
+      "parent": "#v8phzs"
     },
     {
       "@id": "#f356md",
@@ -151,23 +151,23 @@
       "end": 6
     },
     {
-      "start": 0,
+      "start": 1,
       "end": 7
     },
     {
-      "start": 7,
+      "start": 0,
       "end": 8
     },
     {
-      "start": 7,
+      "start": 8,
       "end": 9
     },
     {
-      "start": 7,
+      "start": 8,
       "end": 10
     },
     {
-      "start": 7,
+      "start": 8,
       "end": 11
     },
     {

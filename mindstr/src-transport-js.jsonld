@@ -19,7 +19,7 @@
       "bgColor": "#ebc573"
     },
     {
-      "@id": "#f2gvzm",
+      "@id": "#8x5xg4",
       "name": "exports 1/3",
       "x": 243,
       "y": -49,
@@ -27,61 +27,61 @@
       "parent": "#this"
     },
     {
-      "@id": "#2y862s",
+      "@id": "#4qhe86",
       "name": "APP_RELAYS()",
       "x": 348,
       "y": -306,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/transport.js#L16",
       "bgColor": "#daeeff",
-      "parent": "#f2gvzm"
+      "parent": "#8x5xg4"
     },
     {
-      "@id": "#8x5xg4",
+      "@id": "#z2x7bd",
       "name": "INDEXERS()",
       "x": 496,
       "y": -272,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/transport.js#L23",
       "bgColor": "#daeeff",
-      "parent": "#f2gvzm"
+      "parent": "#8x5xg4"
     },
     {
-      "@id": "#4qhe86",
+      "@id": "#a22mzd",
       "name": "NDR_RELAYS()",
       "x": 471,
       "y": -144,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/transport.js#L25",
       "bgColor": "#daeeff",
-      "parent": "#f2gvzm"
+      "parent": "#8x5xg4"
     },
     {
-      "@id": "#z2x7bd",
+      "@id": "#duad9x",
       "name": "uniq()",
       "x": 586,
       "y": -58,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/transport.js#L27",
       "bgColor": "#daeeff",
-      "parent": "#f2gvzm"
+      "parent": "#8x5xg4"
     },
     {
-      "@id": "#a22mzd",
+      "@id": "#m37qt3",
       "name": "pool()",
       "x": 497,
       "y": 48,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/transport.js#L33",
       "bgColor": "#daeeff",
-      "parent": "#f2gvzm"
+      "parent": "#8x5xg4"
     },
     {
-      "@id": "#duad9x",
+      "@id": "#k5nh46",
       "name": "setOwnRelays()",
       "x": 556,
       "y": 168,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/transport.js#L37",
       "bgColor": "#daeeff",
-      "parent": "#f2gvzm"
+      "parent": "#8x5xg4"
     },
     {
-      "@id": "#m37qt3",
+      "@id": "#rqeata",
       "name": "exports 2/3",
       "x": 40,
       "y": 210,
@@ -89,61 +89,61 @@
       "parent": "#this"
     },
     {
-      "@id": "#k5nh46",
+      "@id": "#hk4piu",
       "name": "resolve()",
       "x": 336,
       "y": 315,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/transport.js#L41",
       "bgColor": "#f7e4f9",
-      "parent": "#m37qt3"
+      "parent": "#rqeata"
     },
     {
-      "@id": "#rqeata",
+      "@id": "#k8arpb",
       "name": "get()",
       "x": 286,
       "y": 439,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/transport.js#L54",
       "bgColor": "#f7e4f9",
-      "parent": "#m37qt3"
+      "parent": "#rqeata"
     },
     {
-      "@id": "#hk4piu",
+      "@id": "#jqh9fh",
       "name": "query()",
       "x": 136,
       "y": 409,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/transport.js#L55",
       "bgColor": "#f7e4f9",
-      "parent": "#m37qt3"
+      "parent": "#rqeata"
     },
     {
-      "@id": "#k8arpb",
+      "@id": "#t4du3j",
       "name": "queryConfirmed()",
       "x": 26,
       "y": 501,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/transport.js#L59",
       "bgColor": "#f7e4f9",
-      "parent": "#m37qt3"
+      "parent": "#rqeata"
     },
     {
-      "@id": "#jqh9fh",
+      "@id": "#dxtxsr",
       "name": "subscribe()",
       "x": -93,
       "y": 418,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/transport.js#L96",
       "bgColor": "#f7e4f9",
-      "parent": "#m37qt3"
+      "parent": "#rqeata"
     },
     {
-      "@id": "#t4du3j",
+      "@id": "#nmjv76",
       "name": "publish()",
       "x": -240,
       "y": 458,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/transport.js#L102",
       "bgColor": "#f7e4f9",
-      "parent": "#m37qt3"
+      "parent": "#rqeata"
     },
     {
-      "@id": "#dxtxsr",
+      "@id": "#mjdvee",
       "name": "exports 3/3",
       "x": -244,
       "y": 47,
@@ -151,52 +151,52 @@
       "parent": "#this"
     },
     {
-      "@id": "#nmjv76",
+      "@id": "#d6tkb9",
       "name": "pageOlder()",
       "x": -389,
       "y": 267,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/transport.js#L129",
       "bgColor": "#ffe3dc",
-      "parent": "#dxtxsr"
+      "parent": "#mjdvee"
     },
     {
-      "@id": "#mjdvee",
+      "@id": "#tefhrg",
       "name": "resetPaging()",
       "x": -531,
       "y": 219,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/transport.js#L150",
       "bgColor": "#ffe3dc",
-      "parent": "#dxtxsr"
+      "parent": "#mjdvee"
     },
     {
-      "@id": "#d6tkb9",
+      "@id": "#qmxg97",
       "name": "up()",
       "x": -488,
       "y": 93,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/transport.js#L155",
       "bgColor": "#ffe3dc",
-      "parent": "#dxtxsr"
+      "parent": "#mjdvee"
     },
     {
-      "@id": "#tefhrg",
+      "@id": "#g4d8c6",
       "name": "setAuthSigner()",
       "x": -590,
       "y": -4,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/transport.js#L162",
       "bgColor": "#ffe3dc",
-      "parent": "#dxtxsr"
+      "parent": "#mjdvee"
     },
     {
-      "@id": "#qmxg97",
+      "@id": "#yzue8k",
       "name": "reset()",
       "x": -486,
       "y": -100,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/transport.js#L177",
       "bgColor": "#ffe3dc",
-      "parent": "#dxtxsr"
+      "parent": "#mjdvee"
     },
     {
-      "@id": "#g4d8c6",
+      "@id": "#7jcj9y",
       "name": "183 lines",
       "x": -161,
       "y": -162,
@@ -205,7 +205,7 @@
       "parent": "#this"
     },
     {
-      "@id": "#yzue8k",
+      "@id": "#a69dfq",
       "name": "← js",
       "x": 29,
       "y": -211,

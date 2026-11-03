@@ -19,7 +19,7 @@
       "bgColor": "#ebc573"
     },
     {
-      "@id": "#xzgaz8",
+      "@id": "#45xtcc",
       "name": "exports",
       "x": 250,
       "y": 0,
@@ -27,25 +27,25 @@
       "parent": "#this"
     },
     {
-      "@id": "#brfb5w",
+      "@id": "#ybwvcb",
       "name": "hasNdrDevices()",
       "x": 452,
       "y": -181,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ndr.js#L6",
       "bgColor": "#daeeff",
-      "parent": "#xzgaz8"
+      "parent": "#45xtcc"
     },
     {
-      "@id": "#45xtcc",
+      "@id": "#i9qywf",
       "name": "createNdrClient()",
       "x": 534,
       "y": 214,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ndr.js#L8",
       "bgColor": "#daeeff",
-      "parent": "#xzgaz8"
+      "parent": "#45xtcc"
     },
     {
-      "@id": "#ybwvcb",
+      "@id": "#iyzq7q",
       "name": "107 lines",
       "x": -125,
       "y": 184,
@@ -54,7 +54,7 @@
       "parent": "#this"
     },
     {
-      "@id": "#i9qywf",
+      "@id": "#bke9zd",
       "name": "← js",
       "x": -125,
       "y": -184,

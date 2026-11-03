@@ -1,136 +1,5 @@
 # [anagram](https://github.com/melvincarvalho/anagram)
 
-- [Commits · 101](https://github.com/melvincarvalho/anagram/commits/gh-pages)
-  - [Nov 2026 · 1 ›](./commits-2026-11.jsonld)
-    - Tue 3 Nov · 1
-      - [b3d8e9e mindstr/: this repo as mind maps, f…](https://github.com/melvincarvalho/anagram/commit/b3d8e9e)
-  - [Oct 2026 · 1–20 of 100 ›](./commits-2026-10-1.jsonld)
-    - Wed 21 Oct · 2
-      - [454112d AUTH warning names the relay; note…](https://github.com/melvincarvalho/anagram/commit/454112d)
-      - [0aacad5 Stabilisation: frame guard, group-D…](https://github.com/melvincarvalho/anagram/commit/0aacad5)
-    - Tue 20 Oct · 1–6 of 18
-      - [6333096 Docs: describe NIP-98-style HTTP as…](https://github.com/melvincarvalho/anagram/commit/6333096)
-      - [2ec0722 Split app.js into js/ui/ by feature…](https://github.com/melvincarvalho/anagram/commit/2ec0722)
-      - [9720c8a Split store.js into js/store/ by fe…](https://github.com/melvincarvalho/anagram/commit/9720c8a)
-      - [cd03d9b Sounds: distinct bells for DMs, roo…](https://github.com/melvincarvalho/anagram/commit/cd03d9b)
-      - [d1cce1d Rooms: sender name and avatar open…](https://github.com/melvincarvalho/anagram/commit/d1cce1d)
-      - [123250f Say what multi-device really means…](https://github.com/melvincarvalho/anagram/commit/123250f)
-    - Tue 20 Oct · 7–12 of 18
-      - [536013f docs/SPEC.md: the nostr.chat intero…](https://github.com/melvincarvalho/anagram/commit/536013f)
-      - [3fc6f0c Room links as plain text, composer…](https://github.com/melvincarvalho/anagram/commit/3fc6f0c)
-      - [5897b7c Landing: one line on interoperable…](https://github.com/melvincarvalho/anagram/commit/5897b7c)
-      - [684c780 Critic pass on the double-ratchet i…](https://github.com/melvincarvalho/anagram/commit/684c780)
-      - [5878662 Landing page around the sign-in card](https://github.com/melvincarvalho/anagram/commit/5878662)
-      - [487f6b5 Double ratchet: ask before register…](https://github.com/melvincarvalho/anagram/commit/487f6b5)
-    - Tue 20 Oct · 13–18 of 18
-      - [feaa5da Merge pull request #1 from mmalmi/c…](https://github.com/melvincarvalho/anagram/commit/feaa5da)
-      - [1bc6f9d Merge upstream relay transport and…](https://github.com/melvincarvalho/anagram/commit/1bc6f9d)
-      - [fdd692f Keep encryption details in chat inf…](https://github.com/melvincarvalho/anagram/commit/fdd692f)
-      - [cea2c38 Transport layer: one module talks t…](https://github.com/melvincarvalho/anagram/commit/cea2c38)
-      - [28ff68e Sync read marks, pins, mutes and hi…](https://github.com/melvincarvalho/anagram/commit/28ff68e)
-      - [ecb25f4 Sidebar long-press, app icon badge,…](https://github.com/melvincarvalho/anagram/commit/ecb25f4)
-  - [Oct 2026 · 21–40 of 100 ›](./commits-2026-10-2.jsonld)
-    - Tue 20 Oct · 1–7 of 13
-      - [c955422 Show @Name in the composer, send An…](https://github.com/melvincarvalho/anagram/commit/c955422)
-      - [0016a09 Inbox relay settings, kind 10002, N…](https://github.com/melvincarvalho/anagram/commit/0016a09)
-      - [4663778 Merge upstream message requests and…](https://github.com/melvincarvalho/anagram/commit/4663778)
-      - [8cea25d View profiles in-app](https://github.com/melvincarvalho/anagram/commit/8cea25d)
-      - [f58e5e4 Message requests from people you do…](https://github.com/melvincarvalho/anagram/commit/f58e5e4)
-      - [b4390b2 Merge upstream gh-pages while prese…](https://github.com/melvincarvalho/anagram/commit/b4390b2)
-      - [e97c7fd Room owner tools: edit room, trust/…](https://github.com/melvincarvalho/anagram/commit/e97c7fd)
-    - Tue 20 Oct · 8–13 of 13
-      - [1d5e3b0 Voice notes](https://github.com/melvincarvalho/anagram/commit/1d5e3b0)
-      - [1f8ba6b Update double ratchet registration…](https://github.com/melvincarvalho/anagram/commit/1f8ba6b)
-      - [42ebbde Privacy section in the README and S…](https://github.com/melvincarvalho/anagram/commit/42ebbde)
-      - [a3c2676 Keep explicit encryption choice whe…](https://github.com/melvincarvalho/anagram/commit/a3c2676)
-      - [1fc364b Clarify own-device copies and histo…](https://github.com/melvincarvalho/anagram/commit/1fc364b)
-      - [d6124b4 Show authorized messaging devices i…](https://github.com/melvincarvalho/anagram/commit/d6124b4)
-    - Mon 19 Oct · 7
-      - [376ce46 Edit rollback, quiet AUTH failures,…](https://github.com/melvincarvalho/anagram/commit/376ce46)
-      - [f2ae344 Honest delivery tick; rooms stay li…](https://github.com/melvincarvalho/anagram/commit/f2ae344)
-      - [447345a Audio playback; NIP-05 checks only…](https://github.com/melvincarvalho/anagram/commit/447345a)
-      - [e3a1d5d Blocked list, share-link form and s…](https://github.com/melvincarvalho/anagram/commit/e3a1d5d)
-      - [d6da45f Never let a profile save wipe field…](https://github.com/melvincarvalho/anagram/commit/d6da45f)
-      - [121ac1b Deletions only count from the messa…](https://github.com/melvincarvalho/anagram/commit/121ac1b)
-      - [66c2584 Fix startup hanging on 'Loading…' a…](https://github.com/melvincarvalho/anagram/commit/66c2584)
-  - [Oct 2026 · 41–60 of 100 ›](./commits-2026-10-3.jsonld)
-    - Tue 20 Oct · 7
-      - [bb815d2 Keep newly received direct conversa…](https://github.com/melvincarvalho/anagram/commit/bb815d2)
-      - [1ee756b Keep messaging errors in plain lang…](https://github.com/melvincarvalho/anagram/commit/1ee756b)
-      - [56d522a Share an Iris relay for double-ratc…](https://github.com/melvincarvalho/anagram/commit/56d522a)
-      - [a747e32 Keep encryption protocol names in c…](https://github.com/melvincarvalho/anagram/commit/a747e32)
-      - [c1da3a9 Merge upstream accessibility and re…](https://github.com/melvincarvalho/anagram/commit/c1da3a9)
-      - [2675516 Prefer double ratchet for compatibl…](https://github.com/melvincarvalho/anagram/commit/2675516)
-      - [ba94c1e Merge upstream room caching and opt…](https://github.com/melvincarvalho/anagram/commit/ba94c1e)
-    - Mon 19 Oct · 1–7 of 13
-      - [33874ee Keyboard shortcuts and accessibility](https://github.com/melvincarvalho/anagram/commit/33874ee)
-      - [59b9328 Big emoji, @ badge, mark all read](https://github.com/melvincarvalho/anagram/commit/59b9328)
-      - [b06fd39 Fetch missing reply targets; jump t…](https://github.com/melvincarvalho/anagram/commit/b06fd39)
-      - [bdae2ca Add optional Iris-compatible double…](https://github.com/melvincarvalho/anagram/commit/bdae2ca)
-      - [597cfe4 @mention autocomplete](https://github.com/melvincarvalho/anagram/commit/597cfe4)
-      - [e9779e3 Keep room history on the device](https://github.com/melvincarvalho/anagram/commit/e9779e3)
-      - [7de2a39 Connection status banner](https://github.com/melvincarvalho/anagram/commit/7de2a39)
-    - Mon 19 Oct · 8–13 of 13
-      - [cd7a86c Optimistic reactions, edits and del…](https://github.com/melvincarvalho/anagram/commit/cd7a86c)
-      - [d2cdfad did:nostr share links: nostr.chat/d…](https://github.com/melvincarvalho/anagram/commit/d2cdfad)
-      - [901408f Show the did:nostr identity in chat…](https://github.com/melvincarvalho/anagram/commit/901408f)
-      - [0d7dddc New message screen: people search,…](https://github.com/melvincarvalho/anagram/commit/0d7dddc)
-      - [ee4931a Load profiles from nostr.social's s…](https://github.com/melvincarvalho/anagram/commit/ee4931a)
-      - [4023fd5 Resolve did:nostr documents via nos…](https://github.com/melvincarvalho/anagram/commit/4023fd5)
-  - [Oct 2026 · 61–80 of 100 ›](./commits-2026-10-4.jsonld)
-    - Mon 19 Oct · 1–7 of 20
-      - [c86ed0b Fix nostr.social profile links](https://github.com/melvincarvalho/anagram/commit/c86ed0b)
-      - [3c10456 Open chats at the first unread; inf…](https://github.com/melvincarvalho/anagram/commit/3c10456)
-      - [c9da386 Block people and delete chats](https://github.com/melvincarvalho/anagram/commit/c9da386)
-      - [9875813 One chat list sorted by activity](https://github.com/melvincarvalho/anagram/commit/9875813)
-      - [09e3659 Render Anagram's message formatting](https://github.com/melvincarvalho/anagram/commit/09e3659)
-      - [1f98946 Edit your profile; set up new accou…](https://github.com/melvincarvalho/anagram/commit/1f98946)
-      - [7a5dae4 Send photos, video and audio via Bl…](https://github.com/melvincarvalho/anagram/commit/7a5dae4)
-    - Mon 19 Oct · 8–14 of 20
-      - [13476cd Small fixes: mobile Enter, Firefox…](https://github.com/melvincarvalho/anagram/commit/13476cd)
-      - [794a95c Performance with large histories](https://github.com/melvincarvalho/anagram/commit/794a95c)
-      - [62cc190 Open Graph and social previews for…](https://github.com/melvincarvalho/anagram/commit/62cc190)
-      - [ec6d577 Serve the site at nostr.chat](https://github.com/melvincarvalho/anagram/commit/ec6d577)
-      - [7be902d Fix chat scrolling](https://github.com/melvincarvalho/anagram/commit/7be902d)
-      - [1214529 Page history per relay; fetch activ…](https://github.com/melvincarvalho/anagram/commit/1214529)
-      - [7bb977a README: correct the not-yet-include…](https://github.com/melvincarvalho/anagram/commit/7bb977a)
-    - Mon 19 Oct · 15–20 of 20
-      - [259e9dd Vendor libraries, add CSP, verify N…](https://github.com/melvincarvalho/anagram/commit/259e9dd)
-      - [67afed6 Harden accounts, blocking and conta…](https://github.com/melvincarvalho/anagram/commit/67afed6)
-      - [13095f6 Make edits consistent with Anagram](https://github.com/melvincarvalho/anagram/commit/13095f6)
-      - [ef85e67 Fix false ✓, lost DMs and dropped D…](https://github.com/melvincarvalho/anagram/commit/ef85e67)
-      - [8501580 Light/dark theme toggle](https://github.com/melvincarvalho/anagram/commit/8501580)
-      - [e990780 Multiple accounts with quick switch…](https://github.com/melvincarvalho/anagram/commit/e990780)
-  - [Oct 2026 · 81–100 of 100 ›](./commits-2026-10-5.jsonld)
-    - Mon 19 Oct · 1–7 of 20
-      - [7dc858b Emoji picker](https://github.com/melvincarvalho/anagram/commit/7dc858b)
-      - [9c8637b Forward messages](https://github.com/melvincarvalho/anagram/commit/9c8637b)
-      - [331a488 Pinned and muted chats](https://github.com/melvincarvalho/anagram/commit/331a488)
-      - [0492ee3 Per-chat drafts](https://github.com/melvincarvalho/anagram/commit/0492ee3)
-      - [9774623 In-tab notifications](https://github.com/melvincarvalho/anagram/commit/9774623)
-      - [2eec9a3 Search across chats and within a ch…](https://github.com/melvincarvalho/anagram/commit/2eec9a3)
-      - [2899aba Pick up deploys on the next reload](https://github.com/melvincarvalho/anagram/commit/2899aba)
-    - Mon 19 Oct · 8–14 of 20
-      - [422bbf4 Mobile polish: swipe to reply, jump…](https://github.com/melvincarvalho/anagram/commit/422bbf4)
-      - [74d8924 Instant send with status ticks](https://github.com/melvincarvalho/anagram/commit/74d8924)
-      - [3cdea97 Chat info panel](https://github.com/melvincarvalho/anagram/commit/3cdea97)
-      - [8066d6c Inline images and video with a full…](https://github.com/melvincarvalho/anagram/commit/8066d6c)
-      - [8fbfd7a Unread counts](https://github.com/melvincarvalho/anagram/commit/8fbfd7a)
-      - [2454a52 Edit and delete your own messages](https://github.com/melvincarvalho/anagram/commit/2454a52)
-      - [229612e Reactions in rooms and DMs](https://github.com/melvincarvalho/anagram/commit/229612e)
-    - Mon 19 Oct · 15–20 of 20
-      - [9d92ddb Telegram-style bubbles and message…](https://github.com/melvincarvalho/anagram/commit/9d92ddb)
-      - [62f8019 Render nostr:/did:nostr mentions as…](https://github.com/melvincarvalho/anagram/commit/62f8019)
-      - [0e4bda6 Link profiles to nostr.social/<did>](https://github.com/melvincarvalho/anagram/commit/0e4bda6)
-      - [8a71465 Anagram lite: Preact client for NIP…](https://github.com/melvincarvalho/anagram/commit/8a71465)
-      - [8fb36dc trail: first mark](https://github.com/melvincarvalho/anagram/commit/8fb36dc)
-      - [ab3d923 agent identity](https://github.com/melvincarvalho/anagram/commit/ab3d923)
-- Hot files · 5
-  - [js/app.js · 71](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/app.js)
-  - [js/store.js · 53](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store.js)
-  - [style.css · 45](https://github.com/melvincarvalho/anagram/blob/gh-pages/style.css)
-  - [js/nostr.js · 34](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js)
-  - [README.md · 20](https://github.com/melvincarvalho/anagram/blob/gh-pages/README.md#readme)
 - [README · 5](https://github.com/melvincarvalho/anagram/blob/gh-pages/README.md#anagram-lite)
   - [Transport](https://github.com/melvincarvalho/anagram/blob/gh-pages/README.md#transport)
   - [Interoperability](https://github.com/melvincarvalho/anagram/blob/gh-pages/README.md#interoperability)
@@ -139,31 +8,21 @@
   - [Double-ratchet messaging](https://github.com/melvincarvalho/anagram/blob/gh-pages/README.md#double-ratchet-messaging)
 - Docs · 1
   - [SPEC.md · 10 ›](./doc-spec.jsonld)
-    - sections · 1–5 of 10
+    - sections 1/2
       - [Identity](https://github.com/melvincarvalho/anagram/blob/gh-pages/docs/SPEC.md#1-identity)
       - [Relays and the transport scopes](https://github.com/melvincarvalho/anagram/blob/gh-pages/docs/SPEC.md#2-relays-and-the-transport-scopes)
       - [Direct messages](https://github.com/melvincarvalho/anagram/blob/gh-pages/docs/SPEC.md#3-direct-messages-nip-17)
       - [Public rooms](https://github.com/melvincarvalho/anagram/blob/gh-pages/docs/SPEC.md#4-public-rooms-anagram-public-groups)
       - [Private lists and settings](https://github.com/melvincarvalho/anagram/blob/gh-pages/docs/SPEC.md#5-private-lists-and-settings)
-    - sections · 6–10 of 10
+    - sections 2/2
       - [Media](https://github.com/melvincarvalho/anagram/blob/gh-pages/docs/SPEC.md#6-media)
       - [Double-ratchet binding](https://github.com/melvincarvalho/anagram/blob/gh-pages/docs/SPEC.md#7-double-ratchet-binding-optional)
       - [Message requests, trust and policy](https://github.com/melvincarvalho/anagram/blob/gh-pages/docs/SPEC.md#8-message-requests-trust-and-policy)
       - [Conformance summary](https://github.com/melvincarvalho/anagram/blob/gh-pages/docs/SPEC.md#9-conformance-summary)
       - [Known gaps](https://github.com/melvincarvalho/anagram/blob/gh-pages/docs/SPEC.md#10-known-gaps)
 - [Source · js/ · 31 files ›](./src.jsonld)
-  - [store/ · 9 files, 173 exports ›](./src-store.jsonld)
-    - a–m · 5
-      - [accounts.js · 7 ›](./src-store-accounts-js.jsonld)
-        - exports
-          - [accounts()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/accounts.js#L18)
-          - [addingAccount()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/accounts.js#L19)
-          - [switchAccount()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/accounts.js#L62)
-          - [login()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/accounts.js#L70)
-          - [restoring()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/accounts.js#L90)
-          - [restoreSession()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/accounts.js#L92)
-          - [logout()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/accounts.js#L119)
-        - [137 lines](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/accounts.js)
+  - [store/ · 9 ›](./src-store.jsonld)
+    - around core.js · 6
       - [core.js · 20 ›](./src-store-core-js.jsonld)
         - exports 1/3
           - [me()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/core.js#L7)
@@ -189,6 +48,16 @@
           - [go()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/core.js#L58)
           - [connection()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/core.js#L65)
         - [74 lines](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/core.js)
+      - [accounts.js · 7 ›](./src-store-accounts-js.jsonld)
+        - exports
+          - [accounts()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/accounts.js#L18)
+          - [addingAccount()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/accounts.js#L19)
+          - [switchAccount()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/accounts.js#L62)
+          - [login()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/accounts.js#L70)
+          - [restoring()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/accounts.js#L90)
+          - [restoreSession()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/accounts.js#L92)
+          - [logout()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/accounts.js#L119)
+        - [137 lines](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/accounts.js)
       - [dms.js · 7 ›](./src-store-dms-js.jsonld)
         - exports
           - [reset()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/dms.js#L17)
@@ -244,7 +113,6 @@
             - [deleteMessage()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/messages.js#L310)
             - [editMessage()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/messages.js#L353)
         - [385 lines](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/messages.js)
-    - p–r · 4
       - [people.js · 30 ›](./src-store-people-js.jsonld)
         - [exports 1–15 of 30 ›](./src-store-people-js-1.jsonld)
           - exports 1/3
@@ -285,6 +153,7 @@
             - [chatList()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/people.js#L383)
             - [requests()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/people.js#L384)
         - [385 lines](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/people.js)
+    - around prefs.js · 3
       - [prefs.js · 23 ›](./src-store-prefs-js.jsonld)
         - [exports 1–12 of 23 ›](./src-store-prefs-js-1.jsonld)
           - exports 1/2
@@ -316,6 +185,30 @@
             - [mentionsMe()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/prefs.js#L269)
             - [emitIncoming()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/prefs.js#L277)
         - [285 lines](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/prefs.js)
+      - [rooms.js · 19 ›](./src-store-rooms-js.jsonld)
+        - exports 1/3
+          - [load()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L14)
+          - [reset()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L21)
+          - [resetSignals()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L26)
+          - [setRoom()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L31)
+          - [addRoomMessages()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L55)
+          - [openRoom()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L89)
+          - [roomActivity()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L148)
+        - exports 2/3
+          - [dropRoomMessage()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L156)
+          - [quotes()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L163)
+          - [fetchQuote()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L165)
+          - [loadUntil()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L177)
+          - [loadOlderRoomMessages()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L184)
+          - [joinRoom()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L200)
+          - [updateRoom()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L207)
+        - exports 3/3
+          - [setMemberPolicy()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L221)
+          - [pinMessage()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L231)
+          - [leaveRoom()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L233)
+          - [createRoom()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L245)
+          - [sendRoomMessage()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L251)
+        - [265 lines](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js)
       - [ratchet.js · 34 ›](./src-store-ratchet-js.jsonld)
         - [exports 1–17 of 34 ›](./src-store-ratchet-js-1.jsonld)
           - exports 1/3
@@ -360,37 +253,8 @@
             - [markNdrQueued()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/ratchet.js#L381)
             - [sendNdrMessage()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/ratchet.js#L388)
         - [410 lines](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/ratchet.js)
-      - [rooms.js · 19 ›](./src-store-rooms-js.jsonld)
-        - exports 1/3
-          - [load()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L14)
-          - [reset()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L21)
-          - [resetSignals()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L26)
-          - [setRoom()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L31)
-          - [addRoomMessages()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L55)
-          - [openRoom()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L89)
-          - [roomActivity()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L148)
-        - exports 2/3
-          - [dropRoomMessage()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L156)
-          - [quotes()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L163)
-          - [fetchQuote()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L165)
-          - [loadUntil()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L177)
-          - [loadOlderRoomMessages()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L184)
-          - [joinRoom()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L200)
-          - [updateRoom()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L207)
-        - exports 3/3
-          - [setMemberPolicy()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L221)
-          - [pinMessage()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L231)
-          - [leaveRoom()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L233)
-          - [createRoom()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L245)
-          - [sendRoomMessage()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L251)
-        - [265 lines](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js)
-  - [ui/ · 13 files, 55 exports ›](./src-ui.jsonld)
-    - c–m · 7
-      - [chats.js · 2 ›](./src-ui-chats-js.jsonld)
-        - exports
-          - [DirectChat()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/chats.js#L13)
-          - [RoomChat()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/chats.js#L79)
-        - [173 lines](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/chats.js)
+  - [ui/ · 13 ›](./src-ui.jsonld)
+    - around common.js · 6
       - [common.js · 28 ›](./src-ui-common-js.jsonld)
         - [exports 1–14 of 28 ›](./src-ui-common-js-1.jsonld)
           - exports 1/2
@@ -427,6 +291,11 @@
             - [touchKeyboard()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/common.js#L175)
             - [autosize()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/common.js#L178)
         - [183 lines](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/common.js)
+      - [chats.js · 2 ›](./src-ui-chats-js.jsonld)
+        - exports
+          - [DirectChat()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/chats.js#L13)
+          - [RoomChat()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/chats.js#L79)
+        - [173 lines](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/chats.js)
       - [composer.js · 1 ›](./src-ui-composer-js.jsonld)
         - exports
           - [Composer()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/composer.js#L71)
@@ -445,32 +314,7 @@
         - exports
           - [Login()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/login.js#L9)
         - [116 lines](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/login.js)
-      - [messages.js · 4 ›](./src-ui-messages-js.jsonld)
-        - exports
-          - [EmojiPanel()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/messages.js#L33)
-          - [MessageList()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/messages.js#L152)
-          - [useMarkRead()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/messages.js#L378)
-          - [useChatActions()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/messages.js#L389)
-        - [427 lines](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/messages.js)
-    - n–t · 6
-      - [new.js · 1 ›](./src-ui-new-js.jsonld)
-        - exports
-          - [NewThing()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/new.js#L67)
-        - [107 lines](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/new.js)
-      - [notifications.js](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/notifications.js)
-      - [settings.js · 1 ›](./src-ui-settings-js.jsonld)
-        - exports
-          - [Settings()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/settings.js#L51)
-        - [280 lines](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/settings.js)
-      - [sidebar.js · 2 ›](./src-ui-sidebar-js.jsonld)
-        - exports
-          - [Sidebar()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/sidebar.js#L146)
-          - [ChatSearch()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/sidebar.js#L232)
-        - [272 lines](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/sidebar.js)
-      - [sounds.js · 1 ›](./src-ui-sounds-js.jsonld)
-        - exports
-          - [playSound()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/sounds.js#L48)
-        - [56 lines](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/sounds.js)
+    - around text.js · 4
       - [text.js · 10 ›](./src-ui-text-js.jsonld)
         - exports 1/2
           - [MENTION_RE()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/text.js#L12)
@@ -485,9 +329,61 @@
           - [previewText()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/text.js#L317)
           - [EncryptedFile()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/text.js#L326)
         - [357 lines](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/text.js)
+      - [messages.js · 4 ›](./src-ui-messages-js.jsonld)
+        - exports
+          - [EmojiPanel()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/messages.js#L33)
+          - [MessageList()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/messages.js#L152)
+          - [useMarkRead()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/messages.js#L378)
+          - [useChatActions()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/messages.js#L389)
+        - [427 lines](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/messages.js)
+      - [notifications.js](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/notifications.js)
+      - [sidebar.js · 2 ›](./src-ui-sidebar-js.jsonld)
+        - exports
+          - [Sidebar()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/sidebar.js#L146)
+          - [ChatSearch()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/sidebar.js#L232)
+        - [272 lines](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/sidebar.js)
+    - around settings.js · 2
+      - [settings.js · 1 ›](./src-ui-settings-js.jsonld)
+        - exports
+          - [Settings()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/settings.js#L51)
+        - [280 lines](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/settings.js)
+      - [sounds.js · 1 ›](./src-ui-sounds-js.jsonld)
+        - exports
+          - [playSound()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/sounds.js#L48)
+        - [56 lines](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/sounds.js)
+    - other · 1
+      - [new.js · 1 ›](./src-ui-new-js.jsonld)
+        - exports
+          - [NewThing()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/new.js#L67)
+        - [107 lines](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/new.js)
   - [js/*.js · 9 ›](./src-root.jsonld)
-    - a–n · 5
-      - [app.js](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/app.js)
+    - around messaging-devices.js · 3
+      - [messaging-devices.js · 1 ›](./src-messaging-devices-js.jsonld)
+        - exports
+          - [loadMessagingDevices()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/messaging-devices.js#L6)
+        - [37 lines](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/messaging-devices.js)
+      - [transport.js · 17 ›](./src-transport-js.jsonld)
+        - exports 1/3
+          - [APP_RELAYS()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/transport.js#L16)
+          - [INDEXERS()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/transport.js#L23)
+          - [NDR_RELAYS()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/transport.js#L25)
+          - [uniq()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/transport.js#L27)
+          - [pool()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/transport.js#L33)
+          - [setOwnRelays()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/transport.js#L37)
+        - exports 2/3
+          - [resolve()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/transport.js#L41)
+          - [get()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/transport.js#L54)
+          - [query()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/transport.js#L55)
+          - [queryConfirmed()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/transport.js#L59)
+          - [subscribe()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/transport.js#L96)
+          - [publish()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/transport.js#L102)
+        - exports 3/3
+          - [pageOlder()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/transport.js#L129)
+          - [resetPaging()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/transport.js#L150)
+          - [up()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/transport.js#L155)
+          - [setAuthSigner()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/transport.js#L162)
+          - [reset()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/transport.js#L177)
+        - [183 lines](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/transport.js)
       - [db.js · 15 ›](./src-db-js.jsonld)
         - exports 1/3
           - [onOpenBlocked()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/db.js#L40)
@@ -508,24 +404,24 @@
           - [clearAccount()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/db.js#L128)
           - [ndrStorage()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/db.js#L143)
         - [151 lines](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/db.js)
-      - [emoji.js · 1 ›](./src-emoji-js.jsonld)
-        - exports
-          - [EMOJI_GROUPS()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/emoji.js#L14)
-        - [15 lines](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/emoji.js)
-      - [messaging-devices.js · 1 ›](./src-messaging-devices-js.jsonld)
-        - exports
-          - [loadMessagingDevices()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/messaging-devices.js#L6)
-        - [37 lines](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/messaging-devices.js)
+    - around app.js · 2
+      - [app.js](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/app.js)
+      - [store.js](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store.js)
+    - around ndr-discovery.js · 2
       - [ndr-discovery.js · 1 ›](./src-ndr-discovery-js.jsonld)
         - exports
           - [watchNdrCapability()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ndr-discovery.js#L5)
         - [54 lines](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ndr-discovery.js)
-    - n–t · 4
       - [ndr.js · 2 ›](./src-ndr-js.jsonld)
         - exports
           - [hasNdrDevices()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ndr.js#L6)
           - [createNdrClient()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ndr.js#L8)
         - [107 lines](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ndr.js)
+    - other · 2
+      - [emoji.js · 1 ›](./src-emoji-js.jsonld)
+        - exports
+          - [EMOJI_GROUPS()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/emoji.js#L14)
+        - [15 lines](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/emoji.js)
       - [nostr.js · 75 ›](./src-nostr-js.jsonld)
         - [exports 1–19 of 75 ›](./src-nostr-js-1.jsonld)
           - exports 1/3
@@ -619,30 +515,9 @@
             - [uploadsOf()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js#L932)
             - [enableAuth()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js#L943)
         - [944 lines](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js)
-      - [store.js](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store.js)
-      - [transport.js · 17 ›](./src-transport-js.jsonld)
-        - exports 1/3
-          - [APP_RELAYS()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/transport.js#L16)
-          - [INDEXERS()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/transport.js#L23)
-          - [NDR_RELAYS()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/transport.js#L25)
-          - [uniq()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/transport.js#L27)
-          - [pool()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/transport.js#L33)
-          - [setOwnRelays()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/transport.js#L37)
-        - exports 2/3
-          - [resolve()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/transport.js#L41)
-          - [get()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/transport.js#L54)
-          - [query()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/transport.js#L55)
-          - [queryConfirmed()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/transport.js#L59)
-          - [subscribe()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/transport.js#L96)
-          - [publish()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/transport.js#L102)
-        - exports 3/3
-          - [pageOlder()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/transport.js#L129)
-          - [resetPaging()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/transport.js#L150)
-          - [up()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/transport.js#L155)
-          - [setAuthSigner()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/transport.js#L162)
-          - [reset()](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/transport.js#L177)
-        - [183 lines](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/transport.js)
-- [A no-build web client for private Nostr DMs…](https://github.com/melvincarvalho/anagram)
-  - 101 commits since 2026-10-19
+- [Open PRs · 1](https://github.com/melvincarvalho/anagram/pulls)
+  - [#3 Protect private delivery and peer d…](https://github.com/melvincarvalho/anagram/pull/3)
+- [Anagram lite: Preact Nostr DMs + public roo…](https://github.com/melvincarvalho/anagram)
+  - [103 commits, 2026-10-19 to 2026-11-03](https://github.com/melvincarvalho/anagram/commits/gh-pages)
   - branches: gh-pages, pr3
-  - nostr, web-app, chat, no-build, javascr…
+  - [1 stars](https://github.com/melvincarvalho/anagram/stargazers)

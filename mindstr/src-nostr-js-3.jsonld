@@ -19,7 +19,7 @@
       "bgColor": "#ebc573"
     },
     {
-      "@id": "#pcr96u",
+      "@id": "#tznyhy",
       "name": "exports 1/3",
       "x": 310,
       "y": -11,
@@ -27,70 +27,70 @@
       "parent": "#this"
     },
     {
-      "@id": "#9b7nqt",
+      "@id": "#uwwb48",
       "name": "editTag()",
       "x": 361,
       "y": -294,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js#L439",
       "bgColor": "#daeeff",
-      "parent": "#pcr96u"
+      "parent": "#tznyhy"
     },
     {
-      "@id": "#tznyhy",
+      "@id": "#bkdx9m",
       "name": "isEdited()",
       "x": 511,
       "y": -251,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js#L440",
       "bgColor": "#daeeff",
-      "parent": "#pcr96u"
+      "parent": "#tznyhy"
     },
     {
-      "@id": "#uwwb48",
+      "@id": "#uyi44v",
       "name": "sendDirectMessage()",
       "x": 480,
       "y": -118,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js#L442",
       "bgColor": "#daeeff",
-      "parent": "#pcr96u"
+      "parent": "#tznyhy"
     },
     {
-      "@id": "#bkdx9m",
+      "@id": "#pepean",
       "name": "normalizeEmoji()",
       "x": 590,
       "y": -19,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js#L453",
       "bgColor": "#daeeff",
-      "parent": "#pcr96u"
+      "parent": "#tznyhy"
     },
     {
-      "@id": "#uyi44v",
+      "@id": "#uxyq6b",
       "name": "unwrap()",
       "x": 490,
       "y": 85,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js#L479",
       "bgColor": "#daeeff",
-      "parent": "#pcr96u"
+      "parent": "#tznyhy"
     },
     {
-      "@id": "#pepean",
+      "@id": "#pms64g",
       "name": "roomAddress()",
       "x": 533,
       "y": 215,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js#L500",
       "bgColor": "#daeeff",
-      "parent": "#pcr96u"
+      "parent": "#tznyhy"
     },
     {
-      "@id": "#uxyq6b",
+      "@id": "#cywvmh",
       "name": "decodeRoomLink()",
       "x": 387,
       "y": 269,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js#L506",
       "bgColor": "#daeeff",
-      "parent": "#pcr96u"
+      "parent": "#tznyhy"
     },
     {
-      "@id": "#pms64g",
+      "@id": "#mmmrka",
       "name": "exports 2/3",
       "x": -115,
       "y": 245,
@@ -98,70 +98,70 @@
       "parent": "#this"
     },
     {
-      "@id": "#cywvmh",
+      "@id": "#u2r43v",
       "name": "encodeRoomLink()",
       "x": 161,
       "y": 402,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js#L526",
       "bgColor": "#fce3f3",
-      "parent": "#pms64g"
+      "parent": "#mmmrka"
     },
     {
-      "@id": "#mmmrka",
+      "@id": "#pnzi2z",
       "name": "parseRoom()",
       "x": 55,
       "y": 499,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js#L535",
       "bgColor": "#fce3f3",
-      "parent": "#pms64g"
+      "parent": "#mmmrka"
     },
     {
-      "@id": "#u2r43v",
+      "@id": "#2yz4j8",
       "name": "roomPolicy()",
       "x": -72,
       "y": 421,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js#L564",
       "bgColor": "#fce3f3",
-      "parent": "#pms64g"
+      "parent": "#mmmrka"
     },
     {
-      "@id": "#pnzi2z",
+      "@id": "#xgkrrw",
       "name": "fetchRoom()",
       "x": -219,
       "y": 466,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js#L570",
       "bgColor": "#fce3f3",
-      "parent": "#pms64g"
+      "parent": "#mmmrka"
     },
     {
-      "@id": "#2yz4j8",
+      "@id": "#2yqrnt",
       "name": "createRoom()",
       "x": -289,
       "y": 347,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js#L587",
       "bgColor": "#fce3f3",
-      "parent": "#pms64g"
+      "parent": "#mmmrka"
     },
     {
-      "@id": "#xgkrrw",
+      "@id": "#igep64",
       "name": "updateRoom()",
       "x": -444,
       "y": 330,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js#L608",
       "bgColor": "#fce3f3",
-      "parent": "#pms64g"
+      "parent": "#mmmrka"
     },
     {
-      "@id": "#2yqrnt",
+      "@id": "#hgg764",
       "name": "ROOM_MAX_LENGTH()",
       "x": -443,
       "y": 197,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js#L658",
       "bgColor": "#fce3f3",
-      "parent": "#pms64g"
+      "parent": "#mmmrka"
     },
     {
-      "@id": "#igep64",
+      "@id": "#pqcgpp",
       "name": "exports 3/3",
       "x": -215,
       "y": -108,
@@ -169,52 +169,52 @@
       "parent": "#this"
     },
     {
-      "@id": "#hgg764",
+      "@id": "#jhj67c",
       "name": "validRoomMessage()",
       "x": -500,
       "y": -15,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js#L660",
       "bgColor": "#fbe8d3",
-      "parent": "#igep64"
+      "parent": "#pqcgpp"
     },
     {
-      "@id": "#pqcgpp",
+      "@id": "#mr58qm",
       "name": "signRoomMessage()",
       "x": -566,
       "y": -141,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js#L672",
       "bgColor": "#fbe8d3",
-      "parent": "#igep64"
+      "parent": "#pqcgpp"
     },
     {
-      "@id": "#jhj67c",
+      "@id": "#hawxjn",
       "name": "sendRoomMessage()",
       "x": -431,
       "y": -216,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js#L695",
       "bgColor": "#fbe8d3",
-      "parent": "#igep64"
+      "parent": "#pqcgpp"
     },
     {
-      "@id": "#mr58qm",
+      "@id": "#y6wpy5",
       "name": "STARTER_ROOM()",
       "x": -419,
       "y": -353,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js#L702",
       "bgColor": "#fbe8d3",
-      "parent": "#igep64"
+      "parent": "#pqcgpp"
     },
     {
-      "@id": "#hawxjn",
+      "@id": "#4q7gbw",
       "name": "starterRoom()",
       "x": -257,
       "y": -364,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js#L727",
       "bgColor": "#fbe8d3",
-      "parent": "#igep64"
+      "parent": "#pqcgpp"
     },
     {
-      "@id": "#y6wpy5",
+      "@id": "#98geuv",
       "name": "← nostr.js",
       "x": 28,
       "y": -211,

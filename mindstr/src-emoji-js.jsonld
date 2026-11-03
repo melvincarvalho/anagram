@@ -19,7 +19,7 @@
       "bgColor": "#ebc573"
     },
     {
-      "@id": "#qrspvr",
+      "@id": "#xetwaa",
       "name": "exports",
       "x": 250,
       "y": 0,
@@ -27,16 +27,16 @@
       "parent": "#this"
     },
     {
-      "@id": "#wfbk2v",
+      "@id": "#wtpnjp",
       "name": "EMOJI_GROUPS()",
       "x": 500,
       "y": 0,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/emoji.js#L14",
       "bgColor": "#daeeff",
-      "parent": "#qrspvr"
+      "parent": "#xetwaa"
     },
     {
-      "@id": "#xetwaa",
+      "@id": "#7cw6cg",
       "name": "15 lines",
       "x": -125,
       "y": 184,
@@ -45,7 +45,7 @@
       "parent": "#this"
     },
     {
-      "@id": "#wtpnjp",
+      "@id": "#a54nev",
       "name": "← js",
       "x": -125,
       "y": -184,

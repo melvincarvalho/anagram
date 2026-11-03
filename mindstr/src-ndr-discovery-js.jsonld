@@ -19,7 +19,7 @@
       "bgColor": "#ebc573"
     },
     {
-      "@id": "#9n2fi8",
+      "@id": "#eqxhbv",
       "name": "exports",
       "x": 250,
       "y": 0,
@@ -27,16 +27,16 @@
       "parent": "#this"
     },
     {
-      "@id": "#27czbt",
+      "@id": "#m3zt7z",
       "name": "watchNdrCapability()",
       "x": 500,
       "y": 0,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ndr-discovery.js#L5",
       "bgColor": "#daeeff",
-      "parent": "#9n2fi8"
+      "parent": "#eqxhbv"
     },
     {
-      "@id": "#eqxhbv",
+      "@id": "#xzgaz8",
       "name": "54 lines",
       "x": -125,
       "y": 184,
@@ -45,7 +45,7 @@
       "parent": "#this"
     },
     {
-      "@id": "#m3zt7z",
+      "@id": "#brfb5w",
       "name": "← js",
       "x": -125,
       "y": -184,

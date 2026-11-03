@@ -19,233 +19,137 @@
       "bgColor": "#ebc573"
     },
     {
-      "@id": "#krwt6e",
-      "name": "Commits · 101",
-      "x": 247,
-      "y": -35,
-      "link": "https://github.com/melvincarvalho/anagram/commits/gh-pages",
+      "@id": "#skzt29",
+      "name": "README · 5",
+      "x": 248,
+      "y": -29,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/README.md#anagram-lite",
       "bgColor": "#acd5ff",
       "parent": "#this"
     },
     {
-      "@id": "#emecna",
-      "name": "Nov 2026 · 1 ›",
-      "x": 347,
-      "y": -315,
-      "link": "./commits-2026-11.jsonld",
-      "bgColor": "#daeeff",
-      "parent": "#krwt6e"
-    },
-    {
-      "@id": "#u8v9bw",
-      "name": "Oct 2026 · 1–20 of 100 ›",
-      "x": 493,
-      "y": -271,
-      "link": "./commits-2026-10-1.jsonld",
-      "bgColor": "#daeeff",
-      "parent": "#krwt6e"
-    },
-    {
-      "@id": "#j6zbf9",
-      "name": "Oct 2026 · 21–40 of 100 ›",
-      "x": 473,
-      "y": -137,
-      "link": "./commits-2026-10-2.jsonld",
-      "bgColor": "#daeeff",
-      "parent": "#krwt6e"
-    },
-    {
-      "@id": "#2z3p7w",
-      "name": "Oct 2026 · 41–60 of 100 ›",
-      "x": 588,
-      "y": -37,
-      "link": "./commits-2026-10-3.jsonld",
-      "bgColor": "#daeeff",
-      "parent": "#krwt6e"
-    },
-    {
-      "@id": "#pvzwd8",
-      "name": "Oct 2026 · 61–80 of 100 ›",
-      "x": 492,
-      "y": 77,
-      "link": "./commits-2026-10-4.jsonld",
-      "bgColor": "#daeeff",
-      "parent": "#krwt6e"
-    },
-    {
-      "@id": "#57iy7q",
-      "name": "Oct 2026 · 81–100 of 100 ›",
-      "x": 533,
-      "y": 215,
-      "link": "./commits-2026-10-5.jsonld",
-      "bgColor": "#daeeff",
-      "parent": "#krwt6e"
-    },
-    {
-      "@id": "#qprvms",
-      "name": "Hot files · 5",
-      "x": 81,
-      "y": 201,
-      "bgColor": "#e0c4f6",
-      "parent": "#this"
-    },
-    {
-      "@id": "#7fucmt",
-      "name": "js/app.js · 71",
-      "x": 315,
-      "y": 330,
-      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/app.js",
-      "bgColor": "#f2e5fd",
-      "parent": "#qprvms"
-    },
-    {
-      "@id": "#t922yq",
-      "name": "js/store.js · 53",
-      "x": 286,
-      "y": 445,
-      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store.js",
-      "bgColor": "#f2e5fd",
-      "parent": "#qprvms"
-    },
-    {
-      "@id": "#26rfi6",
-      "name": "style.css · 45",
-      "x": 161,
-      "y": 399,
-      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/style.css",
-      "bgColor": "#f2e5fd",
-      "parent": "#qprvms"
-    },
-    {
-      "@id": "#u28rkq",
-      "name": "js/nostr.js · 34",
-      "x": 89,
-      "y": 496,
-      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js",
-      "bgColor": "#f2e5fd",
-      "parent": "#qprvms"
-    },
-    {
-      "@id": "#varvfj",
-      "name": "README.md · 20",
-      "x": -13,
-      "y": 425,
-      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/README.md#readme",
-      "bgColor": "#f2e5fd",
-      "parent": "#qprvms"
-    },
-    {
-      "@id": "#ucttef",
-      "name": "README · 5",
-      "x": -173,
-      "y": 153,
-      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/README.md#anagram-lite",
-      "bgColor": "#febdc6",
-      "parent": "#this"
-    },
-    {
-      "@id": "#vzipyd",
+      "@id": "#t4pwzt",
       "name": "Transport",
-      "x": -183,
-      "y": 395,
+      "x": 364,
+      "y": -291,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/README.md#transport",
-      "bgColor": "#ffe2e6",
-      "parent": "#ucttef"
+      "bgColor": "#daeeff",
+      "parent": "#skzt29"
     },
     {
-      "@id": "#miy6ts",
+      "@id": "#jhaa84",
       "name": "Interoperability",
-      "x": -317,
-      "y": 424,
+      "x": 528,
+      "y": -223,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/README.md#interoperability",
-      "bgColor": "#ffe2e6",
-      "parent": "#ucttef"
+      "bgColor": "#daeeff",
+      "parent": "#skzt29"
     },
     {
-      "@id": "#ft3k8u",
+      "@id": "#wavvy9",
       "name": "Privacy",
-      "x": -339,
-      "y": 312,
+      "x": 493,
+      "y": -71,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/README.md#privacy",
-      "bgColor": "#ffe2e6",
-      "parent": "#ucttef"
+      "bgColor": "#daeeff",
+      "parent": "#skzt29"
     },
     {
-      "@id": "#it6792",
+      "@id": "#i9w3v4",
       "name": "Run",
-      "x": -473,
-      "y": 300,
+      "x": 585,
+      "y": 63,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/README.md#run",
-      "bgColor": "#ffe2e6",
-      "parent": "#ucttef"
+      "bgColor": "#daeeff",
+      "parent": "#skzt29"
     },
     {
-      "@id": "#dnz3gb",
+      "@id": "#e9sufn",
       "name": "Double-ratchet messaging",
-      "x": -453,
-      "y": 181,
+      "x": 450,
+      "y": 185,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/README.md#double-ratchet-messaging",
-      "bgColor": "#ffe2e6",
-      "parent": "#ucttef"
+      "bgColor": "#daeeff",
+      "parent": "#skzt29"
     },
     {
-      "@id": "#3ifse5",
+      "@id": "#g45zx9",
       "name": "Docs · 1",
-      "x": -249,
-      "y": -15,
-      "bgColor": "#f1c99c",
+      "x": 74,
+      "y": 203,
+      "bgColor": "#e9c1ef",
       "parent": "#this"
     },
     {
-      "@id": "#ju3xzh",
+      "@id": "#vz8rhu",
       "name": "SPEC.md · 10 ›",
-      "x": -499,
-      "y": -31,
+      "x": 148,
+      "y": 406,
       "link": "./doc-spec.jsonld",
-      "bgColor": "#fbe8d3",
-      "parent": "#3ifse5"
+      "bgColor": "#f7e4f9",
+      "parent": "#g45zx9"
     },
     {
-      "@id": "#p46jmx",
+      "@id": "#35gtrs",
       "name": "Source · js/ · 31 files ›",
-      "x": -193,
-      "y": -135,
+      "x": -159,
+      "y": 164,
       "link": "./src.jsonld",
-      "bgColor": "#c1dba8",
+      "bgColor": "#fec0b1",
       "parent": "#this"
     },
     {
-      "@id": "#bu7kuh",
-      "name": "A no-build web client for private Nostr DMs…",
-      "x": -6,
-      "y": -212,
+      "@id": "#fiqrfa",
+      "name": "Open PRs · 1",
+      "x": -249,
+      "y": -23,
+      "link": "https://github.com/melvincarvalho/anagram/pulls",
+      "bgColor": "#d7d59b",
+      "parent": "#this"
+    },
+    {
+      "@id": "#fad69b",
+      "name": "#3 Protect private delivery and peer d…",
+      "x": -497,
+      "y": -45,
+      "link": "https://github.com/melvincarvalho/anagram/pull/3",
+      "bgColor": "#eeedd3",
+      "parent": "#fiqrfa"
+    },
+    {
+      "@id": "#fnrzmm",
+      "name": "Anagram lite: Preact Nostr DMs + public roo…",
+      "x": -55,
+      "y": -207,
       "link": "https://github.com/melvincarvalho/anagram",
       "bgColor": "#ececec",
       "parent": "#this"
     },
     {
-      "@id": "#2iffkx",
-      "name": "101 commits since 2026-10-19",
-      "x": -174,
-      "y": -400,
+      "@id": "#3y3s3p",
+      "name": "103 commits, 2026-10-19 to 2026-11-03",
+      "x": -270,
+      "y": -358,
+      "link": "https://github.com/melvincarvalho/anagram/commits/gh-pages",
       "bgColor": "#ececec",
-      "parent": "#bu7kuh"
+      "parent": "#fnrzmm"
     },
     {
-      "@id": "#ssgz3q",
+      "@id": "#ujs2ci",
       "name": "branches: gh-pages, pr3",
-      "x": -46,
-      "y": -500,
+      "x": -60,
+      "y": -499,
       "bgColor": "#ececec",
-      "parent": "#bu7kuh"
+      "parent": "#fnrzmm"
     },
     {
-      "@id": "#gksydt",
-      "name": "nostr, web-app, chat, no-build, javascr…",
-      "x": 122,
-      "y": -413,
+      "@id": "#442pm7",
+      "name": "1 stars",
+      "x": 121,
+      "y": -412,
+      "link": "https://github.com/melvincarvalho/anagram/stargazers",
       "bgColor": "#ececec",
-      "parent": "#bu7kuh"
+      "parent": "#fnrzmm"
     }
   ],
   "connections": [
@@ -274,84 +178,40 @@
       "end": 6
     },
     {
-      "start": 1,
+      "start": 0,
       "end": 7
     },
     {
-      "start": 0,
+      "start": 7,
       "end": 8
     },
     {
-      "start": 8,
+      "start": 0,
       "end": 9
     },
     {
-      "start": 8,
+      "start": 0,
       "end": 10
     },
     {
-      "start": 8,
+      "start": 10,
       "end": 11
     },
     {
-      "start": 8,
+      "start": 0,
       "end": 12
     },
     {
-      "start": 8,
+      "start": 12,
       "end": 13
     },
     {
-      "start": 0,
+      "start": 12,
       "end": 14
     },
     {
-      "start": 14,
+      "start": 12,
       "end": 15
-    },
-    {
-      "start": 14,
-      "end": 16
-    },
-    {
-      "start": 14,
-      "end": 17
-    },
-    {
-      "start": 14,
-      "end": 18
-    },
-    {
-      "start": 14,
-      "end": 19
-    },
-    {
-      "start": 0,
-      "end": 20
-    },
-    {
-      "start": 20,
-      "end": 21
-    },
-    {
-      "start": 0,
-      "end": 22
-    },
-    {
-      "start": 0,
-      "end": 23
-    },
-    {
-      "start": 23,
-      "end": 24
-    },
-    {
-      "start": 23,
-      "end": 25
-    },
-    {
-      "start": 23,
-      "end": 26
     }
   ],
   "selectedNode": 0

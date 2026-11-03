@@ -19,107 +19,123 @@
       "bgColor": "#ebc573"
     },
     {
-      "@id": "#7jcj9y",
-      "name": "a–n · 5",
-      "x": 233,
-      "y": 77,
+      "@id": "#sfg4qv",
+      "name": "around messaging-devices.js · 3",
+      "x": 239,
+      "y": -62,
       "bgColor": "#acd5ff",
       "parent": "#this"
     },
     {
-      "@id": "#a69dfq",
-      "name": "app.js",
-      "x": 412,
-      "y": -241,
-      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/app.js",
-      "bgColor": "#daeeff",
-      "parent": "#7jcj9y"
-    },
-    {
-      "@id": "#sfg4qv",
-      "name": "db.js · 15 ›",
-      "x": 582,
-      "y": -83,
-      "link": "./src-db-js.jsonld",
-      "bgColor": "#daeeff",
-      "parent": "#7jcj9y"
-    },
-    {
       "@id": "#xww8q9",
-      "name": "emoji.js · 1 ›",
-      "x": 482,
-      "y": 114,
-      "link": "./src-emoji-js.jsonld",
+      "name": "messaging-devices.js · 1 ›",
+      "x": 389,
+      "y": -267,
+      "link": "./src-messaging-devices-js.jsonld",
       "bgColor": "#daeeff",
-      "parent": "#7jcj9y"
+      "parent": "#sfg4qv"
     },
     {
       "@id": "#yv5i54",
-      "name": "messaging-devices.js · 1 ›",
-      "x": 422,
-      "y": 351,
-      "link": "./src-messaging-devices-js.jsonld",
+      "name": "transport.js · 17 ›",
+      "x": 574,
+      "y": -117,
+      "link": "./src-transport-js.jsonld",
       "bgColor": "#daeeff",
-      "parent": "#7jcj9y"
+      "parent": "#sfg4qv"
     },
     {
       "@id": "#cfextr",
-      "name": "ndr-discovery.js · 1 ›",
-      "x": 129,
-      "y": 411,
-      "link": "./src-ndr-discovery-js.jsonld",
+      "name": "db.js · 15 ›",
+      "x": 495,
+      "y": 63,
+      "link": "./src-db-js.jsonld",
       "bgColor": "#daeeff",
-      "parent": "#7jcj9y"
+      "parent": "#sfg4qv"
     },
     {
       "@id": "#n4bn2e",
-      "name": "n–t · 4",
-      "x": -235,
-      "y": 72,
-      "bgColor": "#febdc6",
+      "name": "around app.js · 2",
+      "x": 123,
+      "y": 185,
+      "bgColor": "#e9c1ef",
       "parent": "#this"
     },
     {
       "@id": "#eud79w",
-      "name": "ndr.js · 2 ›",
-      "x": -277,
-      "y": 354,
-      "link": "./src-ndr-js.jsonld",
-      "bgColor": "#ffe2e6",
+      "name": "app.js",
+      "x": 346,
+      "y": 306,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/app.js",
+      "bgColor": "#f7e4f9",
       "parent": "#n4bn2e"
     },
     {
       "@id": "#wn4gws",
-      "name": "nostr.js · 75 ›",
-      "x": -499,
-      "y": 267,
-      "link": "./src-nostr-js.jsonld",
-      "bgColor": "#ffe2e6",
+      "name": "store.js",
+      "x": 154,
+      "y": 484,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store.js",
+      "bgColor": "#f7e4f9",
       "parent": "#n4bn2e"
     },
     {
       "@id": "#7urzyg",
-      "name": "store.js",
-      "x": -495,
-      "y": 59,
-      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store.js",
-      "bgColor": "#ffe2e6",
-      "parent": "#n4bn2e"
+      "name": "around ndr-discovery.js · 2",
+      "x": -157,
+      "y": 165,
+      "bgColor": "#fec0b1",
+      "parent": "#this"
     },
     {
       "@id": "#fcdibk",
-      "name": "transport.js · 17 ›",
-      "x": -566,
-      "y": -142,
-      "link": "./src-transport-js.jsonld",
-      "bgColor": "#ffe2e6",
-      "parent": "#n4bn2e"
+      "name": "ndr-discovery.js · 1 ›",
+      "x": -215,
+      "y": 384,
+      "link": "./src-ndr-discovery-js.jsonld",
+      "bgColor": "#ffe3dc",
+      "parent": "#7urzyg"
     },
     {
       "@id": "#tmtxc2",
+      "name": "ndr.js · 2 ›",
+      "x": -479,
+      "y": 293,
+      "link": "./src-ndr-js.jsonld",
+      "bgColor": "#ffe3dc",
+      "parent": "#7urzyg"
+    },
+    {
+      "@id": "#f5mzxc",
+      "name": "other · 2",
+      "x": -239,
+      "y": -63,
+      "bgColor": "#d7d59b",
+      "parent": "#this"
+    },
+    {
+      "@id": "#assz83",
+      "name": "emoji.js · 1 ›",
+      "x": -499,
+      "y": -22,
+      "link": "./src-emoji-js.jsonld",
+      "bgColor": "#eeedd3",
+      "parent": "#f5mzxc"
+    },
+    {
+      "@id": "#ef2zi4",
+      "name": "nostr.js · 75 ›",
+      "x": -502,
+      "y": -264,
+      "link": "./src-nostr-js.jsonld",
+      "bgColor": "#eeedd3",
+      "parent": "#f5mzxc"
+    },
+    {
+      "@id": "#mmiwv8",
       "name": "← js/",
-      "x": -48,
-      "y": -209,
+      "x": -18,
+      "y": -212,
       "link": "./src.jsonld",
       "bgColor": "#ececec",
       "parent": "#this"
@@ -143,36 +159,44 @@
       "end": 4
     },
     {
-      "start": 1,
+      "start": 0,
       "end": 5
     },
     {
-      "start": 1,
+      "start": 5,
       "end": 6
     },
     {
-      "start": 0,
+      "start": 5,
       "end": 7
     },
     {
-      "start": 7,
+      "start": 0,
       "end": 8
     },
     {
-      "start": 7,
+      "start": 8,
       "end": 9
     },
     {
-      "start": 7,
+      "start": 8,
       "end": 10
     },
     {
-      "start": 7,
+      "start": 0,
       "end": 11
     },
     {
-      "start": 0,
+      "start": 11,
       "end": 12
+    },
+    {
+      "start": 11,
+      "end": 13
+    },
+    {
+      "start": 0,
+      "end": 14
     }
   ],
   "selectedNode": 0

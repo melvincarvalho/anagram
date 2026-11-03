@@ -19,17 +19,17 @@
       "bgColor": "#ebc573"
     },
     {
-      "@id": "#f5mzxc",
-      "name": "store/ · 9 files, 173 exports ›",
-      "x": 248,
+      "@id": "#nac2qv",
+      "name": "store/ · 9 ›",
+      "x": 241,
       "y": -55,
       "link": "./src-store.jsonld",
       "bgColor": "#acd5ff",
       "parent": "#this"
     },
     {
-      "@id": "#assz83",
-      "name": "ui/ · 13 files, 55 exports ›",
+      "@id": "#jgxjap",
+      "name": "ui/ · 13 ›",
       "x": 65,
       "y": 205,
       "link": "./src-ui.jsonld",
@@ -37,7 +37,7 @@
       "parent": "#this"
     },
     {
-      "@id": "#ef2zi4",
+      "@id": "#a2eq5j",
       "name": "js/*.js · 9 ›",
       "x": -241,
       "y": 55,
@@ -46,7 +46,7 @@
       "parent": "#this"
     },
     {
-      "@id": "#mmiwv8",
+      "@id": "#wgv26u",
       "name": "← anagram",
       "x": -65,
       "y": -205,
