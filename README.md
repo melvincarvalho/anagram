@@ -1,5 +1,7 @@
 # Anagram lite
 
+[![Mind map](https://mindstr.org/badge.svg)](https://mindstr.org/?uri=https://nostr.chat/mindstr/index.jsonld)
+
 A no-build Preact client for private Nostr DMs and public chat rooms, wire-compatible with [Anagram](https://github.com/lnbits/anagram).
 
 - **Identity:** people are addressed by [did:nostr](https://did-nostr.com) (`did:nostr:<hex pubkey>`) in links and copy buttons. `npub` is display only.
