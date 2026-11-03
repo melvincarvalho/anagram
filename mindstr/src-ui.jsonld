@@ -1,0 +1,231 @@
+{
+  "@context": {
+    "@vocab": "https://mindstr.org/ns#",
+    "link": {
+      "@type": "@id"
+    },
+    "parent": {
+      "@type": "@id"
+    }
+  },
+  "version": "0.2",
+  "nodes": [
+    {
+      "@id": "#this",
+      "name": "js/ui/",
+      "x": 0,
+      "y": 0,
+      "link": "https://github.com/melvincarvalho/anagram/tree/gh-pages/js/ui",
+      "bgColor": "#ebc573"
+    },
+    {
+      "@id": "#pu9sy8",
+      "name": "c–m · 7",
+      "x": 292,
+      "y": 89,
+      "bgColor": "#acd5ff",
+      "parent": "#this"
+    },
+    {
+      "@id": "#7ppwsy",
+      "name": "chats.js · 2 ›",
+      "x": 396,
+      "y": -260,
+      "link": "./src-ui-chats-js.jsonld",
+      "bgColor": "#daeeff",
+      "parent": "#pu9sy8"
+    },
+    {
+      "@id": "#c8rxju",
+      "name": "common.js · 28 ›",
+      "x": 559,
+      "y": -160,
+      "link": "./src-ui-common-js.jsonld",
+      "bgColor": "#daeeff",
+      "parent": "#pu9sy8"
+    },
+    {
+      "@id": "#jr3z4p",
+      "name": "composer.js · 1 ›",
+      "x": 500,
+      "y": 4,
+      "link": "./src-ui-composer-js.jsonld",
+      "bgColor": "#daeeff",
+      "parent": "#pu9sy8"
+    },
+    {
+      "@id": "#hmnpnc",
+      "name": "forward.js · 1 ›",
+      "x": 555,
+      "y": 169,
+      "link": "./src-ui-forward-js.jsonld",
+      "bgColor": "#daeeff",
+      "parent": "#pu9sy8"
+    },
+    {
+      "@id": "#tbf3y4",
+      "name": "info.js · 3 ›",
+      "x": 389,
+      "y": 267,
+      "link": "./src-ui-info-js.jsonld",
+      "bgColor": "#daeeff",
+      "parent": "#pu9sy8"
+    },
+    {
+      "@id": "#z9ubg8",
+      "name": "login.js · 1 ›",
+      "x": 313,
+      "y": 425,
+      "link": "./src-ui-login-js.jsonld",
+      "bgColor": "#daeeff",
+      "parent": "#pu9sy8"
+    },
+    {
+      "@id": "#5h5cc9",
+      "name": "messages.js · 4 ›",
+      "x": 111,
+      "y": 414,
+      "link": "./src-ui-messages-js.jsonld",
+      "bgColor": "#daeeff",
+      "parent": "#pu9sy8"
+    },
+    {
+      "@id": "#2682x9",
+      "name": "n–t · 6",
+      "x": -244,
+      "y": 47,
+      "bgColor": "#febdc6",
+      "parent": "#this"
+    },
+    {
+      "@id": "#dgxw48",
+      "name": "new.js · 1 ›",
+      "x": -248,
+      "y": 369,
+      "link": "./src-ui-new-js.jsonld",
+      "bgColor": "#ffe2e6",
+      "parent": "#2682x9"
+    },
+    {
+      "@id": "#3m2wcm",
+      "name": "notifications.js",
+      "x": -444,
+      "y": 331,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/notifications.js",
+      "bgColor": "#ffe2e6",
+      "parent": "#2682x9"
+    },
+    {
+      "@id": "#4ad697",
+      "name": "settings.js · 1 ›",
+      "x": -463,
+      "y": 161,
+      "link": "./src-ui-settings-js.jsonld",
+      "bgColor": "#ffe2e6",
+      "parent": "#2682x9"
+    },
+    {
+      "@id": "#z237xc",
+      "name": "sidebar.js · 2 ›",
+      "x": -589,
+      "y": 28,
+      "link": "./src-ui-sidebar-js.jsonld",
+      "bgColor": "#ffe2e6",
+      "parent": "#2682x9"
+    },
+    {
+      "@id": "#ern3ds",
+      "name": "sounds.js · 1 ›",
+      "x": -481,
+      "y": -115,
+      "link": "./src-ui-sounds-js.jsonld",
+      "bgColor": "#ffe2e6",
+      "parent": "#2682x9"
+    },
+    {
+      "@id": "#cixa8i",
+      "name": "text.js · 10 ›",
+      "x": -485,
+      "y": -286,
+      "link": "./src-ui-text-js.jsonld",
+      "bgColor": "#ffe2e6",
+      "parent": "#2682x9"
+    },
+    {
+      "@id": "#w8ga4c",
+      "name": "← js/",
+      "x": -11,
+      "y": -212,
+      "link": "./src.jsonld",
+      "bgColor": "#ececec",
+      "parent": "#this"
+    }
+  ],
+  "connections": [
+    {
+      "start": 0,
+      "end": 1
+    },
+    {
+      "start": 1,
+      "end": 2
+    },
+    {
+      "start": 1,
+      "end": 3
+    },
+    {
+      "start": 1,
+      "end": 4
+    },
+    {
+      "start": 1,
+      "end": 5
+    },
+    {
+      "start": 1,
+      "end": 6
+    },
+    {
+      "start": 1,
+      "end": 7
+    },
+    {
+      "start": 1,
+      "end": 8
+    },
+    {
+      "start": 0,
+      "end": 9
+    },
+    {
+      "start": 9,
+      "end": 10
+    },
+    {
+      "start": 9,
+      "end": 11
+    },
+    {
+      "start": 9,
+      "end": 12
+    },
+    {
+      "start": 9,
+      "end": 13
+    },
+    {
+      "start": 9,
+      "end": 14
+    },
+    {
+      "start": 9,
+      "end": 15
+    },
+    {
+      "start": 0,
+      "end": 16
+    }
+  ],
+  "selectedNode": 0
+}

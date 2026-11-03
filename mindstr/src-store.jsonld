@@ -1,0 +1,179 @@
+{
+  "@context": {
+    "@vocab": "https://mindstr.org/ns#",
+    "link": {
+      "@type": "@id"
+    },
+    "parent": {
+      "@type": "@id"
+    }
+  },
+  "version": "0.2",
+  "nodes": [
+    {
+      "@id": "#this",
+      "name": "js/store/",
+      "x": 0,
+      "y": 0,
+      "link": "https://github.com/melvincarvalho/anagram/tree/gh-pages/js/store",
+      "bgColor": "#ebc573"
+    },
+    {
+      "@id": "#spatem",
+      "name": "a–m · 5",
+      "x": 240,
+      "y": 59,
+      "bgColor": "#acd5ff",
+      "parent": "#this"
+    },
+    {
+      "@id": "#twzhxn",
+      "name": "accounts.js · 7 ›",
+      "x": 409,
+      "y": -244,
+      "link": "./src-store-accounts-js.jsonld",
+      "bgColor": "#daeeff",
+      "parent": "#spatem"
+    },
+    {
+      "@id": "#ir6eif",
+      "name": "core.js · 20 ›",
+      "x": 582,
+      "y": -83,
+      "link": "./src-store-core-js.jsonld",
+      "bgColor": "#daeeff",
+      "parent": "#spatem"
+    },
+    {
+      "@id": "#bwj4g5",
+      "name": "dms.js · 7 ›",
+      "x": 480,
+      "y": 118,
+      "link": "./src-store-dms-js.jsonld",
+      "bgColor": "#daeeff",
+      "parent": "#spatem"
+    },
+    {
+      "@id": "#9fjvd8",
+      "name": "media.js · 4 ›",
+      "x": 441,
+      "y": 333,
+      "link": "./src-store-media-js.jsonld",
+      "bgColor": "#daeeff",
+      "parent": "#spatem"
+    },
+    {
+      "@id": "#6fwnzy",
+      "name": "messages.js · 29 ›",
+      "x": 194,
+      "y": 392,
+      "link": "./src-store-messages-js.jsonld",
+      "bgColor": "#daeeff",
+      "parent": "#spatem"
+    },
+    {
+      "@id": "#rtnzsk",
+      "name": "p–r · 4",
+      "x": -223,
+      "y": 97,
+      "bgColor": "#febdc6",
+      "parent": "#this"
+    },
+    {
+      "@id": "#v8phzs",
+      "name": "people.js · 30 ›",
+      "x": -208,
+      "y": 386,
+      "link": "./src-store-people-js.jsonld",
+      "bgColor": "#ffe2e6",
+      "parent": "#rtnzsk"
+    },
+    {
+      "@id": "#izxsmt",
+      "name": "prefs.js · 23 ›",
+      "x": -453,
+      "y": 321,
+      "link": "./src-store-prefs-js.jsonld",
+      "bgColor": "#ffe2e6",
+      "parent": "#rtnzsk"
+    },
+    {
+      "@id": "#er3xwg",
+      "name": "ratchet.js · 34 ›",
+      "x": -484,
+      "y": 105,
+      "link": "./src-store-ratchet-js.jsonld",
+      "bgColor": "#ffe2e6",
+      "parent": "#rtnzsk"
+    },
+    {
+      "@id": "#3p4wn2",
+      "name": "rooms.js · 19 ›",
+      "x": -579,
+      "y": -97,
+      "link": "./src-store-rooms-js.jsonld",
+      "bgColor": "#ffe2e6",
+      "parent": "#rtnzsk"
+    },
+    {
+      "@id": "#f356md",
+      "name": "← js/",
+      "x": -57,
+      "y": -207,
+      "link": "./src.jsonld",
+      "bgColor": "#ececec",
+      "parent": "#this"
+    }
+  ],
+  "connections": [
+    {
+      "start": 0,
+      "end": 1
+    },
+    {
+      "start": 1,
+      "end": 2
+    },
+    {
+      "start": 1,
+      "end": 3
+    },
+    {
+      "start": 1,
+      "end": 4
+    },
+    {
+      "start": 1,
+      "end": 5
+    },
+    {
+      "start": 1,
+      "end": 6
+    },
+    {
+      "start": 0,
+      "end": 7
+    },
+    {
+      "start": 7,
+      "end": 8
+    },
+    {
+      "start": 7,
+      "end": 9
+    },
+    {
+      "start": 7,
+      "end": 10
+    },
+    {
+      "start": 7,
+      "end": 11
+    },
+    {
+      "start": 0,
+      "end": 12
+    }
+  ],
+  "selectedNode": 0
+}

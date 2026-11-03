@@ -1,0 +1,244 @@
+{
+  "@context": {
+    "@vocab": "https://mindstr.org/ns#",
+    "link": {
+      "@type": "@id"
+    },
+    "parent": {
+      "@type": "@id"
+    }
+  },
+  "version": "0.2",
+  "nodes": [
+    {
+      "@id": "#this",
+      "name": "messages.js · exports 16–29 of 29",
+      "x": 0,
+      "y": 0,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/messages.js",
+      "bgColor": "#ebc573"
+    },
+    {
+      "@id": "#j8deiz",
+      "name": "exports 1/2",
+      "x": 301,
+      "y": 65,
+      "bgColor": "#acd5ff",
+      "parent": "#this"
+    },
+    {
+      "@id": "#aya9s9",
+      "name": "applyDeletions()",
+      "x": 387,
+      "y": -269,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/messages.js#L144",
+      "bgColor": "#daeeff",
+      "parent": "#j8deiz"
+    },
+    {
+      "@id": "#vn2imx",
+      "name": "reactionTarget()",
+      "x": 549,
+      "y": -183,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/messages.js#L160",
+      "bgColor": "#daeeff",
+      "parent": "#j8deiz"
+    },
+    {
+      "@id": "#2tznvh",
+      "name": "queueSave()",
+      "x": 499,
+      "y": -27,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/messages.js#L162",
+      "bgColor": "#daeeff",
+      "parent": "#j8deiz"
+    },
+    {
+      "@id": "#cnh2fk",
+      "name": "flushSaves()",
+      "x": 572,
+      "y": 123,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/messages.js#L170",
+      "bgColor": "#daeeff",
+      "parent": "#j8deiz"
+    },
+    {
+      "@id": "#dk76uz",
+      "name": "sendStatus()",
+      "x": 424,
+      "y": 225,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/messages.js#L178",
+      "bgColor": "#daeeff",
+      "parent": "#j8deiz"
+    },
+    {
+      "@id": "#5aggpq",
+      "name": "setStatus()",
+      "x": 380,
+      "y": 383,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/messages.js#L180",
+      "bgColor": "#daeeff",
+      "parent": "#j8deiz"
+    },
+    {
+      "@id": "#eqmaaw",
+      "name": "track()",
+      "x": 190,
+      "y": 393,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/messages.js#L187",
+      "bgColor": "#daeeff",
+      "parent": "#j8deiz"
+    },
+    {
+      "@id": "#pjbq25",
+      "name": "exports 2/2",
+      "x": -296,
+      "y": 77,
+      "bgColor": "#febdc6",
+      "parent": "#this"
+    },
+    {
+      "@id": "#tz98k5",
+      "name": "retrySend()",
+      "x": -165,
+      "y": 401,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/messages.js#L201",
+      "bgColor": "#ffe2e6",
+      "parent": "#pjbq25"
+    },
+    {
+      "@id": "#437yyk",
+      "name": "resumePending()",
+      "x": -357,
+      "y": 399,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/messages.js#L221",
+      "bgColor": "#ffe2e6",
+      "parent": "#pjbq25"
+    },
+    {
+      "@id": "#j3k2bu",
+      "name": "markSent()",
+      "x": -410,
+      "y": 243,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/messages.js#L232",
+      "bgColor": "#ffe2e6",
+      "parent": "#pjbq25"
+    },
+    {
+      "@id": "#uhqx6j",
+      "name": "toggleReaction()",
+      "x": -564,
+      "y": 147,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/messages.js#L246",
+      "bgColor": "#ffe2e6",
+      "parent": "#pjbq25"
+    },
+    {
+      "@id": "#aurbbn",
+      "name": "forwardMessage()",
+      "x": -500,
+      "y": -7,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/messages.js#L303",
+      "bgColor": "#ffe2e6",
+      "parent": "#pjbq25"
+    },
+    {
+      "@id": "#fxz322",
+      "name": "deleteMessage()",
+      "x": -559,
+      "y": -162,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/messages.js#L310",
+      "bgColor": "#ffe2e6",
+      "parent": "#pjbq25"
+    },
+    {
+      "@id": "#s77s87",
+      "name": "editMessage()",
+      "x": -401,
+      "y": -254,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/messages.js#L353",
+      "bgColor": "#ffe2e6",
+      "parent": "#pjbq25"
+    },
+    {
+      "@id": "#k73rni",
+      "name": "← messages.js",
+      "x": -5,
+      "y": -212,
+      "link": "./src-store-messages-js.jsonld",
+      "bgColor": "#ececec",
+      "parent": "#this"
+    }
+  ],
+  "connections": [
+    {
+      "start": 0,
+      "end": 1
+    },
+    {
+      "start": 1,
+      "end": 2
+    },
+    {
+      "start": 1,
+      "end": 3
+    },
+    {
+      "start": 1,
+      "end": 4
+    },
+    {
+      "start": 1,
+      "end": 5
+    },
+    {
+      "start": 1,
+      "end": 6
+    },
+    {
+      "start": 1,
+      "end": 7
+    },
+    {
+      "start": 1,
+      "end": 8
+    },
+    {
+      "start": 0,
+      "end": 9
+    },
+    {
+      "start": 9,
+      "end": 10
+    },
+    {
+      "start": 9,
+      "end": 11
+    },
+    {
+      "start": 9,
+      "end": 12
+    },
+    {
+      "start": 9,
+      "end": 13
+    },
+    {
+      "start": 9,
+      "end": 14
+    },
+    {
+      "start": 9,
+      "end": 15
+    },
+    {
+      "start": 9,
+      "end": 16
+    },
+    {
+      "start": 0,
+      "end": 17
+    }
+  ],
+  "selectedNode": 0
+}

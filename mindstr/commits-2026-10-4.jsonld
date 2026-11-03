@@ -19,214 +19,214 @@
       "bgColor": "#ebc573"
     },
     {
-      "@id": "#vn2imx",
+      "@id": "#dk76uz",
       "name": "Mon 19 Oct · 1–7 of 20",
-      "x": -143,
-      "y": -234,
+      "x": 310,
+      "y": 0,
       "bgColor": "#acd5ff",
       "parent": "#this"
-    },
-    {
-      "@id": "#2tznvh",
-      "name": "c86ed0b Fix nostr.social profile links",
-      "x": -478,
-      "y": -124,
-      "link": "https://github.com/melvincarvalho/anagram/commit/c86ed0b",
-      "bgColor": "#daeeff",
-      "parent": "#vn2imx"
-    },
-    {
-      "@id": "#cnh2fk",
-      "name": "3c10456 Open chats at the first unread; inf…",
-      "x": -501,
-      "y": -265,
-      "link": "https://github.com/melvincarvalho/anagram/commit/3c10456",
-      "bgColor": "#daeeff",
-      "parent": "#vn2imx"
-    },
-    {
-      "@id": "#dk76uz",
-      "name": "c9da386 Block people and delete chats",
-      "x": -344,
-      "y": -309,
-      "link": "https://github.com/melvincarvalho/anagram/commit/c9da386",
-      "bgColor": "#daeeff",
-      "parent": "#vn2imx"
     },
     {
       "@id": "#5aggpq",
-      "name": "9875813 One chat list sorted by activity",
-      "x": -289,
-      "y": -471,
-      "link": "https://github.com/melvincarvalho/anagram/commit/9875813",
+      "name": "c86ed0b Fix nostr.social profile links",
+      "x": 361,
+      "y": -294,
+      "link": "https://github.com/melvincarvalho/anagram/commit/c86ed0b",
       "bgColor": "#daeeff",
-      "parent": "#vn2imx"
+      "parent": "#dk76uz"
     },
     {
       "@id": "#eqmaaw",
-      "name": "09e3659 Render Anagram's message formatting",
-      "x": -124,
-      "y": -427,
-      "link": "https://github.com/melvincarvalho/anagram/commit/09e3659",
+      "name": "3c10456 Open chats at the first unread; inf…",
+      "x": 514,
+      "y": -247,
+      "link": "https://github.com/melvincarvalho/anagram/commit/3c10456",
       "bgColor": "#daeeff",
-      "parent": "#vn2imx"
+      "parent": "#dk76uz"
     },
     {
       "@id": "#pjbq25",
-      "name": "1f98946 Edit your profile; set up new accou…",
-      "x": 14,
-      "y": -515,
-      "link": "https://github.com/melvincarvalho/anagram/commit/1f98946",
+      "name": "c9da386 Block people and delete chats",
+      "x": 482,
+      "y": -112,
+      "link": "https://github.com/melvincarvalho/anagram/commit/c9da386",
       "bgColor": "#daeeff",
-      "parent": "#vn2imx"
+      "parent": "#dk76uz"
     },
     {
       "@id": "#tz98k5",
-      "name": "7a5dae4 Send photos, video and audio via Bl…",
-      "x": 148,
-      "y": -381,
-      "link": "https://github.com/melvincarvalho/anagram/commit/7a5dae4",
+      "name": "9875813 One chat list sorted by activity",
+      "x": 590,
+      "y": -16,
+      "link": "https://github.com/melvincarvalho/anagram/commit/9875813",
       "bgColor": "#daeeff",
-      "parent": "#vn2imx"
+      "parent": "#dk76uz"
     },
     {
       "@id": "#437yyk",
-      "name": "Mon 19 Oct · 8–14 of 20",
-      "x": 312,
-      "y": 23,
-      "bgColor": "#acd5ff",
-      "parent": "#this"
+      "name": "09e3659 Render Anagram's message formatting",
+      "x": 488,
+      "y": 93,
+      "link": "https://github.com/melvincarvalho/anagram/commit/09e3659",
+      "bgColor": "#daeeff",
+      "parent": "#dk76uz"
     },
     {
       "@id": "#j3k2bu",
-      "name": "13476cd Small fixes: mobile Enter, Firefox…",
-      "x": 397,
-      "y": -259,
-      "link": "https://github.com/melvincarvalho/anagram/commit/13476cd",
-      "bgColor": "#fce3f3",
-      "parent": "#437yyk"
+      "name": "1f98946 Edit your profile; set up new accou…",
+      "x": 523,
+      "y": 233,
+      "link": "https://github.com/melvincarvalho/anagram/commit/1f98946",
+      "bgColor": "#daeeff",
+      "parent": "#dk76uz"
     },
     {
       "@id": "#uhqx6j",
-      "name": "794a95c Performance with large histories",
-      "x": 545,
-      "y": -192,
-      "link": "https://github.com/melvincarvalho/anagram/commit/794a95c",
-      "bgColor": "#fce3f3",
-      "parent": "#437yyk"
+      "name": "7a5dae4 Send photos, video and audio via Bl…",
+      "x": 367,
+      "y": 289,
+      "link": "https://github.com/melvincarvalho/anagram/commit/7a5dae4",
+      "bgColor": "#daeeff",
+      "parent": "#dk76uz"
     },
     {
       "@id": "#aurbbn",
-      "name": "62cc190 Open Graph and social previews for…",
-      "x": 496,
-      "y": -55,
-      "link": "https://github.com/melvincarvalho/anagram/commit/62cc190",
-      "bgColor": "#fce3f3",
-      "parent": "#437yyk"
-    },
-    {
-      "@id": "#fxz322",
-      "name": "ec6d577 Serve the site at nostr.chat",
-      "x": 586,
-      "y": 61,
-      "link": "https://github.com/melvincarvalho/anagram/commit/ec6d577",
-      "bgColor": "#fce3f3",
-      "parent": "#437yyk"
-    },
-    {
-      "@id": "#s77s87",
-      "name": "7be902d Fix chat scrolling",
-      "x": 474,
-      "y": 136,
-      "link": "https://github.com/melvincarvalho/anagram/commit/7be902d",
-      "bgColor": "#fce3f3",
-      "parent": "#437yyk"
-    },
-    {
-      "@id": "#k73rni",
-      "name": "1214529 Page history per relay; fetch activ…",
-      "x": 503,
-      "y": 263,
-      "link": "https://github.com/melvincarvalho/anagram/commit/1214529",
-      "bgColor": "#fce3f3",
-      "parent": "#437yyk"
-    },
-    {
-      "@id": "#r8zm2z",
-      "name": "7bb977a README: correct the not-yet-include…",
-      "x": 338,
-      "y": 313,
-      "link": "https://github.com/melvincarvalho/anagram/commit/7bb977a",
-      "bgColor": "#fce3f3",
-      "parent": "#437yyk"
-    },
-    {
-      "@id": "#wzv4c3",
-      "name": "Mon 19 Oct · 15–20 of 20",
-      "x": -120,
-      "y": 186,
+      "name": "Mon 19 Oct · 8–14 of 20",
+      "x": -143,
+      "y": 234,
       "bgColor": "#acd5ff",
       "parent": "#this"
     },
     {
+      "@id": "#fxz322",
+      "name": "13476cd Small fixes: mobile Enter, Firefox…",
+      "x": 115,
+      "y": 437,
+      "link": "https://github.com/melvincarvalho/anagram/commit/13476cd",
+      "bgColor": "#fce3f3",
+      "parent": "#aurbbn"
+    },
+    {
+      "@id": "#s77s87",
+      "name": "794a95c Performance with large histories",
+      "x": -11,
+      "y": 501,
+      "link": "https://github.com/melvincarvalho/anagram/commit/794a95c",
+      "bgColor": "#fce3f3",
+      "parent": "#aurbbn"
+    },
+    {
+      "@id": "#k73rni",
+      "name": "62cc190 Open Graph and social previews for…",
+      "x": -134,
+      "y": 393,
+      "link": "https://github.com/melvincarvalho/anagram/commit/62cc190",
+      "bgColor": "#fce3f3",
+      "parent": "#aurbbn"
+    },
+    {
+      "@id": "#r8zm2z",
+      "name": "ec6d577 Serve the site at nostr.chat",
+      "x": -289,
+      "y": 439,
+      "link": "https://github.com/melvincarvalho/anagram/commit/ec6d577",
+      "bgColor": "#fce3f3",
+      "parent": "#aurbbn"
+    },
+    {
+      "@id": "#wzv4c3",
+      "name": "7be902d Fix chat scrolling",
+      "x": -325,
+      "y": 338,
+      "link": "https://github.com/melvincarvalho/anagram/commit/7be902d",
+      "bgColor": "#fce3f3",
+      "parent": "#aurbbn"
+    },
+    {
       "@id": "#7fnz2s",
-      "name": "259e9dd Vendor libraries, add CSP, verify N…",
-      "x": 74,
-      "y": 426,
-      "link": "https://github.com/melvincarvalho/anagram/commit/259e9dd",
-      "bgColor": "#fbe8d3",
-      "parent": "#wzv4c3"
+      "name": "1214529 Page history per relay; fetch activ…",
+      "x": -471,
+      "y": 294,
+      "link": "https://github.com/melvincarvalho/anagram/commit/1214529",
+      "bgColor": "#fce3f3",
+      "parent": "#aurbbn"
     },
     {
       "@id": "#p89exh",
-      "name": "67afed6 Harden accounts, blocking and conta…",
-      "x": -75,
-      "y": 497,
-      "link": "https://github.com/melvincarvalho/anagram/commit/67afed6",
-      "bgColor": "#fbe8d3",
-      "parent": "#wzv4c3"
+      "name": "7bb977a README: correct the not-yet-include…",
+      "x": -464,
+      "y": 158,
+      "link": "https://github.com/melvincarvalho/anagram/commit/7bb977a",
+      "bgColor": "#fce3f3",
+      "parent": "#aurbbn"
     },
     {
       "@id": "#urtpxv",
-      "name": "13095f6 Make edits consistent with Anagram",
-      "x": -194,
-      "y": 362,
-      "link": "https://github.com/melvincarvalho/anagram/commit/13095f6",
-      "bgColor": "#fbe8d3",
-      "parent": "#wzv4c3"
+      "name": "Mon 19 Oct · 15–20 of 20",
+      "x": -172,
+      "y": -154,
+      "bgColor": "#acd5ff",
+      "parent": "#this"
     },
     {
       "@id": "#4dg5c4",
-      "name": "ef85e67 Fix false ✓, lost DMs and dropped D…",
-      "x": -366,
-      "y": 408,
-      "link": "https://github.com/melvincarvalho/anagram/commit/ef85e67",
+      "name": "259e9dd Vendor libraries, add CSP, verify N…",
+      "x": -491,
+      "y": -80,
+      "link": "https://github.com/melvincarvalho/anagram/commit/259e9dd",
       "bgColor": "#fbe8d3",
-      "parent": "#wzv4c3"
+      "parent": "#urtpxv"
     },
     {
       "@id": "#kwm3he",
-      "name": "8501580 Light/dark theme toggle",
-      "x": -394,
-      "y": 261,
-      "link": "https://github.com/melvincarvalho/anagram/commit/8501580",
+      "name": "67afed6 Harden accounts, blocking and conta…",
+      "x": -530,
+      "y": -220,
+      "link": "https://github.com/melvincarvalho/anagram/commit/67afed6",
       "bgColor": "#fbe8d3",
-      "parent": "#wzv4c3"
+      "parent": "#urtpxv"
     },
     {
       "@id": "#qvd9cw",
-      "name": "e990780 Multiple accounts with quick switch…",
-      "x": -538,
-      "y": 205,
-      "link": "https://github.com/melvincarvalho/anagram/commit/e990780",
+      "name": "13095f6 Make edits consistent with Anagram",
+      "x": -378,
+      "y": -278,
+      "link": "https://github.com/melvincarvalho/anagram/commit/13095f6",
       "bgColor": "#fbe8d3",
-      "parent": "#wzv4c3"
+      "parent": "#urtpxv"
     },
     {
       "@id": "#sf37xb",
+      "name": "ef85e67 Fix false ✓, lost DMs and dropped D…",
+      "x": -332,
+      "y": -432,
+      "link": "https://github.com/melvincarvalho/anagram/commit/ef85e67",
+      "bgColor": "#fbe8d3",
+      "parent": "#urtpxv"
+    },
+    {
+      "@id": "#fuhjpf",
+      "name": "8501580 Light/dark theme toggle",
+      "x": -180,
+      "y": -388,
+      "link": "https://github.com/melvincarvalho/anagram/commit/8501580",
+      "bgColor": "#fbe8d3",
+      "parent": "#urtpxv"
+    },
+    {
+      "@id": "#dry8wx",
+      "name": "e990780 Multiple accounts with quick switch…",
+      "x": -81,
+      "y": -497,
+      "link": "https://github.com/melvincarvalho/anagram/commit/e990780",
+      "bgColor": "#fbe8d3",
+      "parent": "#urtpxv"
+    },
+    {
+      "@id": "#rmckuv",
       "name": "← anagram",
-      "x": -259,
-      "y": 14,
+      "x": 81,
+      "y": -201,
       "link": "./index.jsonld",
       "bgColor": "#ececec",
       "parent": "#this"

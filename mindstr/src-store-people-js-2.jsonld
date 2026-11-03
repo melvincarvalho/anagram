@@ -1,0 +1,269 @@
+{
+  "@context": {
+    "@vocab": "https://mindstr.org/ns#",
+    "link": {
+      "@type": "@id"
+    },
+    "parent": {
+      "@type": "@id"
+    }
+  },
+  "version": "0.2",
+  "nodes": [
+    {
+      "@id": "#this",
+      "name": "people.js · exports 16–30 of 30",
+      "x": 0,
+      "y": 0,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/people.js",
+      "bgColor": "#ebc573"
+    },
+    {
+      "@id": "#ba2cgp",
+      "name": "exports 1/3",
+      "x": 257,
+      "y": -43,
+      "bgColor": "#acd5ff",
+      "parent": "#this"
+    },
+    {
+      "@id": "#h7ym9k",
+      "name": "resolveDid()",
+      "x": 359,
+      "y": -296,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/people.js#L217",
+      "bgColor": "#daeeff",
+      "parent": "#ba2cgp"
+    },
+    {
+      "@id": "#ius84b",
+      "name": "nip05Verified()",
+      "x": 521,
+      "y": -235,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/people.js#L241",
+      "bgColor": "#daeeff",
+      "parent": "#ba2cgp"
+    },
+    {
+      "@id": "#583aqh",
+      "name": "verifyNip05Now()",
+      "x": 490,
+      "y": -86,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/people.js#L248",
+      "bgColor": "#daeeff",
+      "parent": "#ba2cgp"
+    },
+    {
+      "@id": "#sbf4ee",
+      "name": "verifiedNip05()",
+      "x": 588,
+      "y": 40,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/people.js#L257",
+      "bgColor": "#daeeff",
+      "parent": "#ba2cgp"
+    },
+    {
+      "@id": "#t6q67m",
+      "name": "nip05State()",
+      "x": 467,
+      "y": 151,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/people.js#L267",
+      "bgColor": "#daeeff",
+      "parent": "#ba2cgp"
+    },
+    {
+      "@id": "#abq85r",
+      "name": "exports 2/3",
+      "x": 1,
+      "y": 212,
+      "bgColor": "#f3bee1",
+      "parent": "#this"
+    },
+    {
+      "@id": "#sy2ncx",
+      "name": "saveProfile()",
+      "x": 294,
+      "y": 343,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/people.js#L277",
+      "bgColor": "#fce3f3",
+      "parent": "#abq85r"
+    },
+    {
+      "@id": "#fertai",
+      "name": "setUpNewAccount()",
+      "x": 188,
+      "y": 475,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/people.js#L299",
+      "bgColor": "#fce3f3",
+      "parent": "#abq85r"
+    },
+    {
+      "@id": "#9u36xp",
+      "name": "publishDefaultInbox()",
+      "x": 1,
+      "y": 425,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/people.js#L303",
+      "bgColor": "#fce3f3",
+      "parent": "#abq85r"
+    },
+    {
+      "@id": "#5q2nc4",
+      "name": "saveInboxRelays()",
+      "x": -185,
+      "y": 476,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/people.js#L309",
+      "bgColor": "#fce3f3",
+      "parent": "#abq85r"
+    },
+    {
+      "@id": "#eegh3a",
+      "name": "relayDirectory()",
+      "x": -292,
+      "y": 345,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/people.js#L323",
+      "bgColor": "#fce3f3",
+      "parent": "#abq85r"
+    },
+    {
+      "@id": "#tmtdcb",
+      "name": "exports 3/3",
+      "x": -258,
+      "y": -48,
+      "bgColor": "#f1c99c",
+      "parent": "#this"
+    },
+    {
+      "@id": "#ziixui",
+      "name": "loadRelayDirectory()",
+      "x": -469,
+      "y": 146,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/people.js#L324",
+      "bgColor": "#fbe8d3",
+      "parent": "#tmtdcb"
+    },
+    {
+      "@id": "#qnf7j2",
+      "name": "addContact()",
+      "x": -589,
+      "y": 27,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/people.js#L353",
+      "bgColor": "#fbe8d3",
+      "parent": "#tmtdcb"
+    },
+    {
+      "@id": "#rx55k2",
+      "name": "conversations()",
+      "x": -486,
+      "y": -100,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/people.js#L374",
+      "bgColor": "#fbe8d3",
+      "parent": "#tmtdcb"
+    },
+    {
+      "@id": "#ux93wm",
+      "name": "chatList()",
+      "x": -510,
+      "y": -252,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/people.js#L383",
+      "bgColor": "#fbe8d3",
+      "parent": "#tmtdcb"
+    },
+    {
+      "@id": "#a464iu",
+      "name": "requests()",
+      "x": -342,
+      "y": -310,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/people.js#L384",
+      "bgColor": "#fbe8d3",
+      "parent": "#tmtdcb"
+    },
+    {
+      "@id": "#simp87",
+      "name": "← people.js",
+      "x": 7,
+      "y": -212,
+      "link": "./src-store-people-js.jsonld",
+      "bgColor": "#ececec",
+      "parent": "#this"
+    }
+  ],
+  "connections": [
+    {
+      "start": 0,
+      "end": 1
+    },
+    {
+      "start": 1,
+      "end": 2
+    },
+    {
+      "start": 1,
+      "end": 3
+    },
+    {
+      "start": 1,
+      "end": 4
+    },
+    {
+      "start": 1,
+      "end": 5
+    },
+    {
+      "start": 1,
+      "end": 6
+    },
+    {
+      "start": 0,
+      "end": 7
+    },
+    {
+      "start": 7,
+      "end": 8
+    },
+    {
+      "start": 7,
+      "end": 9
+    },
+    {
+      "start": 7,
+      "end": 10
+    },
+    {
+      "start": 7,
+      "end": 11
+    },
+    {
+      "start": 7,
+      "end": 12
+    },
+    {
+      "start": 0,
+      "end": 13
+    },
+    {
+      "start": 13,
+      "end": 14
+    },
+    {
+      "start": 13,
+      "end": 15
+    },
+    {
+      "start": 13,
+      "end": 16
+    },
+    {
+      "start": 13,
+      "end": 17
+    },
+    {
+      "start": 13,
+      "end": 18
+    },
+    {
+      "start": 0,
+      "end": 19
+    }
+  ],
+  "selectedNode": 0
+}

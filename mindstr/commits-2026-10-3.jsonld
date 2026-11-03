@@ -19,214 +19,214 @@
       "bgColor": "#ebc573"
     },
     {
-      "@id": "#2fzfhg",
+      "@id": "#z5cumb",
       "name": "Tue 20 Oct · 7",
-      "x": -136,
-      "y": -237,
+      "x": 310,
+      "y": 7,
       "bgColor": "#acd5ff",
       "parent": "#this"
     },
     {
-      "@id": "#6ab87r",
+      "@id": "#7iejm3",
       "name": "bb815d2 Keep newly received direct conversa…",
-      "x": -476,
-      "y": -131,
+      "x": 367,
+      "y": -289,
       "link": "https://github.com/melvincarvalho/anagram/commit/bb815d2",
       "bgColor": "#daeeff",
-      "parent": "#2fzfhg"
-    },
-    {
-      "@id": "#uyfscv",
-      "name": "1ee756b Keep messaging errors in plain lang…",
-      "x": -493,
-      "y": -275,
-      "link": "https://github.com/melvincarvalho/anagram/commit/1ee756b",
-      "bgColor": "#daeeff",
-      "parent": "#2fzfhg"
-    },
-    {
-      "@id": "#z5cumb",
-      "name": "56d522a Share an Iris relay for double-ratc…",
-      "x": -330,
-      "y": -319,
-      "link": "https://github.com/melvincarvalho/anagram/commit/56d522a",
-      "bgColor": "#daeeff",
-      "parent": "#2fzfhg"
-    },
-    {
-      "@id": "#7iejm3",
-      "name": "a747e32 Keep encryption protocol names in c…",
-      "x": -258,
-      "y": -471,
-      "link": "https://github.com/melvincarvalho/anagram/commit/a747e32",
-      "bgColor": "#daeeff",
-      "parent": "#2fzfhg"
+      "parent": "#z5cumb"
     },
     {
       "@id": "#452y5w",
-      "name": "c1da3a9 Merge upstream accessibility and re…",
-      "x": -92,
-      "y": -427,
-      "link": "https://github.com/melvincarvalho/anagram/commit/c1da3a9",
+      "name": "1ee756b Keep messaging errors in plain lang…",
+      "x": 521,
+      "y": -236,
+      "link": "https://github.com/melvincarvalho/anagram/commit/1ee756b",
       "bgColor": "#daeeff",
-      "parent": "#2fzfhg"
+      "parent": "#z5cumb"
     },
     {
       "@id": "#yyjnxk",
-      "name": "2675516 Prefer double ratchet for compatibl…",
-      "x": 49,
-      "y": -515,
-      "link": "https://github.com/melvincarvalho/anagram/commit/2675516",
+      "name": "56d522a Share an Iris relay for double-ratc…",
+      "x": 487,
+      "y": -97,
+      "link": "https://github.com/melvincarvalho/anagram/commit/56d522a",
       "bgColor": "#daeeff",
-      "parent": "#2fzfhg"
+      "parent": "#z5cumb"
     },
     {
       "@id": "#hrvxpy",
-      "name": "ba94c1e Merge upstream room caching and opt…",
-      "x": 172,
-      "y": -381,
-      "link": "https://github.com/melvincarvalho/anagram/commit/ba94c1e",
+      "name": "a747e32 Keep encryption protocol names in c…",
+      "x": 590,
+      "y": 13,
+      "link": "https://github.com/melvincarvalho/anagram/commit/a747e32",
       "bgColor": "#daeeff",
-      "parent": "#2fzfhg"
+      "parent": "#z5cumb"
     },
     {
       "@id": "#hzsqn4",
-      "name": "Mon 19 Oct · 1–7 of 13",
-      "x": 309,
-      "y": 26,
-      "bgColor": "#f3bee1",
-      "parent": "#this"
+      "name": "c1da3a9 Merge upstream accessibility and re…",
+      "x": 480,
+      "y": 119,
+      "link": "https://github.com/melvincarvalho/anagram/commit/c1da3a9",
+      "bgColor": "#daeeff",
+      "parent": "#z5cumb"
     },
     {
       "@id": "#dttxwc",
-      "name": "33874ee Keyboard shortcuts and accessibility",
-      "x": 409,
-      "y": -244,
-      "link": "https://github.com/melvincarvalho/anagram/commit/33874ee",
-      "bgColor": "#fce3f3",
-      "parent": "#hzsqn4"
+      "name": "2675516 Prefer double ratchet for compatibl…",
+      "x": 506,
+      "y": 258,
+      "link": "https://github.com/melvincarvalho/anagram/commit/2675516",
+      "bgColor": "#daeeff",
+      "parent": "#z5cumb"
     },
     {
       "@id": "#p8ysyk",
-      "name": "59b9328 Big emoji, @ badge, mark all read",
-      "x": 554,
-      "y": -173,
-      "link": "https://github.com/melvincarvalho/anagram/commit/59b9328",
-      "bgColor": "#fce3f3",
-      "parent": "#hzsqn4"
+      "name": "ba94c1e Merge upstream room caching and opt…",
+      "x": 349,
+      "y": 305,
+      "link": "https://github.com/melvincarvalho/anagram/commit/ba94c1e",
+      "bgColor": "#daeeff",
+      "parent": "#z5cumb"
     },
     {
       "@id": "#9c2qhr",
-      "name": "b06fd39 Fetch missing reply targets; jump t…",
-      "x": 498,
-      "y": -39,
-      "link": "https://github.com/melvincarvalho/anagram/commit/b06fd39",
-      "bgColor": "#fce3f3",
-      "parent": "#hzsqn4"
-    },
-    {
-      "@id": "#h59t8f",
-      "name": "bdae2ca Add optional Iris-compatible double…",
-      "x": 581,
-      "y": 88,
-      "link": "https://github.com/melvincarvalho/anagram/commit/bdae2ca",
-      "bgColor": "#fce3f3",
-      "parent": "#hzsqn4"
-    },
-    {
-      "@id": "#rfby2g",
-      "name": "597cfe4 @mention autocomplete",
-      "x": 460,
-      "y": 167,
-      "link": "https://github.com/melvincarvalho/anagram/commit/597cfe4",
-      "bgColor": "#fce3f3",
-      "parent": "#hzsqn4"
-    },
-    {
-      "@id": "#arxjt8",
-      "name": "e9779e3 Keep room history on the device",
-      "x": 481,
-      "y": 278,
-      "link": "https://github.com/melvincarvalho/anagram/commit/e9779e3",
-      "bgColor": "#fce3f3",
-      "parent": "#hzsqn4"
-    },
-    {
-      "@id": "#jtyjdw",
-      "name": "7de2a39 Connection status banner",
-      "x": 334,
-      "y": 324,
-      "link": "https://github.com/melvincarvalho/anagram/commit/7de2a39",
-      "bgColor": "#fce3f3",
-      "parent": "#hzsqn4"
-    },
-    {
-      "@id": "#dtqx4z",
-      "name": "Mon 19 Oct · 8–13 of 13",
-      "x": -117,
-      "y": 188,
+      "name": "Mon 19 Oct · 1–7 of 13",
+      "x": -147,
+      "y": 232,
       "bgColor": "#f3bee1",
       "parent": "#this"
     },
     {
+      "@id": "#h59t8f",
+      "name": "33874ee Keyboard shortcuts and accessibility",
+      "x": 93,
+      "y": 432,
+      "link": "https://github.com/melvincarvalho/anagram/commit/33874ee",
+      "bgColor": "#fce3f3",
+      "parent": "#9c2qhr"
+    },
+    {
+      "@id": "#rfby2g",
+      "name": "59b9328 Big emoji, @ badge, mark all read",
+      "x": -36,
+      "y": 501,
+      "link": "https://github.com/melvincarvalho/anagram/commit/59b9328",
+      "bgColor": "#fce3f3",
+      "parent": "#9c2qhr"
+    },
+    {
+      "@id": "#arxjt8",
+      "name": "b06fd39 Fetch missing reply targets; jump t…",
+      "x": -153,
+      "y": 383,
+      "link": "https://github.com/melvincarvalho/anagram/commit/b06fd39",
+      "bgColor": "#fce3f3",
+      "parent": "#9c2qhr"
+    },
+    {
+      "@id": "#jtyjdw",
+      "name": "bdae2ca Add optional Iris-compatible double…",
+      "x": -318,
+      "y": 429,
+      "link": "https://github.com/melvincarvalho/anagram/commit/bdae2ca",
+      "bgColor": "#fce3f3",
+      "parent": "#9c2qhr"
+    },
+    {
+      "@id": "#dtqx4z",
+      "name": "597cfe4 @mention autocomplete",
+      "x": -354,
+      "y": 313,
+      "link": "https://github.com/melvincarvalho/anagram/commit/597cfe4",
+      "bgColor": "#fce3f3",
+      "parent": "#9c2qhr"
+    },
+    {
       "@id": "#u2s2vv",
-      "name": "cd7a86c Optimistic reactions, edits and del…",
-      "x": 90,
-      "y": 427,
-      "link": "https://github.com/melvincarvalho/anagram/commit/cd7a86c",
-      "bgColor": "#fbe8d3",
-      "parent": "#dtqx4z"
+      "name": "e9779e3 Keep room history on the device",
+      "x": -494,
+      "y": 267,
+      "link": "https://github.com/melvincarvalho/anagram/commit/e9779e3",
+      "bgColor": "#fce3f3",
+      "parent": "#9c2qhr"
     },
     {
       "@id": "#vx2z65",
-      "name": "d2cdfad did:nostr share links: nostr.chat/d…",
-      "x": -51,
-      "y": 500,
-      "link": "https://github.com/melvincarvalho/anagram/commit/d2cdfad",
-      "bgColor": "#fbe8d3",
-      "parent": "#dtqx4z"
+      "name": "7de2a39 Connection status banner",
+      "x": -467,
+      "y": 151,
+      "link": "https://github.com/melvincarvalho/anagram/commit/7de2a39",
+      "bgColor": "#fce3f3",
+      "parent": "#9c2qhr"
     },
     {
       "@id": "#xwei9g",
-      "name": "901408f Show the did:nostr identity in chat…",
-      "x": -174,
-      "y": 374,
-      "link": "https://github.com/melvincarvalho/anagram/commit/901408f",
-      "bgColor": "#fbe8d3",
-      "parent": "#dtqx4z"
+      "name": "Mon 19 Oct · 8–13 of 13",
+      "x": -173,
+      "y": -153,
+      "bgColor": "#f3bee1",
+      "parent": "#this"
     },
     {
       "@id": "#6bzs4i",
-      "name": "0d7dddc New message screen: people search,…",
-      "x": -343,
-      "y": 418,
-      "link": "https://github.com/melvincarvalho/anagram/commit/0d7dddc",
+      "name": "cd7a86c Optimistic reactions, edits and del…",
+      "x": -493,
+      "y": -69,
+      "link": "https://github.com/melvincarvalho/anagram/commit/cd7a86c",
       "bgColor": "#fbe8d3",
-      "parent": "#dtqx4z"
+      "parent": "#xwei9g"
     },
     {
       "@id": "#fkywkd",
-      "name": "ee4931a Load profiles from nostr.social's s…",
-      "x": -387,
-      "y": 269,
-      "link": "https://github.com/melvincarvalho/anagram/commit/ee4931a",
+      "name": "d2cdfad did:nostr share links: nostr.chat/d…",
+      "x": -539,
+      "y": -205,
+      "link": "https://github.com/melvincarvalho/anagram/commit/d2cdfad",
       "bgColor": "#fbe8d3",
-      "parent": "#dtqx4z"
+      "parent": "#xwei9g"
     },
     {
       "@id": "#j8deiz",
-      "name": "4023fd5 Resolve did:nostr documents via nos…",
-      "x": -540,
-      "y": 203,
-      "link": "https://github.com/melvincarvalho/anagram/commit/4023fd5",
+      "name": "901408f Show the did:nostr identity in chat…",
+      "x": -389,
+      "y": -267,
+      "link": "https://github.com/melvincarvalho/anagram/commit/901408f",
       "bgColor": "#fbe8d3",
-      "parent": "#dtqx4z"
+      "parent": "#xwei9g"
     },
     {
       "@id": "#aya9s9",
+      "name": "0d7dddc New message screen: people search,…",
+      "x": -351,
+      "y": -427,
+      "link": "https://github.com/melvincarvalho/anagram/commit/0d7dddc",
+      "bgColor": "#fbe8d3",
+      "parent": "#xwei9g"
+    },
+    {
+      "@id": "#vn2imx",
+      "name": "ee4931a Load profiles from nostr.social's s…",
+      "x": -187,
+      "y": -381,
+      "link": "https://github.com/melvincarvalho/anagram/commit/ee4931a",
+      "bgColor": "#fbe8d3",
+      "parent": "#xwei9g"
+    },
+    {
+      "@id": "#2tznvh",
+      "name": "4023fd5 Resolve did:nostr documents via nos…",
+      "x": -74,
+      "y": -498,
+      "link": "https://github.com/melvincarvalho/anagram/commit/4023fd5",
+      "bgColor": "#fbe8d3",
+      "parent": "#xwei9g"
+    },
+    {
+      "@id": "#cnh2fk",
       "name": "← anagram",
-      "x": -259,
-      "y": 14,
+      "x": 83,
+      "y": -201,
       "link": "./index.jsonld",
       "bgColor": "#ececec",
       "parent": "#this"

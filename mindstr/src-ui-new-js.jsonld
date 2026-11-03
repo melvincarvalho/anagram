@@ -1,0 +1,76 @@
+{
+  "@context": {
+    "@vocab": "https://mindstr.org/ns#",
+    "link": {
+      "@type": "@id"
+    },
+    "parent": {
+      "@type": "@id"
+    }
+  },
+  "version": "0.2",
+  "nodes": [
+    {
+      "@id": "#this",
+      "name": "new.js",
+      "x": 0,
+      "y": 0,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/new.js",
+      "bgColor": "#ebc573"
+    },
+    {
+      "@id": "#3g77sx",
+      "name": "exports",
+      "x": 250,
+      "y": 0,
+      "bgColor": "#acd5ff",
+      "parent": "#this"
+    },
+    {
+      "@id": "#ucs9ug",
+      "name": "NewThing()",
+      "x": 500,
+      "y": 0,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/new.js#L67",
+      "bgColor": "#daeeff",
+      "parent": "#3g77sx"
+    },
+    {
+      "@id": "#tse2je",
+      "name": "107 lines",
+      "x": -125,
+      "y": 184,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/new.js",
+      "bgColor": "#ececec",
+      "parent": "#this"
+    },
+    {
+      "@id": "#cvh8ee",
+      "name": "← ui",
+      "x": -125,
+      "y": -184,
+      "link": "./src-ui.jsonld",
+      "bgColor": "#ececec",
+      "parent": "#this"
+    }
+  ],
+  "connections": [
+    {
+      "start": 0,
+      "end": 1
+    },
+    {
+      "start": 1,
+      "end": 2
+    },
+    {
+      "start": 0,
+      "end": 3
+    },
+    {
+      "start": 0,
+      "end": 4
+    }
+  ],
+  "selectedNode": 0
+}

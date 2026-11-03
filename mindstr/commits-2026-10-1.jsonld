@@ -19,222 +19,222 @@
       "bgColor": "#ebc573"
     },
     {
-      "@id": "#ab9ysn",
+      "@id": "#j9h6ge",
       "name": "Wed 21 Oct · 2",
-      "x": -238,
-      "y": -64,
+      "x": 183,
+      "y": -145,
       "bgColor": "#acd5ff",
       "parent": "#this"
     },
     {
-      "@id": "#qhtzie",
+      "@id": "#ejt2c7",
       "name": "454112d AUTH warning names the relay; note…",
-      "x": -492,
-      "y": -75,
+      "x": 320,
+      "y": -335,
       "link": "https://github.com/melvincarvalho/anagram/commit/454112d",
       "bgColor": "#daeeff",
-      "parent": "#ab9ysn"
-    },
-    {
-      "@id": "#2sgmjt",
-      "name": "0aacad5 Stabilisation: frame guard, group-D…",
-      "x": -535,
-      "y": -211,
-      "link": "https://github.com/melvincarvalho/anagram/commit/0aacad5",
-      "bgColor": "#daeeff",
-      "parent": "#ab9ysn"
-    },
-    {
-      "@id": "#j9h6ge",
-      "name": "Tue 20 Oct · 1–6 of 18",
-      "x": -9,
-      "y": -212,
-      "bgColor": "#e9c1ef",
-      "parent": "#this"
-    },
-    {
-      "@id": "#ejt2c7",
-      "name": "6333096 Docs: describe NIP-98-style HTTP as…",
-      "x": -314,
-      "y": -331,
-      "link": "https://github.com/melvincarvalho/anagram/commit/6333096",
-      "bgColor": "#f7e4f9",
       "parent": "#j9h6ge"
     },
     {
       "@id": "#tvx8v7",
-      "name": "2ec0722 Split app.js into js/ui/ by feature…",
-      "x": -240,
-      "y": -463,
-      "link": "https://github.com/melvincarvalho/anagram/commit/2ec0722",
-      "bgColor": "#f7e4f9",
+      "name": "0aacad5 Stabilisation: frame guard, group-D…",
+      "x": 477,
+      "y": -291,
+      "link": "https://github.com/melvincarvalho/anagram/commit/0aacad5",
+      "bgColor": "#daeeff",
       "parent": "#j9h6ge"
     },
     {
       "@id": "#4bfmpa",
-      "name": "9720c8a Split store.js into js/store/ by fe…",
-      "x": -79,
-      "y": -419,
-      "link": "https://github.com/melvincarvalho/anagram/commit/9720c8a",
-      "bgColor": "#f7e4f9",
-      "parent": "#j9h6ge"
+      "name": "Tue 20 Oct · 1–6 of 18",
+      "x": 227,
+      "y": 88,
+      "bgColor": "#e9c1ef",
+      "parent": "#this"
     },
     {
       "@id": "#c2mpq8",
-      "name": "cd03d9b Sounds: distinct bells for DMs, roo…",
-      "x": 59,
-      "y": -509,
-      "link": "https://github.com/melvincarvalho/anagram/commit/cd03d9b",
+      "name": "6333096 Docs: describe NIP-98-style HTTP as…",
+      "x": 491,
+      "y": -80,
+      "link": "https://github.com/melvincarvalho/anagram/commit/6333096",
       "bgColor": "#f7e4f9",
-      "parent": "#j9h6ge"
+      "parent": "#4bfmpa"
     },
     {
       "@id": "#yykmee",
-      "name": "d1cce1d Rooms: sender name and avatar open…",
-      "x": 175,
-      "y": -375,
-      "link": "https://github.com/melvincarvalho/anagram/commit/d1cce1d",
+      "name": "2ec0722 Split app.js into js/ui/ by feature…",
+      "x": 589,
+      "y": 30,
+      "link": "https://github.com/melvincarvalho/anagram/commit/2ec0722",
       "bgColor": "#f7e4f9",
-      "parent": "#j9h6ge"
+      "parent": "#4bfmpa"
     },
     {
       "@id": "#7kgwkb",
-      "name": "123250f Say what multi-device really means…",
-      "x": 340,
-      "y": -419,
-      "link": "https://github.com/melvincarvalho/anagram/commit/123250f",
+      "name": "9720c8a Split store.js into js/store/ by fe…",
+      "x": 476,
+      "y": 132,
+      "link": "https://github.com/melvincarvalho/anagram/commit/9720c8a",
       "bgColor": "#f7e4f9",
-      "parent": "#j9h6ge"
+      "parent": "#4bfmpa"
     },
     {
       "@id": "#x7t4w7",
-      "name": "Tue 20 Oct · 7–12 of 18",
-      "x": 230,
-      "y": 64,
-      "bgColor": "#e9c1ef",
-      "parent": "#this"
+      "name": "cd03d9b Sounds: distinct bells for DMs, roo…",
+      "x": 500,
+      "y": 264,
+      "link": "https://github.com/melvincarvalho/anagram/commit/cd03d9b",
+      "bgColor": "#f7e4f9",
+      "parent": "#4bfmpa"
     },
     {
       "@id": "#dsw684",
-      "name": "536013f docs/SPEC.md: the nostr.chat intero…",
-      "x": 460,
-      "y": -167,
-      "link": "https://github.com/melvincarvalho/anagram/commit/536013f",
-      "bgColor": "#ffe3dc",
-      "parent": "#x7t4w7"
+      "name": "d1cce1d Rooms: sender name and avatar open…",
+      "x": 346,
+      "y": 308,
+      "link": "https://github.com/melvincarvalho/anagram/commit/d1cce1d",
+      "bgColor": "#f7e4f9",
+      "parent": "#4bfmpa"
     },
     {
       "@id": "#v88t4a",
-      "name": "3fc6f0c Room links as plain text, composer…",
-      "x": 584,
-      "y": -73,
-      "link": "https://github.com/melvincarvalho/anagram/commit/3fc6f0c",
-      "bgColor": "#ffe3dc",
-      "parent": "#x7t4w7"
+      "name": "123250f Say what multi-device really means…",
+      "x": 292,
+      "y": 481,
+      "link": "https://github.com/melvincarvalho/anagram/commit/123250f",
+      "bgColor": "#f7e4f9",
+      "parent": "#4bfmpa"
     },
     {
       "@id": "#skzt29",
-      "name": "5897b7c Landing: one line on interoperable…",
-      "x": 519,
-      "y": 46,
-      "link": "https://github.com/melvincarvalho/anagram/commit/5897b7c",
-      "bgColor": "#ffe3dc",
-      "parent": "#x7t4w7"
-    },
-    {
-      "@id": "#t4pwzt",
-      "name": "684c780 Critic pass on the double-ratchet i…",
-      "x": 551,
-      "y": 179,
-      "link": "https://github.com/melvincarvalho/anagram/commit/684c780",
-      "bgColor": "#ffe3dc",
-      "parent": "#x7t4w7"
-    },
-    {
-      "@id": "#jhaa84",
-      "name": "5878662 Landing page around the sign-in card",
-      "x": 405,
-      "y": 249,
-      "link": "https://github.com/melvincarvalho/anagram/commit/5878662",
-      "bgColor": "#ffe3dc",
-      "parent": "#x7t4w7"
-    },
-    {
-      "@id": "#wavvy9",
-      "name": "487f6b5 Double ratchet: ask before register…",
-      "x": 373,
-      "y": 383,
-      "link": "https://github.com/melvincarvalho/anagram/commit/487f6b5",
-      "bgColor": "#ffe3dc",
-      "parent": "#x7t4w7"
-    },
-    {
-      "@id": "#i9w3v4",
-      "name": "Tue 20 Oct · 13–18 of 18",
-      "x": -124,
-      "y": 185,
+      "name": "Tue 20 Oct · 7–12 of 18",
+      "x": -148,
+      "y": 171,
       "bgColor": "#e9c1ef",
       "parent": "#this"
     },
     {
+      "@id": "#t4pwzt",
+      "name": "536013f docs/SPEC.md: the nostr.chat intero…",
+      "x": -7,
+      "y": 435,
+      "link": "https://github.com/melvincarvalho/anagram/commit/536013f",
+      "bgColor": "#ffe3dc",
+      "parent": "#skzt29"
+    },
+    {
+      "@id": "#jhaa84",
+      "name": "3fc6f0c Room links as plain text, composer…",
+      "x": -153,
+      "y": 484,
+      "link": "https://github.com/melvincarvalho/anagram/commit/3fc6f0c",
+      "bgColor": "#ffe3dc",
+      "parent": "#skzt29"
+    },
+    {
+      "@id": "#wavvy9",
+      "name": "5897b7c Landing: one line on interoperable…",
+      "x": -243,
+      "y": 390,
+      "link": "https://github.com/melvincarvalho/anagram/commit/5897b7c",
+      "bgColor": "#ffe3dc",
+      "parent": "#skzt29"
+    },
+    {
+      "@id": "#i9w3v4",
+      "name": "684c780 Critic pass on the double-ratchet i…",
+      "x": -404,
+      "y": 346,
+      "link": "https://github.com/melvincarvalho/anagram/commit/684c780",
+      "bgColor": "#ffe3dc",
+      "parent": "#skzt29"
+    },
+    {
       "@id": "#e9sufn",
-      "name": "feaa5da Merge pull request #1 from mmalmi/c…",
-      "x": 64,
-      "y": 430,
-      "link": "https://github.com/melvincarvalho/anagram/commit/feaa5da",
-      "bgColor": "#eeedd3",
-      "parent": "#i9w3v4"
+      "name": "5878662 Landing page around the sign-in card",
+      "x": -422,
+      "y": 228,
+      "link": "https://github.com/melvincarvalho/anagram/commit/5878662",
+      "bgColor": "#ffe3dc",
+      "parent": "#skzt29"
     },
     {
       "@id": "#g45zx9",
-      "name": "1bc6f9d Merge upstream relay transport and…",
-      "x": -76,
-      "y": 497,
-      "link": "https://github.com/melvincarvalho/anagram/commit/1bc6f9d",
-      "bgColor": "#eeedd3",
-      "parent": "#i9w3v4"
+      "name": "487f6b5 Double ratchet: ask before register…",
+      "x": -561,
+      "y": 156,
+      "link": "https://github.com/melvincarvalho/anagram/commit/487f6b5",
+      "bgColor": "#ffe3dc",
+      "parent": "#skzt29"
     },
     {
       "@id": "#vz8rhu",
-      "name": "fdd692f Keep encryption details in chat inf…",
-      "x": -188,
-      "y": 367,
-      "link": "https://github.com/melvincarvalho/anagram/commit/fdd692f",
-      "bgColor": "#eeedd3",
-      "parent": "#i9w3v4"
+      "name": "Tue 20 Oct · 13–18 of 18",
+      "x": -167,
+      "y": -158,
+      "bgColor": "#e9c1ef",
+      "parent": "#this"
     },
     {
       "@id": "#35gtrs",
-      "name": "cea2c38 Transport layer: one module talks t…",
-      "x": -355,
-      "y": 413,
-      "link": "https://github.com/melvincarvalho/anagram/commit/cea2c38",
+      "name": "feaa5da Merge pull request #1 from mmalmi/c…",
+      "x": -488,
+      "y": -92,
+      "link": "https://github.com/melvincarvalho/anagram/commit/feaa5da",
       "bgColor": "#eeedd3",
-      "parent": "#i9w3v4"
+      "parent": "#vz8rhu"
     },
     {
       "@id": "#fiqrfa",
-      "name": "28ff68e Sync read marks, pins, mutes and hi…",
-      "x": -394,
-      "y": 262,
-      "link": "https://github.com/melvincarvalho/anagram/commit/28ff68e",
+      "name": "1bc6f9d Merge upstream relay transport and…",
+      "x": -527,
+      "y": -225,
+      "link": "https://github.com/melvincarvalho/anagram/commit/1bc6f9d",
       "bgColor": "#eeedd3",
-      "parent": "#i9w3v4"
+      "parent": "#vz8rhu"
     },
     {
       "@id": "#fad69b",
-      "name": "ecb25f4 Sidebar long-press, app icon badge,…",
-      "x": -543,
-      "y": 197,
-      "link": "https://github.com/melvincarvalho/anagram/commit/ecb25f4",
+      "name": "fdd692f Keep encryption details in chat inf…",
+      "x": -378,
+      "y": -278,
+      "link": "https://github.com/melvincarvalho/anagram/commit/fdd692f",
       "bgColor": "#eeedd3",
-      "parent": "#i9w3v4"
+      "parent": "#vz8rhu"
     },
     {
       "@id": "#fnrzmm",
+      "name": "cea2c38 Transport layer: one module talks t…",
+      "x": -336,
+      "y": -432,
+      "link": "https://github.com/melvincarvalho/anagram/commit/cea2c38",
+      "bgColor": "#eeedd3",
+      "parent": "#vz8rhu"
+    },
+    {
+      "@id": "#3y3s3p",
+      "name": "28ff68e Sync read marks, pins, mutes and hi…",
+      "x": -174,
+      "y": -388,
+      "link": "https://github.com/melvincarvalho/anagram/commit/28ff68e",
+      "bgColor": "#eeedd3",
+      "parent": "#vz8rhu"
+    },
+    {
+      "@id": "#ujs2ci",
+      "name": "ecb25f4 Sidebar long-press, app icon badge,…",
+      "x": -63,
+      "y": -499,
+      "link": "https://github.com/melvincarvalho/anagram/commit/ecb25f4",
+      "bgColor": "#eeedd3",
+      "parent": "#vz8rhu"
+    },
+    {
+      "@id": "#442pm7",
       "name": "← anagram",
-      "x": -254,
-      "y": 13,
+      "x": 84,
+      "y": -200,
       "link": "./index.jsonld",
       "bgColor": "#ececec",
       "parent": "#this"

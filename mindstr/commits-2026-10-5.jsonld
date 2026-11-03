@@ -19,214 +19,214 @@
       "bgColor": "#ebc573"
     },
     {
-      "@id": "#fuhjpf",
+      "@id": "#6cicry",
       "name": "Mon 19 Oct · 1–7 of 20",
-      "x": -172,
-      "y": -217,
+      "x": 313,
+      "y": -32,
       "bgColor": "#acd5ff",
       "parent": "#this"
-    },
-    {
-      "@id": "#dry8wx",
-      "name": "7dc858b Emoji picker",
-      "x": -486,
-      "y": -100,
-      "link": "https://github.com/melvincarvalho/anagram/commit/7dc858b",
-      "bgColor": "#daeeff",
-      "parent": "#fuhjpf"
-    },
-    {
-      "@id": "#rmckuv",
-      "name": "9c8637b Forward messages",
-      "x": -539,
-      "y": -204,
-      "link": "https://github.com/melvincarvalho/anagram/commit/9c8637b",
-      "bgColor": "#daeeff",
-      "parent": "#fuhjpf"
-    },
-    {
-      "@id": "#6cicry",
-      "name": "331a488 Pinned and muted chats",
-      "x": -409,
-      "y": -251,
-      "link": "https://github.com/melvincarvalho/anagram/commit/331a488",
-      "bgColor": "#daeeff",
-      "parent": "#fuhjpf"
     },
     {
       "@id": "#7c28q6",
-      "name": "0492ee3 Per-chat drafts",
-      "x": -394,
-      "y": -399,
-      "link": "https://github.com/melvincarvalho/anagram/commit/0492ee3",
+      "name": "7dc858b Emoji picker",
+      "x": 341,
+      "y": -334,
+      "link": "https://github.com/melvincarvalho/anagram/commit/7dc858b",
       "bgColor": "#daeeff",
-      "parent": "#fuhjpf"
+      "parent": "#6cicry"
     },
     {
       "@id": "#4qbh3e",
-      "name": "9774623 In-tab notifications",
-      "x": -252,
-      "y": -353,
-      "link": "https://github.com/melvincarvalho/anagram/commit/9774623",
+      "name": "9c8637b Forward messages",
+      "x": 470,
+      "y": -290,
+      "link": "https://github.com/melvincarvalho/anagram/commit/9c8637b",
       "bgColor": "#daeeff",
-      "parent": "#fuhjpf"
+      "parent": "#6cicry"
     },
     {
       "@id": "#m3xps2",
-      "name": "2eec9a3 Search across chats and within a ch…",
-      "x": -150,
-      "y": -485,
-      "link": "https://github.com/melvincarvalho/anagram/commit/2eec9a3",
+      "name": "331a488 Pinned and muted chats",
+      "x": 451,
+      "y": -184,
+      "link": "https://github.com/melvincarvalho/anagram/commit/331a488",
       "bgColor": "#daeeff",
-      "parent": "#fuhjpf"
+      "parent": "#6cicry"
     },
     {
       "@id": "#yxjf84",
-      "name": "2899aba Pick up deploys on the next reload",
-      "x": 30,
-      "y": -424,
-      "link": "https://github.com/melvincarvalho/anagram/commit/2899aba",
+      "name": "0492ee3 Per-chat drafts",
+      "x": 572,
+      "y": -123,
+      "link": "https://github.com/melvincarvalho/anagram/commit/0492ee3",
       "bgColor": "#daeeff",
-      "parent": "#fuhjpf"
+      "parent": "#6cicry"
     },
     {
       "@id": "#mrv4db",
-      "name": "Mon 19 Oct · 8–14 of 20",
-      "x": 317,
-      "y": -25,
-      "bgColor": "#acd5ff",
-      "parent": "#this"
+      "name": "9774623 In-tab notifications",
+      "x": 542,
+      "y": -23,
+      "link": "https://github.com/melvincarvalho/anagram/commit/9774623",
+      "bgColor": "#daeeff",
+      "parent": "#6cicry"
     },
     {
       "@id": "#i6483q",
-      "name": "422bbf4 Mobile polish: swipe to reply, jump…",
-      "x": 326,
-      "y": -323,
-      "link": "https://github.com/melvincarvalho/anagram/commit/422bbf4",
-      "bgColor": "#fce3f3",
-      "parent": "#mrv4db"
+      "name": "2eec9a3 Search across chats and within a ch…",
+      "x": 578,
+      "y": 102,
+      "link": "https://github.com/melvincarvalho/anagram/commit/2eec9a3",
+      "bgColor": "#daeeff",
+      "parent": "#6cicry"
     },
     {
       "@id": "#kmcrgd",
-      "name": "74d8924 Instant send with status ticks",
-      "x": 501,
-      "y": -265,
-      "link": "https://github.com/melvincarvalho/anagram/commit/74d8924",
-      "bgColor": "#fce3f3",
-      "parent": "#mrv4db"
+      "name": "2899aba Pick up deploys on the next reload",
+      "x": 437,
+      "y": 206,
+      "link": "https://github.com/melvincarvalho/anagram/commit/2899aba",
+      "bgColor": "#daeeff",
+      "parent": "#6cicry"
     },
     {
       "@id": "#ktiw89",
-      "name": "3cdea97 Chat info panel",
-      "x": 474,
-      "y": -134,
-      "link": "https://github.com/melvincarvalho/anagram/commit/3cdea97",
-      "bgColor": "#fce3f3",
-      "parent": "#mrv4db"
-    },
-    {
-      "@id": "#c74y5q",
-      "name": "8066d6c Inline images and video with a full…",
-      "x": 610,
-      "y": -34,
-      "link": "https://github.com/melvincarvalho/anagram/commit/8066d6c",
-      "bgColor": "#fce3f3",
-      "parent": "#mrv4db"
-    },
-    {
-      "@id": "#374kep",
-      "name": "8fbfd7a Unread counts",
-      "x": 492,
-      "y": 77,
-      "link": "https://github.com/melvincarvalho/anagram/commit/8fbfd7a",
-      "bgColor": "#fce3f3",
-      "parent": "#mrv4db"
-    },
-    {
-      "@id": "#ba2cgp",
-      "name": "2454a52 Edit and delete your own messages",
-      "x": 539,
-      "y": 205,
-      "link": "https://github.com/melvincarvalho/anagram/commit/2454a52",
-      "bgColor": "#fce3f3",
-      "parent": "#mrv4db"
-    },
-    {
-      "@id": "#h7ym9k",
-      "name": "229612e Reactions in rooms and DMs",
-      "x": 382,
-      "y": 274,
-      "link": "https://github.com/melvincarvalho/anagram/commit/229612e",
-      "bgColor": "#fce3f3",
-      "parent": "#mrv4db"
-    },
-    {
-      "@id": "#ius84b",
-      "name": "Mon 19 Oct · 15–20 of 20",
-      "x": -103,
-      "y": 194,
+      "name": "Mon 19 Oct · 8–14 of 20",
+      "x": -87,
+      "y": 253,
       "bgColor": "#acd5ff",
       "parent": "#this"
     },
     {
+      "@id": "#c74y5q",
+      "name": "422bbf4 Mobile polish: swipe to reply, jump…",
+      "x": 216,
+      "y": 379,
+      "link": "https://github.com/melvincarvalho/anagram/commit/422bbf4",
+      "bgColor": "#fce3f3",
+      "parent": "#ktiw89"
+    },
+    {
+      "@id": "#374kep",
+      "name": "74d8924 Instant send with status ticks",
+      "x": 92,
+      "y": 514,
+      "link": "https://github.com/melvincarvalho/anagram/commit/74d8924",
+      "bgColor": "#fce3f3",
+      "parent": "#ktiw89"
+    },
+    {
+      "@id": "#ba2cgp",
+      "name": "3cdea97 Chat info panel",
+      "x": -34,
+      "y": 424,
+      "link": "https://github.com/melvincarvalho/anagram/commit/3cdea97",
+      "bgColor": "#fce3f3",
+      "parent": "#ktiw89"
+    },
+    {
+      "@id": "#h7ym9k",
+      "name": "8066d6c Inline images and video with a full…",
+      "x": -181,
+      "y": 468,
+      "link": "https://github.com/melvincarvalho/anagram/commit/8066d6c",
+      "bgColor": "#fce3f3",
+      "parent": "#ktiw89"
+    },
+    {
+      "@id": "#ius84b",
+      "name": "8fbfd7a Unread counts",
+      "x": -260,
+      "y": 389,
+      "link": "https://github.com/melvincarvalho/anagram/commit/8fbfd7a",
+      "bgColor": "#fce3f3",
+      "parent": "#ktiw89"
+    },
+    {
       "@id": "#583aqh",
-      "name": "9d92ddb Telegram-style bubbles and message…",
-      "x": 122,
-      "y": 451,
-      "link": "https://github.com/melvincarvalho/anagram/commit/9d92ddb",
-      "bgColor": "#fbe8d3",
-      "parent": "#ius84b"
+      "name": "2454a52 Edit and delete your own messages",
+      "x": -413,
+      "y": 343,
+      "link": "https://github.com/melvincarvalho/anagram/commit/2454a52",
+      "bgColor": "#fce3f3",
+      "parent": "#ktiw89"
     },
     {
       "@id": "#sbf4ee",
-      "name": "62f8019 Render nostr:/did:nostr mentions as…",
-      "x": -44,
-      "y": 500,
-      "link": "https://github.com/melvincarvalho/anagram/commit/62f8019",
-      "bgColor": "#fbe8d3",
-      "parent": "#ius84b"
+      "name": "229612e Reactions in rooms and DMs",
+      "x": -432,
+      "y": 214,
+      "link": "https://github.com/melvincarvalho/anagram/commit/229612e",
+      "bgColor": "#fce3f3",
+      "parent": "#ktiw89"
     },
     {
       "@id": "#t6q67m",
-      "name": "0e4bda6 Link profiles to nostr.social/<did>",
-      "x": -192,
-      "y": 406,
-      "link": "https://github.com/melvincarvalho/anagram/commit/0e4bda6",
-      "bgColor": "#fbe8d3",
-      "parent": "#ius84b"
+      "name": "Mon 19 Oct · 15–20 of 20",
+      "x": -190,
+      "y": -138,
+      "bgColor": "#acd5ff",
+      "parent": "#this"
     },
     {
       "@id": "#abq85r",
-      "name": "8a71465 Anagram lite: Preact client for NIP…",
-      "x": -387,
-      "y": 361,
-      "link": "https://github.com/melvincarvalho/anagram/commit/8a71465",
+      "name": "9d92ddb Telegram-style bubbles and message…",
+      "x": -499,
+      "y": -28,
+      "link": "https://github.com/melvincarvalho/anagram/commit/9d92ddb",
       "bgColor": "#fbe8d3",
-      "parent": "#ius84b"
+      "parent": "#t6q67m"
     },
     {
       "@id": "#sy2ncx",
-      "name": "8fb36dc trail: first mark",
-      "x": -414,
-      "y": 240,
-      "link": "https://github.com/melvincarvalho/anagram/commit/8fb36dc",
+      "name": "62f8019 Render nostr:/did:nostr mentions as…",
+      "x": -550,
+      "y": -182,
+      "link": "https://github.com/melvincarvalho/anagram/commit/62f8019",
       "bgColor": "#fbe8d3",
-      "parent": "#ius84b"
+      "parent": "#t6q67m"
     },
     {
       "@id": "#fertai",
-      "name": "ab3d923 agent identity",
-      "x": -542,
-      "y": 196,
-      "link": "https://github.com/melvincarvalho/anagram/commit/ab3d923",
+      "name": "0e4bda6 Link profiles to nostr.social/<did>",
+      "x": -390,
+      "y": -266,
+      "link": "https://github.com/melvincarvalho/anagram/commit/0e4bda6",
       "bgColor": "#fbe8d3",
-      "parent": "#ius84b"
+      "parent": "#t6q67m"
     },
     {
       "@id": "#9u36xp",
+      "name": "8a71465 Anagram lite: Preact client for NIP…",
+      "x": -328,
+      "y": -435,
+      "link": "https://github.com/melvincarvalho/anagram/commit/8a71465",
+      "bgColor": "#fbe8d3",
+      "parent": "#t6q67m"
+    },
+    {
+      "@id": "#5q2nc4",
+      "name": "8fb36dc trail: first mark",
+      "x": -167,
+      "y": -391,
+      "link": "https://github.com/melvincarvalho/anagram/commit/8fb36dc",
+      "bgColor": "#fbe8d3",
+      "parent": "#t6q67m"
+    },
+    {
+      "@id": "#eegh3a",
+      "name": "ab3d923 agent identity",
+      "x": -94,
+      "y": -495,
+      "link": "https://github.com/melvincarvalho/anagram/commit/ab3d923",
+      "bgColor": "#fbe8d3",
+      "parent": "#t6q67m"
+    },
+    {
+      "@id": "#tmtdcb",
       "name": "← anagram",
-      "x": -265,
-      "y": 17,
+      "x": 74,
+      "y": -203,
       "link": "./index.jsonld",
       "bgColor": "#ececec",
       "parent": "#this"

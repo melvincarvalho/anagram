@@ -1,0 +1,205 @@
+{
+  "@context": {
+    "@vocab": "https://mindstr.org/ns#",
+    "link": {
+      "@type": "@id"
+    },
+    "parent": {
+      "@type": "@id"
+    }
+  },
+  "version": "0.2",
+  "nodes": [
+    {
+      "@id": "#this",
+      "name": "text.js",
+      "x": 0,
+      "y": 0,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/text.js",
+      "bgColor": "#ebc573"
+    },
+    {
+      "@id": "#zy9np2",
+      "name": "exports 1/2",
+      "x": 249,
+      "y": -14,
+      "bgColor": "#acd5ff",
+      "parent": "#this"
+    },
+    {
+      "@id": "#3jk3i5",
+      "name": "MENTION_RE()",
+      "x": 374,
+      "y": -282,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/text.js#L12",
+      "bgColor": "#daeeff",
+      "parent": "#zy9np2"
+    },
+    {
+      "@id": "#94asrn",
+      "name": "isBigEmoji()",
+      "x": 544,
+      "y": -193,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/text.js#L198",
+      "bgColor": "#daeeff",
+      "parent": "#zy9np2"
+    },
+    {
+      "@id": "#kgrwxb",
+      "name": "Text()",
+      "x": 499,
+      "y": -28,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/text.js#L200",
+      "bgColor": "#daeeff",
+      "parent": "#zy9np2"
+    },
+    {
+      "@id": "#aj9t28",
+      "name": "Highlight()",
+      "x": 570,
+      "y": 130,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/text.js#L224",
+      "bgColor": "#daeeff",
+      "parent": "#zy9np2"
+    },
+    {
+      "@id": "#vx7khw",
+      "name": "snippet()",
+      "x": 415,
+      "y": 237,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/text.js#L238",
+      "bgColor": "#daeeff",
+      "parent": "#zy9np2"
+    },
+    {
+      "@id": "#34dvu3",
+      "name": "exports 2/2",
+      "x": -80,
+      "y": 201,
+      "bgColor": "#f3bee1",
+      "parent": "#this"
+    },
+    {
+      "@id": "#v52rfv",
+      "name": "mediaOf()",
+      "x": 164,
+      "y": 402,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/text.js#L248",
+      "bgColor": "#fce3f3",
+      "parent": "#34dvu3"
+    },
+    {
+      "@id": "#gitnhm",
+      "name": "Media()",
+      "x": 2,
+      "y": 501,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/text.js#L268",
+      "bgColor": "#fce3f3",
+      "parent": "#34dvu3"
+    },
+    {
+      "@id": "#hzes4u",
+      "name": "Viewer()",
+      "x": -161,
+      "y": 402,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/text.js#L289",
+      "bgColor": "#fce3f3",
+      "parent": "#34dvu3"
+    },
+    {
+      "@id": "#mciseu",
+      "name": "previewText()",
+      "x": -361,
+      "y": 397,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/text.js#L317",
+      "bgColor": "#fce3f3",
+      "parent": "#34dvu3"
+    },
+    {
+      "@id": "#dm48gj",
+      "name": "EncryptedFile()",
+      "x": -418,
+      "y": 234,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/text.js#L326",
+      "bgColor": "#fce3f3",
+      "parent": "#34dvu3"
+    },
+    {
+      "@id": "#k6cm7k",
+      "name": "357 lines",
+      "x": -237,
+      "y": -69,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/text.js",
+      "bgColor": "#ececec",
+      "parent": "#this"
+    },
+    {
+      "@id": "#djkutb",
+      "name": "← ui",
+      "x": -16,
+      "y": -212,
+      "link": "./src-ui.jsonld",
+      "bgColor": "#ececec",
+      "parent": "#this"
+    }
+  ],
+  "connections": [
+    {
+      "start": 0,
+      "end": 1
+    },
+    {
+      "start": 1,
+      "end": 2
+    },
+    {
+      "start": 1,
+      "end": 3
+    },
+    {
+      "start": 1,
+      "end": 4
+    },
+    {
+      "start": 1,
+      "end": 5
+    },
+    {
+      "start": 1,
+      "end": 6
+    },
+    {
+      "start": 0,
+      "end": 7
+    },
+    {
+      "start": 7,
+      "end": 8
+    },
+    {
+      "start": 7,
+      "end": 9
+    },
+    {
+      "start": 7,
+      "end": 10
+    },
+    {
+      "start": 7,
+      "end": 11
+    },
+    {
+      "start": 7,
+      "end": 12
+    },
+    {
+      "start": 0,
+      "end": 13
+    },
+    {
+      "start": 0,
+      "end": 14
+    }
+  ],
+  "selectedNode": 0
+}

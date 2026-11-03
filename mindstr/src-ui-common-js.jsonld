@@ -1,0 +1,77 @@
+{
+  "@context": {
+    "@vocab": "https://mindstr.org/ns#",
+    "link": {
+      "@type": "@id"
+    },
+    "parent": {
+      "@type": "@id"
+    }
+  },
+  "version": "0.2",
+  "nodes": [
+    {
+      "@id": "#this",
+      "name": "common.js",
+      "x": 0,
+      "y": 0,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/common.js",
+      "bgColor": "#ebc573"
+    },
+    {
+      "@id": "#4evz5w",
+      "name": "exports 1–14 of 28 ›",
+      "x": 241,
+      "y": -55,
+      "link": "./src-ui-common-js-1.jsonld",
+      "bgColor": "#acd5ff",
+      "parent": "#this"
+    },
+    {
+      "@id": "#vh32g5",
+      "name": "exports 15–28 of 28 ›",
+      "x": 65,
+      "y": 205,
+      "link": "./src-ui-common-js-2.jsonld",
+      "bgColor": "#f3bee1",
+      "parent": "#this"
+    },
+    {
+      "@id": "#6ktxue",
+      "name": "183 lines",
+      "x": -241,
+      "y": 55,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/common.js",
+      "bgColor": "#ececec",
+      "parent": "#this"
+    },
+    {
+      "@id": "#qrakrq",
+      "name": "← ui",
+      "x": -65,
+      "y": -205,
+      "link": "./src-ui.jsonld",
+      "bgColor": "#ececec",
+      "parent": "#this"
+    }
+  ],
+  "connections": [
+    {
+      "start": 0,
+      "end": 1
+    },
+    {
+      "start": 0,
+      "end": 2
+    },
+    {
+      "start": 0,
+      "end": 3
+    },
+    {
+      "start": 0,
+      "end": 4
+    }
+  ],
+  "selectedNode": 0
+}

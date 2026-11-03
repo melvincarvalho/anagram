@@ -1,0 +1,282 @@
+{
+  "@context": {
+    "@vocab": "https://mindstr.org/ns#",
+    "link": {
+      "@type": "@id"
+    },
+    "parent": {
+      "@type": "@id"
+    }
+  },
+  "version": "0.2",
+  "nodes": [
+    {
+      "@id": "#this",
+      "name": "db.js",
+      "x": 0,
+      "y": 0,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/db.js",
+      "bgColor": "#ebc573"
+    },
+    {
+      "@id": "#eud4cc",
+      "name": "exports 1/3",
+      "x": 241,
+      "y": -56,
+      "bgColor": "#acd5ff",
+      "parent": "#this"
+    },
+    {
+      "@id": "#5mb355",
+      "name": "onOpenBlocked()",
+      "x": 350,
+      "y": -303,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/db.js#L40",
+      "bgColor": "#daeeff",
+      "parent": "#eud4cc"
+    },
+    {
+      "@id": "#mikqv6",
+      "name": "loadDirectMessages()",
+      "x": 509,
+      "y": -254,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/db.js#L53",
+      "bgColor": "#daeeff",
+      "parent": "#eud4cc"
+    },
+    {
+      "@id": "#7s8ycb",
+      "name": "saveDirectMessages()",
+      "x": 483,
+      "y": -110,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/db.js#L56",
+      "bgColor": "#daeeff",
+      "parent": "#eud4cc"
+    },
+    {
+      "@id": "#7jybab",
+      "name": "hasWrap()",
+      "x": 590,
+      "y": 1,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/db.js#L60",
+      "bgColor": "#daeeff",
+      "parent": "#eud4cc"
+    },
+    {
+      "@id": "#7rqytw",
+      "name": "markWrapFailure()",
+      "x": 483,
+      "y": 109,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/db.js#L63",
+      "bgColor": "#daeeff",
+      "parent": "#eud4cc"
+    },
+    {
+      "@id": "#hir8hx",
+      "name": "exports 2/3",
+      "x": 72,
+      "y": 203,
+      "bgColor": "#e9c1ef",
+      "parent": "#this"
+    },
+    {
+      "@id": "#ykkb9u",
+      "name": "markWraps()",
+      "x": 363,
+      "y": 292,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/db.js#L68",
+      "bgColor": "#f7e4f9",
+      "parent": "#hir8hx"
+    },
+    {
+      "@id": "#7ikicx",
+      "name": "deleteDirectMessage()",
+      "x": 312,
+      "y": 428,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/db.js#L71",
+      "bgColor": "#f7e4f9",
+      "parent": "#hir8hx"
+    },
+    {
+      "@id": "#ice2bk",
+      "name": "loadProfiles()",
+      "x": 139,
+      "y": 408,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/db.js#L74",
+      "bgColor": "#f7e4f9",
+      "parent": "#hir8hx"
+    },
+    {
+      "@id": "#scytyn",
+      "name": "saveProfiles()",
+      "x": 22,
+      "y": 501,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/db.js#L76",
+      "bgColor": "#f7e4f9",
+      "parent": "#hir8hx"
+    },
+    {
+      "@id": "#jbhqgv",
+      "name": "deleteConversation()",
+      "x": -109,
+      "y": 415,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/db.js#L80",
+      "bgColor": "#f7e4f9",
+      "parent": "#hir8hx"
+    },
+    {
+      "@id": "#5seuyw",
+      "name": "exports 3/3",
+      "x": -237,
+      "y": 68,
+      "bgColor": "#fec0b1",
+      "parent": "#this"
+    },
+    {
+      "@id": "#nm5hts",
+      "name": "loadRoomMessages()",
+      "x": -332,
+      "y": 321,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/db.js#L89",
+      "bgColor": "#ffe3dc",
+      "parent": "#5seuyw"
+    },
+    {
+      "@id": "#mesfa4",
+      "name": "saveRoomMessages()",
+      "x": -491,
+      "y": 277,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/db.js#L106",
+      "bgColor": "#ffe3dc",
+      "parent": "#5seuyw"
+    },
+    {
+      "@id": "#ek2jcm",
+      "name": "deleteRoomMessages()",
+      "x": -474,
+      "y": 136,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/db.js#L126",
+      "bgColor": "#ffe3dc",
+      "parent": "#5seuyw"
+    },
+    {
+      "@id": "#uja84e",
+      "name": "clearAccount()",
+      "x": -589,
+      "y": 31,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/db.js#L128",
+      "bgColor": "#ffe3dc",
+      "parent": "#5seuyw"
+    },
+    {
+      "@id": "#78sngm",
+      "name": "ndrStorage()",
+      "x": -491,
+      "y": -82,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/db.js#L143",
+      "bgColor": "#ffe3dc",
+      "parent": "#5seuyw"
+    },
+    {
+      "@id": "#58pkgm",
+      "name": "151 lines",
+      "x": -164,
+      "y": -161,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/db.js",
+      "bgColor": "#ececec",
+      "parent": "#this"
+    },
+    {
+      "@id": "#7jxpjz",
+      "name": "← js",
+      "x": 28,
+      "y": -211,
+      "link": "./src-root.jsonld",
+      "bgColor": "#ececec",
+      "parent": "#this"
+    }
+  ],
+  "connections": [
+    {
+      "start": 0,
+      "end": 1
+    },
+    {
+      "start": 1,
+      "end": 2
+    },
+    {
+      "start": 1,
+      "end": 3
+    },
+    {
+      "start": 1,
+      "end": 4
+    },
+    {
+      "start": 1,
+      "end": 5
+    },
+    {
+      "start": 1,
+      "end": 6
+    },
+    {
+      "start": 0,
+      "end": 7
+    },
+    {
+      "start": 7,
+      "end": 8
+    },
+    {
+      "start": 7,
+      "end": 9
+    },
+    {
+      "start": 7,
+      "end": 10
+    },
+    {
+      "start": 7,
+      "end": 11
+    },
+    {
+      "start": 7,
+      "end": 12
+    },
+    {
+      "start": 0,
+      "end": 13
+    },
+    {
+      "start": 13,
+      "end": 14
+    },
+    {
+      "start": 13,
+      "end": 15
+    },
+    {
+      "start": 13,
+      "end": 16
+    },
+    {
+      "start": 13,
+      "end": 17
+    },
+    {
+      "start": 13,
+      "end": 18
+    },
+    {
+      "start": 0,
+      "end": 19
+    },
+    {
+      "start": 0,
+      "end": 20
+    }
+  ],
+  "selectedNode": 0
+}

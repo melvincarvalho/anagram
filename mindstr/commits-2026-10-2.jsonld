@@ -19,214 +19,214 @@
       "bgColor": "#ebc573"
     },
     {
-      "@id": "#3y3s3p",
+      "@id": "#imr4n9",
       "name": "Tue 20 Oct · 1–7 of 13",
-      "x": -148,
-      "y": -232,
+      "x": 310,
+      "y": -4,
       "bgColor": "#acd5ff",
       "parent": "#this"
-    },
-    {
-      "@id": "#ujs2ci",
-      "name": "c955422 Show @Name in the composer, send An…",
-      "x": -477,
-      "y": -128,
-      "link": "https://github.com/melvincarvalho/anagram/commit/c955422",
-      "bgColor": "#daeeff",
-      "parent": "#3y3s3p"
-    },
-    {
-      "@id": "#442pm7",
-      "name": "0016a09 Inbox relay settings, kind 10002, N…",
-      "x": -494,
-      "y": -274,
-      "link": "https://github.com/melvincarvalho/anagram/commit/0016a09",
-      "bgColor": "#daeeff",
-      "parent": "#3y3s3p"
-    },
-    {
-      "@id": "#imr4n9",
-      "name": "4663778 Merge upstream message requests and…",
-      "x": -331,
-      "y": -319,
-      "link": "https://github.com/melvincarvalho/anagram/commit/4663778",
-      "bgColor": "#daeeff",
-      "parent": "#3y3s3p"
     },
     {
       "@id": "#tpktj6",
-      "name": "8cea25d View profiles in-app",
-      "x": -281,
-      "y": -447,
-      "link": "https://github.com/melvincarvalho/anagram/commit/8cea25d",
+      "name": "c955422 Show @Name in the composer, send An…",
+      "x": 365,
+      "y": -290,
+      "link": "https://github.com/melvincarvalho/anagram/commit/c955422",
       "bgColor": "#daeeff",
-      "parent": "#3y3s3p"
+      "parent": "#imr4n9"
     },
     {
       "@id": "#u94rpy",
-      "name": "f58e5e4 Message requests from people you do…",
-      "x": -134,
-      "y": -379,
-      "link": "https://github.com/melvincarvalho/anagram/commit/f58e5e4",
+      "name": "0016a09 Inbox relay settings, kind 10002, N…",
+      "x": 520,
+      "y": -237,
+      "link": "https://github.com/melvincarvalho/anagram/commit/0016a09",
       "bgColor": "#daeeff",
-      "parent": "#3y3s3p"
+      "parent": "#imr4n9"
     },
     {
       "@id": "#7txfyn",
-      "name": "b4390b2 Merge upstream gh-pages while prese…",
-      "x": 0,
-      "y": -501,
-      "link": "https://github.com/melvincarvalho/anagram/commit/b4390b2",
+      "name": "4663778 Merge upstream message requests and…",
+      "x": 486,
+      "y": -98,
+      "link": "https://github.com/melvincarvalho/anagram/commit/4663778",
       "bgColor": "#daeeff",
-      "parent": "#3y3s3p"
+      "parent": "#imr4n9"
     },
     {
       "@id": "#v5njcx",
-      "name": "e97c7fd Room owner tools: edit room, trust/…",
-      "x": 133,
-      "y": -425,
-      "link": "https://github.com/melvincarvalho/anagram/commit/e97c7fd",
+      "name": "8cea25d View profiles in-app",
+      "x": 590,
+      "y": -8,
+      "link": "https://github.com/melvincarvalho/anagram/commit/8cea25d",
       "bgColor": "#daeeff",
-      "parent": "#3y3s3p"
+      "parent": "#imr4n9"
     },
     {
       "@id": "#z8kicz",
+      "name": "f58e5e4 Message requests from people you do…",
+      "x": 490,
+      "y": 85,
+      "link": "https://github.com/melvincarvalho/anagram/commit/f58e5e4",
+      "bgColor": "#daeeff",
+      "parent": "#imr4n9"
+    },
+    {
+      "@id": "#7348h9",
+      "name": "b4390b2 Merge upstream gh-pages while prese…",
+      "x": 529,
+      "y": 223,
+      "link": "https://github.com/melvincarvalho/anagram/commit/b4390b2",
+      "bgColor": "#daeeff",
+      "parent": "#imr4n9"
+    },
+    {
+      "@id": "#jtny2v",
+      "name": "e97c7fd Room owner tools: edit room, trust/…",
+      "x": 376,
+      "y": 280,
+      "link": "https://github.com/melvincarvalho/anagram/commit/e97c7fd",
+      "bgColor": "#daeeff",
+      "parent": "#imr4n9"
+    },
+    {
+      "@id": "#zvvi4r",
       "name": "Tue 20 Oct · 8–13 of 13",
-      "x": 312,
-      "y": -24,
+      "x": -71,
+      "y": 204,
       "bgColor": "#acd5ff",
       "parent": "#this"
     },
     {
-      "@id": "#7348h9",
+      "@id": "#ezqtt6",
       "name": "1d5e3b0 Voice notes",
-      "x": 353,
-      "y": -315,
+      "x": 175,
+      "y": 378,
       "link": "https://github.com/melvincarvalho/anagram/commit/1d5e3b0",
       "bgColor": "#fce3f3",
-      "parent": "#z8kicz"
-    },
-    {
-      "@id": "#jtny2v",
-      "name": "1f8ba6b Update double ratchet registration…",
-      "x": 491,
-      "y": -271,
-      "link": "https://github.com/melvincarvalho/anagram/commit/1f8ba6b",
-      "bgColor": "#fce3f3",
-      "parent": "#z8kicz"
-    },
-    {
-      "@id": "#zvvi4r",
-      "name": "42ebbde Privacy section in the README and S…",
-      "x": 475,
-      "y": -134,
-      "link": "https://github.com/melvincarvalho/anagram/commit/42ebbde",
-      "bgColor": "#fce3f3",
-      "parent": "#z8kicz"
-    },
-    {
-      "@id": "#ezqtt6",
-      "name": "a3c2676 Keep explicit encryption choice whe…",
-      "x": 605,
-      "y": -25,
-      "link": "https://github.com/melvincarvalho/anagram/commit/a3c2676",
-      "bgColor": "#fce3f3",
-      "parent": "#z8kicz"
+      "parent": "#zvvi4r"
     },
     {
       "@id": "#8edjsn",
-      "name": "1fc364b Clarify own-device copies and histo…",
-      "x": 488,
-      "y": 93,
-      "link": "https://github.com/melvincarvalho/anagram/commit/1fc364b",
+      "name": "1f8ba6b Update double ratchet registration…",
+      "x": 98,
+      "y": 512,
+      "link": "https://github.com/melvincarvalho/anagram/commit/1f8ba6b",
       "bgColor": "#fce3f3",
-      "parent": "#z8kicz"
+      "parent": "#zvvi4r"
     },
     {
       "@id": "#75s7ir",
-      "name": "d6124b4 Show authorized messaging devices i…",
-      "x": 521,
-      "y": 236,
-      "link": "https://github.com/melvincarvalho/anagram/commit/d6124b4",
+      "name": "42ebbde Privacy section in the README and S…",
+      "x": -45,
+      "y": 423,
+      "link": "https://github.com/melvincarvalho/anagram/commit/42ebbde",
       "bgColor": "#fce3f3",
-      "parent": "#z8kicz"
+      "parent": "#zvvi4r"
     },
     {
       "@id": "#7x3k79",
+      "name": "a3c2676 Keep explicit encryption choice whe…",
+      "x": -202,
+      "y": 467,
+      "link": "https://github.com/melvincarvalho/anagram/commit/a3c2676",
+      "bgColor": "#fce3f3",
+      "parent": "#zvvi4r"
+    },
+    {
+      "@id": "#4af2dc",
+      "name": "1fc364b Clarify own-device copies and histo…",
+      "x": -286,
+      "y": 362,
+      "link": "https://github.com/melvincarvalho/anagram/commit/1fc364b",
+      "bgColor": "#fce3f3",
+      "parent": "#zvvi4r"
+    },
+    {
+      "@id": "#7iui3z",
+      "name": "d6124b4 Show authorized messaging devices i…",
+      "x": -451,
+      "y": 317,
+      "link": "https://github.com/melvincarvalho/anagram/commit/d6124b4",
+      "bgColor": "#fce3f3",
+      "parent": "#zvvi4r"
+    },
+    {
+      "@id": "#bq9ccn",
       "name": "Mon 19 Oct · 7",
-      "x": -97,
-      "y": 250,
+      "x": -234,
+      "y": -158,
       "bgColor": "#f1c99c",
       "parent": "#this"
     },
     {
-      "@id": "#4af2dc",
+      "@id": "#3yirdr",
       "name": "376ce46 Edit rollback, quiet AUTH failures,…",
-      "x": 235,
-      "y": 375,
+      "x": -495,
+      "y": 57,
       "link": "https://github.com/melvincarvalho/anagram/commit/376ce46",
       "bgColor": "#fbe8d3",
-      "parent": "#7x3k79"
-    },
-    {
-      "@id": "#7iui3z",
-      "name": "f2ae344 Honest delivery tick; rooms stay li…",
-      "x": 167,
-      "y": 489,
-      "link": "https://github.com/melvincarvalho/anagram/commit/f2ae344",
-      "bgColor": "#fbe8d3",
-      "parent": "#7x3k79"
-    },
-    {
-      "@id": "#bq9ccn",
-      "name": "447345a Audio playback; NIP-05 checks only…",
-      "x": -24,
-      "y": 425,
-      "link": "https://github.com/melvincarvalho/anagram/commit/447345a",
-      "bgColor": "#fbe8d3",
-      "parent": "#7x3k79"
-    },
-    {
-      "@id": "#3yirdr",
-      "name": "e3a1d5d Blocked list, share-link form and s…",
-      "x": -203,
-      "y": 477,
-      "link": "https://github.com/melvincarvalho/anagram/commit/e3a1d5d",
-      "bgColor": "#fbe8d3",
-      "parent": "#7x3k79"
+      "parent": "#bq9ccn"
     },
     {
       "@id": "#ptf2jy",
-      "name": "d6da45f Never let a profile save wipe field…",
-      "x": -276,
-      "y": 367,
-      "link": "https://github.com/melvincarvalho/anagram/commit/d6da45f",
+      "name": "f2ae344 Honest delivery tick; rooms stay li…",
+      "x": -585,
+      "y": -62,
+      "link": "https://github.com/melvincarvalho/anagram/commit/f2ae344",
       "bgColor": "#fbe8d3",
-      "parent": "#7x3k79"
+      "parent": "#bq9ccn"
     },
     {
       "@id": "#4bfy6j",
-      "name": "121ac1b Deletions only count from the messa…",
-      "x": -445,
-      "y": 322,
-      "link": "https://github.com/melvincarvalho/anagram/commit/121ac1b",
+      "name": "447345a Audio playback; NIP-05 checks only…",
+      "x": -490,
+      "y": -158,
+      "link": "https://github.com/melvincarvalho/anagram/commit/447345a",
       "bgColor": "#fbe8d3",
-      "parent": "#7x3k79"
+      "parent": "#bq9ccn"
     },
     {
       "@id": "#4wkdd9",
-      "name": "66c2584 Fix startup hanging on 'Loading…' a…",
-      "x": -451,
-      "y": 183,
-      "link": "https://github.com/melvincarvalho/anagram/commit/66c2584",
+      "name": "e3a1d5d Blocked list, share-link form and s…",
+      "x": -474,
+      "y": -292,
+      "link": "https://github.com/melvincarvalho/anagram/commit/e3a1d5d",
       "bgColor": "#fbe8d3",
-      "parent": "#7x3k79"
+      "parent": "#bq9ccn"
     },
     {
       "@id": "#yiscsp",
+      "name": "d6da45f Never let a profile save wipe field…",
+      "x": -312,
+      "y": -336,
+      "link": "https://github.com/melvincarvalho/anagram/commit/d6da45f",
+      "bgColor": "#fbe8d3",
+      "parent": "#bq9ccn"
+    },
+    {
+      "@id": "#2fzfhg",
+      "name": "121ac1b Deletions only count from the messa…",
+      "x": -237,
+      "y": -462,
+      "link": "https://github.com/melvincarvalho/anagram/commit/121ac1b",
+      "bgColor": "#fbe8d3",
+      "parent": "#bq9ccn"
+    },
+    {
+      "@id": "#6ab87r",
+      "name": "66c2584 Fix startup hanging on 'Loading…' a…",
+      "x": -77,
+      "y": -418,
+      "link": "https://github.com/melvincarvalho/anagram/commit/66c2584",
+      "bgColor": "#fbe8d3",
+      "parent": "#bq9ccn"
+    },
+    {
+      "@id": "#uyfscv",
       "name": "← anagram",
-      "x": -259,
-      "y": 14,
+      "x": 82,
+      "y": -201,
       "link": "./index.jsonld",
       "bgColor": "#ececec",
       "parent": "#this"
