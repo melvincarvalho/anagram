@@ -19,37 +19,46 @@
       "bgColor": "#ebc573"
     },
     {
-      "@id": "#8su7v6",
-      "name": "exports 1–12 of 23 ›",
-      "x": 241,
-      "y": -55,
-      "link": "./src-store-prefs-js-1.jsonld",
+      "@id": "#9incsq",
+      "name": "Per-account preferences",
+      "x": 210,
+      "y": -80,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/prefs.js#L1",
       "bgColor": "#acd5ff",
       "parent": "#this"
     },
     {
-      "@id": "#2da7xj",
-      "name": "exports 13–23 of 23 ›",
-      "x": 65,
-      "y": 205,
-      "link": "./src-store-prefs-js-2.jsonld",
-      "bgColor": "#f3bee1",
+      "@id": "#gwp9qx",
+      "name": "exports 1–12 of 23 ›",
+      "x": 154,
+      "y": 145,
+      "link": "./src-store-prefs-js-1.jsonld",
+      "bgColor": "#e9c1ef",
       "parent": "#this"
     },
     {
-      "@id": "#9e878e",
+      "@id": "#7csjb6",
+      "name": "exports 13–23 of 23 ›",
+      "x": -115,
+      "y": 169,
+      "link": "./src-store-prefs-js-2.jsonld",
+      "bgColor": "#fec0b1",
+      "parent": "#this"
+    },
+    {
+      "@id": "#cyfvb8",
       "name": "285 lines",
-      "x": -241,
-      "y": 55,
+      "x": -225,
+      "y": -41,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/prefs.js",
       "bgColor": "#ececec",
       "parent": "#this"
     },
     {
-      "@id": "#cp2str",
+      "@id": "#ngjuhg",
       "name": "← store",
-      "x": -65,
-      "y": -205,
+      "x": -24,
+      "y": -194,
       "link": "./src-store.jsonld",
       "bgColor": "#ececec",
       "parent": "#this"
@@ -71,6 +80,10 @@
     {
       "start": 0,
       "end": 4
+    },
+    {
+      "start": 0,
+      "end": 5
     }
   ],
   "selectedNode": 0

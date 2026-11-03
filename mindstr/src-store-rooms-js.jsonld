@@ -19,214 +19,223 @@
       "bgColor": "#ebc573"
     },
     {
-      "@id": "#48j6uy",
-      "name": "exports 1/3",
-      "x": 305,
-      "y": -48,
+      "@id": "#u6iz6f",
+      "name": "Public rooms (Anagram public groups)",
+      "x": 173,
+      "y": -129,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L1",
       "bgColor": "#acd5ff",
       "parent": "#this"
     },
     {
-      "@id": "#9kbx2m",
-      "name": "load()",
-      "x": 346,
-      "y": -306,
-      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L14",
-      "bgColor": "#daeeff",
-      "parent": "#48j6uy"
-    },
-    {
-      "@id": "#9gbbfy",
-      "name": "reset()",
-      "x": 488,
-      "y": -282,
-      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L21",
-      "bgColor": "#daeeff",
-      "parent": "#48j6uy"
-    },
-    {
-      "@id": "#kue24d",
-      "name": "resetSignals()",
-      "x": 462,
-      "y": -162,
-      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L26",
-      "bgColor": "#daeeff",
-      "parent": "#48j6uy"
-    },
-    {
-      "@id": "#ezqvf7",
-      "name": "setRoom()",
-      "x": 580,
-      "y": -91,
-      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L31",
-      "bgColor": "#daeeff",
-      "parent": "#48j6uy"
-    },
-    {
-      "@id": "#4c22a7",
-      "name": "addRoomMessages()",
-      "x": 500,
-      "y": 10,
-      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L55",
-      "bgColor": "#daeeff",
-      "parent": "#48j6uy"
-    },
-    {
-      "@id": "#zpagjg",
-      "name": "openRoom()",
-      "x": 574,
-      "y": 115,
-      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L89",
-      "bgColor": "#daeeff",
-      "parent": "#48j6uy"
-    },
-    {
-      "@id": "#sptvks",
-      "name": "roomActivity()",
-      "x": 453,
-      "y": 180,
-      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L148",
-      "bgColor": "#daeeff",
-      "parent": "#48j6uy"
-    },
-    {
-      "@id": "#u6iz6f",
-      "name": "exports 2/3",
-      "x": -7,
-      "y": 263,
-      "bgColor": "#e9c1ef",
-      "parent": "#this"
-    },
-    {
       "@id": "#vb6nak",
-      "name": "dropRoomMessage()",
-      "x": 297,
-      "y": 342,
-      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L156",
-      "bgColor": "#f7e4f9",
-      "parent": "#u6iz6f"
+      "name": "exports 1/3",
+      "x": 269,
+      "y": 91,
+      "bgColor": "#e0c4f6",
+      "parent": "#this"
     },
     {
       "@id": "#zv6fek",
-      "name": "quotes()",
-      "x": 242,
-      "y": 457,
-      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L163",
-      "bgColor": "#f7e4f9",
-      "parent": "#u6iz6f"
+      "name": "load()",
+      "x": 423,
+      "y": -65,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L14",
+      "bgColor": "#f2e5fd",
+      "parent": "#vb6nak"
     },
     {
       "@id": "#y6p8te",
-      "name": "fetchQuote()",
-      "x": 104,
-      "y": 416,
-      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L165",
-      "bgColor": "#f7e4f9",
-      "parent": "#u6iz6f"
+      "name": "reset()",
+      "x": 500,
+      "y": 3,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L21",
+      "bgColor": "#f2e5fd",
+      "parent": "#vb6nak"
     },
     {
       "@id": "#kpttum",
-      "name": "loadUntil()",
-      "x": -3,
-      "y": 501,
-      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L177",
-      "bgColor": "#f7e4f9",
-      "parent": "#u6iz6f"
+      "name": "resetSignals()",
+      "x": 422,
+      "y": 70,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L26",
+      "bgColor": "#f2e5fd",
+      "parent": "#vb6nak"
     },
     {
       "@id": "#t62ib9",
-      "name": "loadOlderRoomMessages()",
-      "x": -109,
-      "y": 413,
-      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L184",
-      "bgColor": "#f7e4f9",
-      "parent": "#u6iz6f"
+      "name": "setRoom()",
+      "x": 464,
+      "y": 154,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L31",
+      "bgColor": "#f2e5fd",
+      "parent": "#vb6nak"
     },
     {
       "@id": "#qcu5gk",
-      "name": "joinRoom()",
-      "x": -273,
-      "y": 447,
-      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L200",
-      "bgColor": "#f7e4f9",
-      "parent": "#u6iz6f"
+      "name": "addRoomMessages()",
+      "x": 363,
+      "y": 198,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L55",
+      "bgColor": "#f2e5fd",
+      "parent": "#vb6nak"
     },
     {
       "@id": "#za8che",
-      "name": "updateRoom()",
-      "x": -316,
-      "y": 329,
-      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L207",
-      "bgColor": "#f7e4f9",
-      "parent": "#u6iz6f"
+      "name": "openRoom()",
+      "x": 379,
+      "y": 290,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L89",
+      "bgColor": "#f2e5fd",
+      "parent": "#vb6nak"
     },
     {
       "@id": "#rbwcef",
-      "name": "exports 3/3",
-      "x": -250,
-      "y": -1,
-      "bgColor": "#fec0b1",
-      "parent": "#this"
+      "name": "roomActivity()",
+      "x": 248,
+      "y": 294,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L148",
+      "bgColor": "#f2e5fd",
+      "parent": "#vb6nak"
     },
     {
       "@id": "#mvt9ib",
-      "name": "setMemberPolicy()",
-      "x": -456,
-      "y": 175,
-      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L221",
-      "bgColor": "#ffe3dc",
-      "parent": "#rbwcef"
+      "name": "exports 2/3",
+      "x": -114,
+      "y": 227,
+      "bgColor": "#febdc6",
+      "parent": "#this"
     },
     {
       "@id": "#4cdvsg",
-      "name": "pinMessage()",
-      "x": -577,
-      "y": 105,
-      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L231",
-      "bgColor": "#ffe3dc",
-      "parent": "#rbwcef"
+      "name": "dropRoomMessage()",
+      "x": 81,
+      "y": 359,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L156",
+      "bgColor": "#ffe2e6",
+      "parent": "#mvt9ib"
     },
     {
       "@id": "#ur7wv9",
-      "name": "leaveRoom()",
-      "x": -500,
-      "y": -1,
-      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L233",
-      "bgColor": "#ffe3dc",
-      "parent": "#rbwcef"
+      "name": "quotes",
+      "x": -1,
+      "y": 425,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L163",
+      "bgColor": "#ffe2e6",
+      "parent": "#mvt9ib"
     },
     {
       "@id": "#j2eaqz",
-      "name": "createRoom()",
-      "x": -576,
-      "y": -108,
-      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L245",
-      "bgColor": "#ffe3dc",
-      "parent": "#rbwcef"
+      "name": "fetchQuote()",
+      "x": -83,
+      "y": 353,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L165",
+      "bgColor": "#ffe2e6",
+      "parent": "#mvt9ib"
     },
     {
       "@id": "#vqbwbg",
-      "name": "sendRoomMessage()",
-      "x": -455,
-      "y": -177,
-      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L251",
-      "bgColor": "#ffe3dc",
-      "parent": "#rbwcef"
+      "name": "loadUntil()",
+      "x": -188,
+      "y": 397,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L177",
+      "bgColor": "#ffe2e6",
+      "parent": "#mvt9ib"
     },
     {
       "@id": "#y9jt3w",
+      "name": "loadOlderRoomMessages()",
+      "x": -211,
+      "y": 303,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L184",
+      "bgColor": "#ffe2e6",
+      "parent": "#mvt9ib"
+    },
+    {
+      "@id": "#vxinpu",
+      "name": "joinRoom()",
+      "x": -376,
+      "y": 295,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L200",
+      "bgColor": "#ffe2e6",
+      "parent": "#mvt9ib"
+    },
+    {
+      "@id": "#spatem",
+      "name": "updateRoom()",
+      "x": -361,
+      "y": 199,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L207",
+      "bgColor": "#ffe2e6",
+      "parent": "#mvt9ib"
+    },
+    {
+      "@id": "#twzhxn",
+      "name": "exports 3/3",
+      "x": -224,
+      "y": -43,
+      "bgColor": "#f1c99c",
+      "parent": "#this"
+    },
+    {
+      "@id": "#ir6eif",
+      "name": "setMemberPolicy()",
+      "x": -424,
+      "y": 59,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L221",
+      "bgColor": "#fbe8d3",
+      "parent": "#twzhxn"
+    },
+    {
+      "@id": "#bwj4g5",
+      "name": "pinMessage()",
+      "x": -500,
+      "y": -12,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L231",
+      "bgColor": "#fbe8d3",
+      "parent": "#twzhxn"
+    },
+    {
+      "@id": "#9fjvd8",
+      "name": "leaveRoom()",
+      "x": -420,
+      "y": -80,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L233",
+      "bgColor": "#fbe8d3",
+      "parent": "#twzhxn"
+    },
+    {
+      "@id": "#6fwnzy",
+      "name": "createRoom()",
+      "x": -458,
+      "y": -164,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L245",
+      "bgColor": "#fbe8d3",
+      "parent": "#twzhxn"
+    },
+    {
+      "@id": "#rtnzsk",
+      "name": "sendRoomMessage()",
+      "x": -354,
+      "y": -210,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js#L251",
+      "bgColor": "#fbe8d3",
+      "parent": "#twzhxn"
+    },
+    {
+      "@id": "#v8phzs",
       "name": "265 lines",
-      "x": -135,
-      "y": -179,
+      "x": -101,
+      "y": -176,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/rooms.js",
       "bgColor": "#ececec",
       "parent": "#this"
     },
     {
-      "@id": "#vxinpu",
+      "@id": "#izxsmt",
       "name": "← store",
-      "x": 40,
-      "y": -210,
+      "x": 45,
+      "y": -192,
       "link": "./src-store.jsonld",
       "bgColor": "#ececec",
       "parent": "#this"
@@ -238,96 +247,100 @@
       "end": 1
     },
     {
-      "start": 1,
+      "start": 0,
       "end": 2
     },
     {
-      "start": 1,
+      "start": 2,
       "end": 3
     },
     {
-      "start": 1,
+      "start": 2,
       "end": 4
     },
     {
-      "start": 1,
+      "start": 2,
       "end": 5
     },
     {
-      "start": 1,
+      "start": 2,
       "end": 6
     },
     {
-      "start": 1,
+      "start": 2,
       "end": 7
     },
     {
-      "start": 1,
+      "start": 2,
       "end": 8
     },
     {
-      "start": 0,
+      "start": 2,
       "end": 9
     },
     {
-      "start": 9,
+      "start": 0,
       "end": 10
     },
     {
-      "start": 9,
+      "start": 10,
       "end": 11
     },
     {
-      "start": 9,
+      "start": 10,
       "end": 12
     },
     {
-      "start": 9,
+      "start": 10,
       "end": 13
     },
     {
-      "start": 9,
+      "start": 10,
       "end": 14
     },
     {
-      "start": 9,
+      "start": 10,
       "end": 15
     },
     {
-      "start": 9,
+      "start": 10,
       "end": 16
     },
     {
-      "start": 0,
+      "start": 10,
       "end": 17
     },
     {
-      "start": 17,
+      "start": 0,
       "end": 18
     },
     {
-      "start": 17,
+      "start": 18,
       "end": 19
     },
     {
-      "start": 17,
+      "start": 18,
       "end": 20
     },
     {
-      "start": 17,
+      "start": 18,
       "end": 21
     },
     {
-      "start": 17,
+      "start": 18,
       "end": 22
     },
     {
-      "start": 0,
+      "start": 18,
       "end": 23
     },
     {
       "start": 0,
       "end": 24
+    },
+    {
+      "start": 0,
+      "end": 25
     }
   ],
   "selectedNode": 0

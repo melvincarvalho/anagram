@@ -19,178 +19,187 @@
       "bgColor": "#ebc573"
     },
     {
-      "@id": "#mikqv6",
-      "name": "exports 1/3",
-      "x": 241,
-      "y": -56,
+      "@id": "#wtpnjp",
+      "name": "Local cache",
+      "x": 178,
+      "y": -123,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/db.js#L1",
       "bgColor": "#acd5ff",
       "parent": "#this"
     },
     {
-      "@id": "#7s8ycb",
+      "@id": "#7cw6cg",
+      "name": "exports 1/3",
+      "x": 214,
+      "y": 71,
+      "bgColor": "#e0c4f6",
+      "parent": "#this"
+    },
+    {
+      "@id": "#a54nev",
       "name": "onOpenBlocked()",
-      "x": 350,
-      "y": -303,
+      "x": 428,
+      "y": -35,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/db.js#L40",
-      "bgColor": "#daeeff",
-      "parent": "#mikqv6"
+      "bgColor": "#f2e5fd",
+      "parent": "#7cw6cg"
     },
     {
-      "@id": "#7jybab",
+      "@id": "#qhb5iq",
       "name": "loadDirectMessages()",
-      "x": 509,
-      "y": -254,
+      "x": 495,
+      "y": 58,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/db.js#L53",
-      "bgColor": "#daeeff",
-      "parent": "#mikqv6"
+      "bgColor": "#f2e5fd",
+      "parent": "#7cw6cg"
     },
     {
-      "@id": "#7rqytw",
+      "@id": "#nvqaxu",
       "name": "saveDirectMessages()",
-      "x": 483,
-      "y": -110,
+      "x": 400,
+      "y": 135,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/db.js#L56",
-      "bgColor": "#daeeff",
-      "parent": "#mikqv6"
+      "bgColor": "#f2e5fd",
+      "parent": "#7cw6cg"
     },
     {
-      "@id": "#hir8hx",
+      "@id": "#9n2fi8",
       "name": "hasWrap()",
-      "x": 590,
-      "y": 1,
+      "x": 421,
+      "y": 243,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/db.js#L60",
-      "bgColor": "#daeeff",
-      "parent": "#mikqv6"
+      "bgColor": "#f2e5fd",
+      "parent": "#7cw6cg"
     },
     {
-      "@id": "#ykkb9u",
+      "@id": "#27czbt",
       "name": "markWrapFailure()",
-      "x": 483,
-      "y": 109,
+      "x": 282,
+      "y": 271,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/db.js#L63",
-      "bgColor": "#daeeff",
-      "parent": "#mikqv6"
+      "bgColor": "#f2e5fd",
+      "parent": "#7cw6cg"
     },
     {
-      "@id": "#7ikicx",
+      "@id": "#eqxhbv",
       "name": "exports 2/3",
-      "x": 72,
-      "y": 203,
-      "bgColor": "#e9c1ef",
+      "x": -38,
+      "y": 193,
+      "bgColor": "#febdc6",
       "parent": "#this"
     },
     {
-      "@id": "#ice2bk",
+      "@id": "#m3zt7z",
       "name": "markWraps()",
-      "x": 363,
-      "y": 292,
+      "x": 124,
+      "y": 350,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/db.js#L68",
-      "bgColor": "#f7e4f9",
-      "parent": "#7ikicx"
+      "bgColor": "#ffe2e6",
+      "parent": "#eqxhbv"
     },
     {
-      "@id": "#scytyn",
+      "@id": "#xzgaz8",
       "name": "deleteDirectMessage()",
-      "x": 312,
-      "y": 428,
+      "x": 30,
+      "y": 424,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/db.js#L71",
-      "bgColor": "#f7e4f9",
-      "parent": "#7ikicx"
+      "bgColor": "#ffe2e6",
+      "parent": "#eqxhbv"
     },
     {
-      "@id": "#jbhqgv",
+      "@id": "#brfb5w",
       "name": "loadProfiles()",
-      "x": 139,
-      "y": 408,
+      "x": -73,
+      "y": 353,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/db.js#L74",
-      "bgColor": "#f7e4f9",
-      "parent": "#7ikicx"
+      "bgColor": "#ffe2e6",
+      "parent": "#eqxhbv"
     },
     {
-      "@id": "#5seuyw",
+      "@id": "#45xtcc",
       "name": "saveProfiles()",
-      "x": 22,
-      "y": 501,
+      "x": -191,
+      "y": 397,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/db.js#L76",
-      "bgColor": "#f7e4f9",
-      "parent": "#7ikicx"
+      "bgColor": "#ffe2e6",
+      "parent": "#eqxhbv"
     },
     {
-      "@id": "#nm5hts",
+      "@id": "#ybwvcb",
       "name": "deleteConversation()",
-      "x": -109,
-      "y": 415,
+      "x": -250,
+      "y": 297,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/db.js#L80",
-      "bgColor": "#f7e4f9",
-      "parent": "#7ikicx"
+      "bgColor": "#ffe2e6",
+      "parent": "#eqxhbv"
     },
     {
-      "@id": "#mesfa4",
+      "@id": "#i9qywf",
       "name": "exports 3/3",
-      "x": -237,
-      "y": 68,
-      "bgColor": "#fec0b1",
+      "x": -230,
+      "y": 9,
+      "bgColor": "#f1c99c",
       "parent": "#this"
     },
     {
-      "@id": "#ek2jcm",
+      "@id": "#iyzq7q",
       "name": "loadRoomMessages()",
-      "x": -332,
-      "y": 321,
+      "x": -377,
+      "y": 176,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/db.js#L89",
-      "bgColor": "#ffe3dc",
-      "parent": "#mesfa4"
+      "bgColor": "#fbe8d3",
+      "parent": "#i9qywf"
     },
     {
-      "@id": "#uja84e",
+      "@id": "#bke9zd",
       "name": "saveRoomMessages()",
-      "x": -491,
-      "y": 277,
+      "x": -481,
+      "y": 116,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/db.js#L106",
-      "bgColor": "#ffe3dc",
-      "parent": "#mesfa4"
+      "bgColor": "#fbe8d3",
+      "parent": "#i9qywf"
     },
     {
-      "@id": "#78sngm",
+      "@id": "#fuxupn",
       "name": "deleteRoomMessages()",
-      "x": -474,
-      "y": 136,
+      "x": -430,
+      "y": 16,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/db.js#L126",
-      "bgColor": "#ffe3dc",
-      "parent": "#mesfa4"
+      "bgColor": "#fbe8d3",
+      "parent": "#i9qywf"
     },
     {
-      "@id": "#58pkgm",
+      "@id": "#5m2ws9",
       "name": "clearAccount()",
-      "x": -589,
-      "y": 31,
-      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/db.js#L128",
-      "bgColor": "#ffe3dc",
-      "parent": "#mesfa4"
-    },
-    {
-      "@id": "#7jxpjz",
-      "name": "ndrStorage()",
       "x": -491,
-      "y": -82,
-      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/db.js#L143",
-      "bgColor": "#ffe3dc",
-      "parent": "#mesfa4"
+      "y": -79,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/db.js#L128",
+      "bgColor": "#fbe8d3",
+      "parent": "#i9qywf"
     },
     {
-      "@id": "#qrspvr",
+      "@id": "#bbimsx",
+      "name": "ndrStorage()",
+      "x": -394,
+      "y": -147,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/db.js#L143",
+      "bgColor": "#fbe8d3",
+      "parent": "#i9qywf"
+    },
+    {
+      "@id": "#drrwuk",
       "name": "151 lines",
-      "x": -164,
-      "y": -161,
+      "x": -124,
+      "y": -165,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/db.js",
       "bgColor": "#ececec",
       "parent": "#this"
     },
     {
-      "@id": "#wfbk2v",
+      "@id": "#nsm2yi",
       "name": "← js",
-      "x": 28,
-      "y": -211,
+      "x": 36,
+      "y": -193,
       "link": "./src-root.jsonld",
       "bgColor": "#ececec",
       "parent": "#this"
@@ -202,80 +211,84 @@
       "end": 1
     },
     {
-      "start": 1,
+      "start": 0,
       "end": 2
     },
     {
-      "start": 1,
+      "start": 2,
       "end": 3
     },
     {
-      "start": 1,
+      "start": 2,
       "end": 4
     },
     {
-      "start": 1,
+      "start": 2,
       "end": 5
     },
     {
-      "start": 1,
+      "start": 2,
       "end": 6
     },
     {
-      "start": 0,
+      "start": 2,
       "end": 7
     },
     {
-      "start": 7,
+      "start": 0,
       "end": 8
     },
     {
-      "start": 7,
+      "start": 8,
       "end": 9
     },
     {
-      "start": 7,
+      "start": 8,
       "end": 10
     },
     {
-      "start": 7,
+      "start": 8,
       "end": 11
     },
     {
-      "start": 7,
+      "start": 8,
       "end": 12
     },
     {
-      "start": 0,
+      "start": 8,
       "end": 13
     },
     {
-      "start": 13,
+      "start": 0,
       "end": 14
     },
     {
-      "start": 13,
+      "start": 14,
       "end": 15
     },
     {
-      "start": 13,
+      "start": 14,
       "end": 16
     },
     {
-      "start": 13,
+      "start": 14,
       "end": 17
     },
     {
-      "start": 13,
+      "start": 14,
       "end": 18
     },
     {
-      "start": 0,
+      "start": 14,
       "end": 19
     },
     {
       "start": 0,
       "end": 20
+    },
+    {
+      "start": 0,
+      "end": 21
     }
   ],
   "selectedNode": 0

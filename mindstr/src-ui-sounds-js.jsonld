@@ -19,36 +19,45 @@
       "bgColor": "#ebc573"
     },
     {
-      "@id": "#wymkpw",
-      "name": "exports",
-      "x": 250,
-      "y": 0,
+      "@id": "#7ppwsy",
+      "name": "Notification sounds, synthesised in code",
+      "x": 222,
+      "y": -65,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/sounds.js#L1",
       "bgColor": "#acd5ff",
       "parent": "#this"
     },
     {
-      "@id": "#qhm56x",
-      "name": "playSound()",
-      "x": 500,
-      "y": 0,
-      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/sounds.js#L48",
-      "bgColor": "#daeeff",
-      "parent": "#wymkpw"
+      "@id": "#c8rxju",
+      "name": "exports",
+      "x": 60,
+      "y": 189,
+      "bgColor": "#f3bee1",
+      "parent": "#this"
     },
     {
-      "@id": "#gyahr4",
+      "@id": "#jr3z4p",
+      "name": "playSound()",
+      "x": 111,
+      "y": 353,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/sounds.js#L48",
+      "bgColor": "#fce3f3",
+      "parent": "#c8rxju"
+    },
+    {
+      "@id": "#hmnpnc",
       "name": "56 lines",
-      "x": -125,
-      "y": 184,
+      "x": -222,
+      "y": 51,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/sounds.js",
       "bgColor": "#ececec",
       "parent": "#this"
     },
     {
-      "@id": "#wt6f72",
+      "@id": "#tbf3y4",
       "name": "← ui",
-      "x": -125,
-      "y": -184,
+      "x": -60,
+      "y": -189,
       "link": "./src-ui.jsonld",
       "bgColor": "#ececec",
       "parent": "#this"
@@ -60,16 +69,20 @@
       "end": 1
     },
     {
-      "start": 1,
+      "start": 0,
       "end": 2
     },
     {
-      "start": 0,
+      "start": 2,
       "end": 3
     },
     {
       "start": 0,
       "end": 4
+    },
+    {
+      "start": 0,
+      "end": 5
     }
   ],
   "selectedNode": 0

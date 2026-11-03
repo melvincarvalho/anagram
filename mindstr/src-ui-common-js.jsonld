@@ -19,37 +19,46 @@
       "bgColor": "#ebc573"
     },
     {
-      "@id": "#4evz5w",
-      "name": "exports 1–14 of 28 ›",
-      "x": 241,
-      "y": -55,
-      "link": "./src-ui-common-js-1.jsonld",
+      "@id": "#j99zi5",
+      "name": "Shared UI state and small pieces",
+      "x": 210,
+      "y": -80,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/common.js#L1",
       "bgColor": "#acd5ff",
       "parent": "#this"
     },
     {
-      "@id": "#vh32g5",
-      "name": "exports 15–28 of 28 ›",
-      "x": 65,
-      "y": 205,
-      "link": "./src-ui-common-js-2.jsonld",
-      "bgColor": "#f3bee1",
+      "@id": "#kwrapz",
+      "name": "exports 1–14 of 28 ›",
+      "x": 154,
+      "y": 145,
+      "link": "./src-ui-common-js-1.jsonld",
+      "bgColor": "#e9c1ef",
       "parent": "#this"
     },
     {
-      "@id": "#6ktxue",
+      "@id": "#n3epze",
+      "name": "exports 15–28 of 28 ›",
+      "x": -115,
+      "y": 169,
+      "link": "./src-ui-common-js-2.jsonld",
+      "bgColor": "#fec0b1",
+      "parent": "#this"
+    },
+    {
+      "@id": "#42eis4",
       "name": "183 lines",
-      "x": -241,
-      "y": 55,
+      "x": -225,
+      "y": -41,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/common.js",
       "bgColor": "#ececec",
       "parent": "#this"
     },
     {
-      "@id": "#qrakrq",
+      "@id": "#f65d8e",
       "name": "← ui",
-      "x": -65,
-      "y": -205,
+      "x": -24,
+      "y": -194,
       "link": "./src-ui.jsonld",
       "bgColor": "#ececec",
       "parent": "#this"
@@ -71,6 +80,10 @@
     {
       "start": 0,
       "end": 4
+    },
+    {
+      "start": 0,
+      "end": 5
     }
   ],
   "selectedNode": 0

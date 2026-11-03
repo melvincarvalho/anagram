@@ -19,36 +19,45 @@
       "bgColor": "#ebc573"
     },
     {
-      "@id": "#htircd",
-      "name": "exports",
-      "x": 250,
-      "y": 0,
+      "@id": "#wkrebf",
+      "name": "Forward a message to another chat",
+      "x": 234,
+      "y": -51,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/forward.js#L1",
       "bgColor": "#acd5ff",
       "parent": "#this"
     },
     {
-      "@id": "#sixamq",
-      "name": "ForwardPicker()",
-      "x": 500,
-      "y": 0,
-      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/forward.js#L9",
-      "bgColor": "#daeeff",
-      "parent": "#htircd"
+      "@id": "#bu5bte",
+      "name": "exports",
+      "x": 60,
+      "y": 189,
+      "bgColor": "#f3bee1",
+      "parent": "#this"
     },
     {
-      "@id": "#j99zi5",
+      "@id": "#4hakzu",
+      "name": "ForwardPicker()",
+      "x": 111,
+      "y": 353,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/forward.js#L9",
+      "bgColor": "#fce3f3",
+      "parent": "#bu5bte"
+    },
+    {
+      "@id": "#yhcpjw",
       "name": "51 lines",
-      "x": -125,
-      "y": 184,
+      "x": -222,
+      "y": 51,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/forward.js",
       "bgColor": "#ececec",
       "parent": "#this"
     },
     {
-      "@id": "#kwrapz",
+      "@id": "#m7mgcv",
       "name": "← ui",
-      "x": -125,
-      "y": -184,
+      "x": -60,
+      "y": -189,
       "link": "./src-ui.jsonld",
       "bgColor": "#ececec",
       "parent": "#this"
@@ -60,16 +69,20 @@
       "end": 1
     },
     {
-      "start": 1,
+      "start": 0,
       "end": 2
     },
     {
-      "start": 0,
+      "start": 2,
       "end": 3
     },
     {
       "start": 0,
       "end": 4
+    },
+    {
+      "start": 0,
+      "end": 5
     }
   ],
   "selectedNode": 0

@@ -19,37 +19,46 @@
       "bgColor": "#ebc573"
     },
     {
-      "@id": "#67qhwk",
-      "name": "exports 1–17 of 34 ›",
-      "x": 241,
-      "y": -55,
-      "link": "./src-store-ratchet-js-1.jsonld",
+      "@id": "#kue24d",
+      "name": "Optional double-ratchet DMs (Iris-compatible)",
+      "x": 210,
+      "y": -80,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/ratchet.js#L1",
       "bgColor": "#acd5ff",
       "parent": "#this"
     },
     {
-      "@id": "#s9du6c",
-      "name": "exports 18–34 of 34 ›",
-      "x": 65,
-      "y": 205,
-      "link": "./src-store-ratchet-js-2.jsonld",
-      "bgColor": "#f3bee1",
+      "@id": "#ezqvf7",
+      "name": "exports 1–17 of 34 ›",
+      "x": 154,
+      "y": 145,
+      "link": "./src-store-ratchet-js-1.jsonld",
+      "bgColor": "#e9c1ef",
       "parent": "#this"
     },
     {
-      "@id": "#tjeu4p",
+      "@id": "#4c22a7",
+      "name": "exports 18–34 of 34 ›",
+      "x": -115,
+      "y": 169,
+      "link": "./src-store-ratchet-js-2.jsonld",
+      "bgColor": "#fec0b1",
+      "parent": "#this"
+    },
+    {
+      "@id": "#zpagjg",
       "name": "410 lines",
-      "x": -241,
-      "y": 55,
+      "x": -225,
+      "y": -41,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/ratchet.js",
       "bgColor": "#ececec",
       "parent": "#this"
     },
     {
-      "@id": "#x9rczq",
+      "@id": "#sptvks",
       "name": "← store",
-      "x": -65,
-      "y": -205,
+      "x": -24,
+      "y": -194,
       "link": "./src-store.jsonld",
       "bgColor": "#ececec",
       "parent": "#this"
@@ -71,6 +80,10 @@
     {
       "start": 0,
       "end": 4
+    },
+    {
+      "start": 0,
+      "end": 5
     }
   ],
   "selectedNode": 0

@@ -19,54 +19,63 @@
       "bgColor": "#ebc573"
     },
     {
-      "@id": "#n3epze",
-      "name": "exports",
-      "x": 250,
-      "y": 0,
+      "@id": "#gekznt",
+      "name": "Chat info panels",
+      "x": 222,
+      "y": -51,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/info.js#L1",
       "bgColor": "#acd5ff",
       "parent": "#this"
     },
     {
-      "@id": "#42eis4",
+      "@id": "#beqq5j",
+      "name": "exports",
+      "x": 60,
+      "y": 189,
+      "bgColor": "#f3bee1",
+      "parent": "#this"
+    },
+    {
+      "@id": "#6r28st",
       "name": "PersonInfo()",
-      "x": 416,
-      "y": -235,
+      "x": 278,
+      "y": 279,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/info.js#L78",
-      "bgColor": "#daeeff",
-      "parent": "#n3epze"
+      "bgColor": "#fce3f3",
+      "parent": "#beqq5j"
     },
     {
-      "@id": "#f65d8e",
+      "@id": "#d5e2jv",
       "name": "RoomInfo()",
-      "x": 590,
-      "y": 0,
+      "x": 111,
+      "y": 353,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/info.js#L203",
-      "bgColor": "#daeeff",
-      "parent": "#n3epze"
+      "bgColor": "#fce3f3",
+      "parent": "#beqq5j"
     },
     {
-      "@id": "#ncsetq",
+      "@id": "#3g77sx",
       "name": "InfoPanel()",
-      "x": 416,
-      "y": 235,
+      "x": -76,
+      "y": 360,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/info.js#L239",
-      "bgColor": "#daeeff",
-      "parent": "#n3epze"
+      "bgColor": "#fce3f3",
+      "parent": "#beqq5j"
     },
     {
-      "@id": "#b9nzdc",
+      "@id": "#ucs9ug",
       "name": "249 lines",
-      "x": -125,
-      "y": 184,
+      "x": -222,
+      "y": 51,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/info.js",
       "bgColor": "#ececec",
       "parent": "#this"
     },
     {
-      "@id": "#k8wdpx",
+      "@id": "#tse2je",
       "name": "← ui",
-      "x": -125,
-      "y": -184,
+      "x": -60,
+      "y": -189,
       "link": "./src-ui.jsonld",
       "bgColor": "#ececec",
       "parent": "#this"
@@ -78,24 +87,28 @@
       "end": 1
     },
     {
-      "start": 1,
+      "start": 0,
       "end": 2
     },
     {
-      "start": 1,
+      "start": 2,
       "end": 3
     },
     {
-      "start": 1,
+      "start": 2,
       "end": 4
     },
     {
-      "start": 0,
+      "start": 2,
       "end": 5
     },
     {
       "start": 0,
       "end": 6
+    },
+    {
+      "start": 0,
+      "end": 7
     }
   ],
   "selectedNode": 0

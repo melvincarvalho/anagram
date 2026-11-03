@@ -19,63 +19,72 @@
       "bgColor": "#ebc573"
     },
     {
-      "@id": "#ptf2jy",
-      "name": "exports",
-      "x": 244,
-      "y": 47,
+      "@id": "#yiscsp",
+      "name": "Media uploads (Blossom)",
+      "x": 218,
+      "y": -63,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/media.js#L1",
       "bgColor": "#acd5ff",
       "parent": "#this"
     },
     {
-      "@id": "#4bfy6j",
-      "name": "mediaServer()",
-      "x": 419,
-      "y": -232,
-      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/media.js#L8",
-      "bgColor": "#daeeff",
-      "parent": "#ptf2jy"
-    },
-    {
-      "@id": "#4wkdd9",
-      "name": "setMediaServer()",
-      "x": 589,
-      "y": -22,
-      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/media.js#L9",
-      "bgColor": "#daeeff",
-      "parent": "#ptf2jy"
-    },
-    {
-      "@id": "#yiscsp",
-      "name": "uploadMedia()",
-      "x": 442,
-      "y": 199,
-      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/media.js#L15",
-      "bgColor": "#daeeff",
-      "parent": "#ptf2jy"
-    },
-    {
       "@id": "#2fzfhg",
-      "name": "deleteMedia()",
-      "x": 308,
-      "y": 428,
-      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/media.js#L19",
-      "bgColor": "#daeeff",
-      "parent": "#ptf2jy"
+      "name": "exports",
+      "x": 45,
+      "y": 192,
+      "bgColor": "#f3bee1",
+      "parent": "#this"
     },
     {
       "@id": "#6ab87r",
+      "name": "mediaServer",
+      "x": 313,
+      "y": 251,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/media.js#L8",
+      "bgColor": "#fce3f3",
+      "parent": "#2fzfhg"
+    },
+    {
+      "@id": "#uyfscv",
+      "name": "setMediaServer()",
+      "x": 196,
+      "y": 391,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/media.js#L9",
+      "bgColor": "#fce3f3",
+      "parent": "#2fzfhg"
+    },
+    {
+      "@id": "#z5cumb",
+      "name": "uploadMedia()",
+      "x": -3,
+      "y": 365,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/media.js#L15",
+      "bgColor": "#fce3f3",
+      "parent": "#2fzfhg"
+    },
+    {
+      "@id": "#7iejm3",
+      "name": "deleteMedia()",
+      "x": -203,
+      "y": 388,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/media.js#L19",
+      "bgColor": "#fce3f3",
+      "parent": "#2fzfhg"
+    },
+    {
+      "@id": "#452y5w",
       "name": "26 lines",
-      "x": -189,
-      "y": 139,
+      "x": -229,
+      "y": 14,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/media.js",
       "bgColor": "#ececec",
       "parent": "#this"
     },
     {
-      "@id": "#uyfscv",
+      "@id": "#yyjnxk",
       "name": "← store",
-      "x": -100,
-      "y": -195,
+      "x": -45,
+      "y": -192,
       "link": "./src-store.jsonld",
       "bgColor": "#ececec",
       "parent": "#this"
@@ -87,28 +96,32 @@
       "end": 1
     },
     {
-      "start": 1,
+      "start": 0,
       "end": 2
     },
     {
-      "start": 1,
+      "start": 2,
       "end": 3
     },
     {
-      "start": 1,
+      "start": 2,
       "end": 4
     },
     {
-      "start": 1,
+      "start": 2,
       "end": 5
     },
     {
-      "start": 0,
+      "start": 2,
       "end": 6
     },
     {
       "start": 0,
       "end": 7
+    },
+    {
+      "start": 0,
+      "end": 8
     }
   ],
   "selectedNode": 0

@@ -19,36 +19,45 @@
       "bgColor": "#ebc573"
     },
     {
-      "@id": "#3xd5xn",
-      "name": "exports",
-      "x": 250,
-      "y": 0,
+      "@id": "#aj9t28",
+      "name": "Settings",
+      "x": 222,
+      "y": -51,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/settings.js#L1",
       "bgColor": "#acd5ff",
       "parent": "#this"
     },
     {
-      "@id": "#jingvu",
-      "name": "Settings()",
-      "x": 500,
-      "y": 0,
-      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/settings.js#L51",
-      "bgColor": "#daeeff",
-      "parent": "#3xd5xn"
+      "@id": "#vx7khw",
+      "name": "exports",
+      "x": 60,
+      "y": 189,
+      "bgColor": "#f3bee1",
+      "parent": "#this"
     },
     {
-      "@id": "#u9rrt3",
+      "@id": "#34dvu3",
+      "name": "Settings()",
+      "x": 111,
+      "y": 353,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/settings.js#L51",
+      "bgColor": "#fce3f3",
+      "parent": "#vx7khw"
+    },
+    {
+      "@id": "#v52rfv",
       "name": "280 lines",
-      "x": -125,
-      "y": 184,
+      "x": -222,
+      "y": 51,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/settings.js",
       "bgColor": "#ececec",
       "parent": "#this"
     },
     {
-      "@id": "#kgvapt",
+      "@id": "#gitnhm",
       "name": "← ui",
-      "x": -125,
-      "y": -184,
+      "x": -60,
+      "y": -189,
       "link": "./src-ui.jsonld",
       "bgColor": "#ececec",
       "parent": "#this"
@@ -60,16 +69,20 @@
       "end": 1
     },
     {
-      "start": 1,
+      "start": 0,
       "end": 2
     },
     {
-      "start": 0,
+      "start": 2,
       "end": 3
     },
     {
       "start": 0,
       "end": 4
+    },
+    {
+      "start": 0,
+      "end": 5
     }
   ],
   "selectedNode": 0

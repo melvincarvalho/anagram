@@ -19,152 +19,152 @@
       "bgColor": "#ebc573"
     },
     {
-      "@id": "#ecv4rb",
+      "@id": "#2ec6a3",
       "name": "exports 1/2",
-      "x": 301,
-      "y": 64,
+      "x": 281,
+      "y": 60,
       "bgColor": "#acd5ff",
       "parent": "#this"
     },
     {
-      "@id": "#57jxgj",
+      "@id": "#ta2q85",
       "name": "useAction()",
-      "x": 387,
-      "y": -269,
+      "x": 333,
+      "y": -231,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/common.js#L79",
       "bgColor": "#daeeff",
-      "parent": "#ecv4rb"
+      "parent": "#2ec6a3"
     },
     {
-      "@id": "#ttdvnf",
+      "@id": "#f6qx4w",
       "name": "dayKey()",
-      "x": 549,
-      "y": -184,
+      "x": 465,
+      "y": -156,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/common.js#L96",
       "bgColor": "#daeeff",
-      "parent": "#ecv4rb"
+      "parent": "#2ec6a3"
     },
     {
-      "@id": "#pehema",
+      "@id": "#su9mmy",
       "name": "dayLabel()",
-      "x": 499,
-      "y": -28,
+      "x": 429,
+      "y": -24,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/common.js#L97",
       "bgColor": "#daeeff",
-      "parent": "#ecv4rb"
+      "parent": "#2ec6a3"
     },
     {
-      "@id": "#csimu2",
+      "@id": "#puabcz",
       "name": "shortTime()",
-      "x": 573,
-      "y": 121,
+      "x": 485,
+      "y": 103,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/common.js#L105",
       "bgColor": "#daeeff",
-      "parent": "#ecv4rb"
+      "parent": "#2ec6a3"
     },
     {
-      "@id": "#y2vgqr",
+      "@id": "#pggewd",
       "name": "RoomAvatar()",
-      "x": 425,
-      "y": 223,
+      "x": 365,
+      "y": 193,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/common.js#L110",
       "bgColor": "#daeeff",
-      "parent": "#ecv4rb"
+      "parent": "#2ec6a3"
     },
     {
-      "@id": "#nb2pv3",
+      "@id": "#7cv7qa",
       "name": "shareLink()",
-      "x": 383,
-      "y": 381,
+      "x": 324,
+      "y": 324,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/common.js#L117",
       "bgColor": "#daeeff",
-      "parent": "#ecv4rb"
+      "parent": "#2ec6a3"
     },
     {
-      "@id": "#gb9vd3",
+      "@id": "#4evz5w",
       "name": "copy()",
-      "x": 193,
-      "y": 392,
+      "x": 166,
+      "y": 337,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/common.js#L129",
       "bgColor": "#daeeff",
-      "parent": "#ecv4rb"
+      "parent": "#2ec6a3"
     },
     {
-      "@id": "#85n9f9",
+      "@id": "#vh32g5",
       "name": "exports 2/2",
-      "x": -295,
-      "y": 80,
+      "x": -276,
+      "y": 75,
       "bgColor": "#febdc6",
       "parent": "#this"
     },
     {
-      "@id": "#59pd9r",
+      "@id": "#6ktxue",
       "name": "menuKeys()",
-      "x": -161,
-      "y": 402,
+      "x": -139,
+      "y": 346,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/common.js#L139",
       "bgColor": "#ffe2e6",
-      "parent": "#85n9f9"
+      "parent": "#vh32g5"
     },
     {
-      "@id": "#2ec6a3",
+      "@id": "#qrakrq",
       "name": "Unread()",
-      "x": -352,
-      "y": 403,
+      "x": -299,
+      "y": 341,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/common.js#L147",
       "bgColor": "#ffe2e6",
-      "parent": "#85n9f9"
+      "parent": "#vh32g5"
     },
     {
-      "@id": "#ta2q85",
+      "@id": "#ppuaac",
       "name": "Field()",
-      "x": -407,
-      "y": 247,
+      "x": -350,
+      "y": 212,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/common.js#L151",
       "bgColor": "#ffe2e6",
-      "parent": "#85n9f9"
+      "parent": "#vh32g5"
     },
     {
-      "@id": "#f6qx4w",
+      "@id": "#f77hg7",
       "name": "ConfirmButton()",
-      "x": -562,
-      "y": 153,
+      "x": -476,
+      "y": 129,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/common.js#L163",
       "bgColor": "#ffe2e6",
-      "parent": "#85n9f9"
+      "parent": "#vh32g5"
     },
     {
-      "@id": "#su9mmy",
+      "@id": "#kpihvt",
       "name": "fail()",
-      "x": -500,
+      "x": -430,
       "y": -1,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/common.js#L172",
       "bgColor": "#ffe2e6",
-      "parent": "#85n9f9"
+      "parent": "#vh32g5"
     },
     {
-      "@id": "#puabcz",
-      "name": "touchKeyboard()",
-      "x": -561,
-      "y": -155,
+      "@id": "#k58b5b",
+      "name": "touchKeyboard",
+      "x": -476,
+      "y": -131,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/common.js#L175",
       "bgColor": "#ffe2e6",
-      "parent": "#85n9f9"
+      "parent": "#vh32g5"
     },
     {
-      "@id": "#pggewd",
+      "@id": "#htircd",
       "name": "autosize()",
-      "x": -406,
-      "y": -249,
+      "x": -349,
+      "y": -214,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/common.js#L178",
       "bgColor": "#ffe2e6",
-      "parent": "#85n9f9"
+      "parent": "#vh32g5"
     },
     {
-      "@id": "#7cv7qa",
+      "@id": "#sixamq",
       "name": "← common.js",
       "x": -7,
-      "y": -212,
+      "y": -195,
       "link": "./src-ui-common-js.jsonld",
       "bgColor": "#ececec",
       "parent": "#this"

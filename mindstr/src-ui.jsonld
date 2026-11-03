@@ -19,159 +19,159 @@
       "bgColor": "#ebc573"
     },
     {
-      "@id": "#pu9sy8",
+      "@id": "#7rqytw",
       "name": "around common.js · 6",
-      "x": 250,
-      "y": -9,
+      "x": 230,
+      "y": -8,
       "bgColor": "#acd5ff",
       "parent": "#this"
     },
     {
-      "@id": "#7ppwsy",
+      "@id": "#hir8hx",
       "name": "common.js · 28 ›",
-      "x": 368,
-      "y": -288,
+      "x": 316,
+      "y": -248,
       "link": "./src-ui-common-js.jsonld",
       "bgColor": "#daeeff",
-      "parent": "#pu9sy8"
+      "parent": "#7rqytw"
     },
     {
-      "@id": "#c8rxju",
+      "@id": "#ykkb9u",
       "name": "chats.js · 2 ›",
-      "x": 528,
-      "y": -224,
+      "x": 447,
+      "y": -190,
       "link": "./src-ui-chats-js.jsonld",
       "bgColor": "#daeeff",
-      "parent": "#pu9sy8"
+      "parent": "#7rqytw"
     },
     {
-      "@id": "#jr3z4p",
+      "@id": "#7ikicx",
       "name": "composer.js · 1 ›",
-      "x": 492,
-      "y": -77,
+      "x": 423,
+      "y": -66,
       "link": "./src-ui-composer-js.jsonld",
       "bgColor": "#daeeff",
-      "parent": "#pu9sy8"
+      "parent": "#7rqytw"
     },
     {
-      "@id": "#hmnpnc",
+      "@id": "#ice2bk",
       "name": "forward.js · 1 ›",
-      "x": 587,
-      "y": 50,
+      "x": 497,
+      "y": 43,
       "link": "./src-ui-forward-js.jsonld",
       "bgColor": "#daeeff",
-      "parent": "#pu9sy8"
+      "parent": "#7rqytw"
     },
     {
-      "@id": "#tbf3y4",
+      "@id": "#scytyn",
       "name": "info.js · 3 ›",
-      "x": 464,
-      "y": 159,
+      "x": 399,
+      "y": 136,
       "link": "./src-ui-info-js.jsonld",
       "bgColor": "#daeeff",
-      "parent": "#pu9sy8"
+      "parent": "#7rqytw"
     },
     {
-      "@id": "#z9ubg8",
+      "@id": "#jbhqgv",
       "name": "login.js · 1 ›",
-      "x": 464,
-      "y": 309,
+      "x": 394,
+      "y": 262,
       "link": "./src-ui-login-js.jsonld",
       "bgColor": "#daeeff",
-      "parent": "#pu9sy8"
+      "parent": "#7rqytw"
     },
     {
-      "@id": "#5h5cc9",
+      "@id": "#5seuyw",
       "name": "around text.js · 4",
-      "x": -20,
-      "y": 212,
+      "x": -19,
+      "y": 195,
       "bgColor": "#e9c1ef",
       "parent": "#this"
     },
     {
-      "@id": "#2682x9",
+      "@id": "#nm5hts",
       "name": "text.js · 10 ›",
-      "x": 172,
-      "y": 399,
+      "x": 148,
+      "y": 343,
       "link": "./src-ui-text-js.jsonld",
       "bgColor": "#f7e4f9",
-      "parent": "#5h5cc9"
+      "parent": "#5seuyw"
     },
     {
-      "@id": "#dgxw48",
+      "@id": "#mesfa4",
       "name": "messages.js · 4 ›",
-      "x": 37,
-      "y": 500,
+      "x": 32,
+      "y": 424,
       "link": "./src-ui-messages-js.jsonld",
       "bgColor": "#f7e4f9",
-      "parent": "#5h5cc9"
+      "parent": "#5seuyw"
     },
     {
-      "@id": "#3m2wcm",
+      "@id": "#ek2jcm",
       "name": "notifications.js",
-      "x": -111,
-      "y": 414,
+      "x": -89,
+      "y": 356,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/notifications.js",
       "bgColor": "#f7e4f9",
-      "parent": "#5h5cc9"
+      "parent": "#5seuyw"
     },
     {
-      "@id": "#4ad697",
+      "@id": "#uja84e",
       "name": "sidebar.js · 2 ›",
-      "x": -289,
-      "y": 437,
+      "x": -249,
+      "y": 371,
       "link": "./src-ui-sidebar-js.jsonld",
       "bgColor": "#f7e4f9",
-      "parent": "#5h5cc9"
+      "parent": "#5seuyw"
     },
     {
-      "@id": "#z237xc",
+      "@id": "#78sngm",
       "name": "around settings.js · 2",
-      "x": -237,
-      "y": 67,
+      "x": -218,
+      "y": 62,
       "bgColor": "#fec0b1",
       "parent": "#this"
     },
     {
-      "@id": "#ern3ds",
+      "@id": "#58pkgm",
       "name": "settings.js · 1 ›",
-      "x": -433,
-      "y": 213,
+      "x": -372,
+      "y": 183,
       "link": "./src-ui-settings-js.jsonld",
       "bgColor": "#ffe3dc",
-      "parent": "#z237xc"
+      "parent": "#78sngm"
     },
     {
-      "@id": "#cixa8i",
+      "@id": "#7jxpjz",
       "name": "sounds.js · 1 ›",
-      "x": -586,
-      "y": 60,
+      "x": -427,
+      "y": 43,
       "link": "./src-ui-sounds-js.jsonld",
       "bgColor": "#ffe3dc",
-      "parent": "#z237xc"
+      "parent": "#78sngm"
     },
     {
-      "@id": "#w8ga4c",
-      "name": "other · 1",
-      "x": -200,
-      "y": -128,
+      "@id": "#qrspvr",
+      "name": "standalone · 1",
+      "x": -184,
+      "y": -117,
       "bgColor": "#d7d59b",
       "parent": "#this"
     },
     {
-      "@id": "#eud4cc",
+      "@id": "#wfbk2v",
       "name": "new.js · 1 ›",
-      "x": -400,
-      "y": -255,
+      "x": -344,
+      "y": -220,
       "link": "./src-ui-new-js.jsonld",
       "bgColor": "#eeedd3",
-      "parent": "#w8ga4c"
+      "parent": "#qrspvr"
     },
     {
-      "@id": "#5mb355",
+      "@id": "#xetwaa",
       "name": "← js/",
-      "x": 10,
-      "y": -212,
+      "x": 9,
+      "y": -195,
       "link": "./src.jsonld",
       "bgColor": "#ececec",
       "parent": "#this"

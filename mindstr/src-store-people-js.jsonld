@@ -19,37 +19,46 @@
       "bgColor": "#ebc573"
     },
     {
-      "@id": "#tzmucf",
-      "name": "exports 1–15 of 30 ›",
-      "x": 241,
-      "y": -55,
-      "link": "./src-store-people-js-1.jsonld",
+      "@id": "#28eue2",
+      "name": "People",
+      "x": 210,
+      "y": -80,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/people.js#L1",
       "bgColor": "#acd5ff",
       "parent": "#this"
     },
     {
-      "@id": "#xmtzgz",
-      "name": "exports 16–30 of 30 ›",
-      "x": 65,
-      "y": 205,
-      "link": "./src-store-people-js-2.jsonld",
-      "bgColor": "#f3bee1",
+      "@id": "#f4n9qu",
+      "name": "exports 1–15 of 30 ›",
+      "x": 154,
+      "y": 145,
+      "link": "./src-store-people-js-1.jsonld",
+      "bgColor": "#e9c1ef",
       "parent": "#this"
     },
     {
-      "@id": "#b9snuz",
+      "@id": "#krwt6e",
+      "name": "exports 16–30 of 30 ›",
+      "x": -115,
+      "y": 169,
+      "link": "./src-store-people-js-2.jsonld",
+      "bgColor": "#fec0b1",
+      "parent": "#this"
+    },
+    {
+      "@id": "#emecna",
       "name": "385 lines",
-      "x": -241,
-      "y": 55,
+      "x": -225,
+      "y": -41,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/people.js",
       "bgColor": "#ececec",
       "parent": "#this"
     },
     {
-      "@id": "#nxqgmq",
+      "@id": "#u8v9bw",
       "name": "← store",
-      "x": -65,
-      "y": -205,
+      "x": -24,
+      "y": -194,
       "link": "./src-store.jsonld",
       "bgColor": "#ececec",
       "parent": "#this"
@@ -71,6 +80,10 @@
     {
       "start": 0,
       "end": 4
+    },
+    {
+      "start": 0,
+      "end": 5
     }
   ],
   "selectedNode": 0

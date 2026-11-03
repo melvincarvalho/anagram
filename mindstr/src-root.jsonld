@@ -19,123 +19,123 @@
       "bgColor": "#ebc573"
     },
     {
-      "@id": "#sfg4qv",
+      "@id": "#95c6bh",
       "name": "around messaging-devices.js · 3",
-      "x": 239,
-      "y": -62,
+      "x": 209,
+      "y": -57,
       "bgColor": "#acd5ff",
       "parent": "#this"
     },
     {
-      "@id": "#xww8q9",
+      "@id": "#jdqw4m",
       "name": "messaging-devices.js · 1 ›",
-      "x": 389,
-      "y": -267,
+      "x": 335,
+      "y": -229,
       "link": "./src-messaging-devices-js.jsonld",
       "bgColor": "#daeeff",
-      "parent": "#sfg4qv"
+      "parent": "#95c6bh"
     },
     {
-      "@id": "#yv5i54",
+      "@id": "#ci6a2d",
       "name": "transport.js · 17 ›",
-      "x": 574,
-      "y": -117,
+      "x": 438,
+      "y": -85,
       "link": "./src-transport-js.jsonld",
       "bgColor": "#daeeff",
-      "parent": "#sfg4qv"
+      "parent": "#95c6bh"
     },
     {
-      "@id": "#cfextr",
+      "@id": "#e9ev2h",
       "name": "db.js · 15 ›",
-      "x": 495,
-      "y": 63,
+      "x": 425,
+      "y": 54,
       "link": "./src-db-js.jsonld",
       "bgColor": "#daeeff",
-      "parent": "#sfg4qv"
+      "parent": "#95c6bh"
     },
     {
-      "@id": "#n4bn2e",
+      "@id": "#qg3m9n",
       "name": "around app.js · 2",
-      "x": 123,
-      "y": 185,
+      "x": 113,
+      "y": 170,
       "bgColor": "#e9c1ef",
       "parent": "#this"
     },
     {
-      "@id": "#eud79w",
+      "@id": "#hd3dbi",
       "name": "app.js",
-      "x": 346,
-      "y": 306,
+      "x": 298,
+      "y": 264,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/app.js",
       "bgColor": "#f7e4f9",
-      "parent": "#n4bn2e"
+      "parent": "#qg3m9n"
     },
     {
-      "@id": "#wn4gws",
+      "@id": "#pkx9gj",
       "name": "store.js",
-      "x": 154,
-      "y": 484,
+      "x": 112,
+      "y": 353,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store.js",
       "bgColor": "#f7e4f9",
-      "parent": "#n4bn2e"
+      "parent": "#qg3m9n"
     },
     {
-      "@id": "#7urzyg",
+      "@id": "#zm97u9",
       "name": "around ndr-discovery.js · 2",
-      "x": -157,
-      "y": 165,
+      "x": -145,
+      "y": 152,
       "bgColor": "#fec0b1",
       "parent": "#this"
     },
     {
-      "@id": "#fcdibk",
+      "@id": "#dxk4uv",
       "name": "ndr-discovery.js · 1 ›",
-      "x": -215,
-      "y": 384,
+      "x": -185,
+      "y": 330,
       "link": "./src-ndr-discovery-js.jsonld",
       "bgColor": "#ffe3dc",
-      "parent": "#7urzyg"
+      "parent": "#zm97u9"
     },
     {
-      "@id": "#tmtxc2",
+      "@id": "#zxxzax",
       "name": "ndr.js · 2 ›",
-      "x": -479,
-      "y": 293,
+      "x": -349,
+      "y": 214,
       "link": "./src-ndr-js.jsonld",
       "bgColor": "#ffe3dc",
-      "parent": "#7urzyg"
+      "parent": "#zm97u9"
     },
     {
-      "@id": "#f5mzxc",
-      "name": "other · 2",
-      "x": -239,
-      "y": -63,
+      "@id": "#w59yz8",
+      "name": "standalone · 2",
+      "x": -220,
+      "y": -58,
       "bgColor": "#d7d59b",
       "parent": "#this"
     },
     {
-      "@id": "#assz83",
+      "@id": "#n6njdt",
       "name": "emoji.js · 1 ›",
-      "x": -499,
-      "y": -22,
+      "x": -429,
+      "y": -19,
       "link": "./src-emoji-js.jsonld",
       "bgColor": "#eeedd3",
-      "parent": "#f5mzxc"
+      "parent": "#w59yz8"
     },
     {
-      "@id": "#ef2zi4",
+      "@id": "#we24ey",
       "name": "nostr.js · 75 ›",
-      "x": -502,
-      "y": -264,
+      "x": -366,
+      "y": -192,
       "link": "./src-nostr-js.jsonld",
       "bgColor": "#eeedd3",
-      "parent": "#f5mzxc"
+      "parent": "#w59yz8"
     },
     {
-      "@id": "#mmiwv8",
+      "@id": "#9e76te",
       "name": "← js/",
-      "x": -18,
-      "y": -212,
+      "x": -17,
+      "y": -195,
       "link": "./src.jsonld",
       "bgColor": "#ececec",
       "parent": "#this"

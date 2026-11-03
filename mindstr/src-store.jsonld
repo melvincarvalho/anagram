@@ -19,107 +19,107 @@
       "bgColor": "#ebc573"
     },
     {
-      "@id": "#spatem",
+      "@id": "#er3xwg",
       "name": "around core.js · 6",
-      "x": 213,
-      "y": 111,
+      "x": 196,
+      "y": 102,
       "bgColor": "#acd5ff",
       "parent": "#this"
     },
     {
-      "@id": "#twzhxn",
+      "@id": "#3p4wn2",
       "name": "core.js · 20 ›",
-      "x": 421,
-      "y": -229,
+      "x": 362,
+      "y": -197,
       "link": "./src-store-core-js.jsonld",
       "bgColor": "#daeeff",
-      "parent": "#spatem"
+      "parent": "#er3xwg"
     },
     {
-      "@id": "#ir6eif",
+      "@id": "#f356md",
       "name": "accounts.js · 7 ›",
-      "x": 586,
-      "y": -61,
+      "x": 496,
+      "y": -52,
       "link": "./src-store-accounts-js.jsonld",
       "bgColor": "#daeeff",
-      "parent": "#spatem"
+      "parent": "#er3xwg"
     },
     {
-      "@id": "#bwj4g5",
+      "@id": "#c9pfmk",
       "name": "dms.js · 7 ›",
-      "x": 474,
-      "y": 136,
+      "x": 407,
+      "y": 117,
       "link": "./src-store-dms-js.jsonld",
       "bgColor": "#daeeff",
-      "parent": "#spatem"
+      "parent": "#er3xwg"
     },
     {
-      "@id": "#9fjvd8",
+      "@id": "#metvfr",
       "name": "media.js · 4 ›",
-      "x": 423,
-      "y": 350,
+      "x": 358,
+      "y": 297,
       "link": "./src-store-media-js.jsonld",
       "bgColor": "#daeeff",
-      "parent": "#spatem"
+      "parent": "#er3xwg"
     },
     {
-      "@id": "#6fwnzy",
+      "@id": "#rnyi3y",
       "name": "messages.js · 29 ›",
-      "x": 172,
-      "y": 399,
+      "x": 148,
+      "y": 343,
       "link": "./src-store-messages-js.jsonld",
       "bgColor": "#daeeff",
-      "parent": "#spatem"
+      "parent": "#er3xwg"
     },
     {
-      "@id": "#rtnzsk",
+      "@id": "#ph8a5e",
       "name": "people.js · 30 ›",
-      "x": -56,
-      "y": 499,
+      "x": -47,
+      "y": 423,
       "link": "./src-store-people-js.jsonld",
       "bgColor": "#daeeff",
-      "parent": "#spatem"
+      "parent": "#er3xwg"
     },
     {
-      "@id": "#v8phzs",
+      "@id": "#uncmtp",
       "name": "around prefs.js · 3",
-      "x": -245,
-      "y": 43,
+      "x": -225,
+      "y": 40,
       "bgColor": "#febdc6",
       "parent": "#this"
     },
     {
-      "@id": "#izxsmt",
+      "@id": "#3vjzm2",
       "name": "prefs.js · 23 ›",
-      "x": -398,
-      "y": 257,
+      "x": -343,
+      "y": 221,
       "link": "./src-store-prefs-js.jsonld",
       "bgColor": "#ffe2e6",
-      "parent": "#v8phzs"
+      "parent": "#uncmtp"
     },
     {
-      "@id": "#er3xwg",
+      "@id": "#6wz95i",
       "name": "rooms.js · 19 ›",
-      "x": -578,
-      "y": 102,
+      "x": -421,
+      "y": 74,
       "link": "./src-store-rooms-js.jsonld",
       "bgColor": "#ffe2e6",
-      "parent": "#v8phzs"
+      "parent": "#uncmtp"
     },
     {
-      "@id": "#3p4wn2",
+      "@id": "#mkijzp",
       "name": "ratchet.js · 34 ›",
-      "x": -486,
-      "y": -100,
+      "x": -418,
+      "y": -86,
       "link": "./src-store-ratchet-js.jsonld",
       "bgColor": "#ffe2e6",
-      "parent": "#v8phzs"
+      "parent": "#uncmtp"
     },
     {
-      "@id": "#f356md",
+      "@id": "#wm3fr8",
       "name": "← js/",
-      "x": -57,
-      "y": -207,
+      "x": -53,
+      "y": -190,
       "link": "./src.jsonld",
       "bgColor": "#ececec",
       "parent": "#this"

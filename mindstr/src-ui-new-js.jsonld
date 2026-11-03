@@ -19,36 +19,45 @@
       "bgColor": "#ebc573"
     },
     {
-      "@id": "#3g77sx",
-      "name": "exports",
-      "x": 250,
-      "y": 0,
+      "@id": "#wt6f72",
+      "name": "New message / join or create a room",
+      "x": 222,
+      "y": -51,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/new.js#L1",
       "bgColor": "#acd5ff",
       "parent": "#this"
     },
     {
-      "@id": "#ucs9ug",
-      "name": "NewThing()",
-      "x": 500,
-      "y": 0,
-      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/new.js#L67",
-      "bgColor": "#daeeff",
-      "parent": "#3g77sx"
+      "@id": "#zy9np2",
+      "name": "exports",
+      "x": 60,
+      "y": 189,
+      "bgColor": "#f3bee1",
+      "parent": "#this"
     },
     {
-      "@id": "#tse2je",
+      "@id": "#3jk3i5",
+      "name": "NewThing()",
+      "x": 111,
+      "y": 353,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/new.js#L67",
+      "bgColor": "#fce3f3",
+      "parent": "#zy9np2"
+    },
+    {
+      "@id": "#94asrn",
       "name": "107 lines",
-      "x": -125,
-      "y": 184,
+      "x": -222,
+      "y": 51,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/new.js",
       "bgColor": "#ececec",
       "parent": "#this"
     },
     {
-      "@id": "#cvh8ee",
+      "@id": "#kgrwxb",
       "name": "← ui",
-      "x": -125,
-      "y": -184,
+      "x": -60,
+      "y": -189,
       "link": "./src-ui.jsonld",
       "bgColor": "#ececec",
       "parent": "#this"
@@ -60,16 +69,20 @@
       "end": 1
     },
     {
-      "start": 1,
+      "start": 0,
       "end": 2
     },
     {
-      "start": 0,
+      "start": 2,
       "end": 3
     },
     {
       "start": 0,
       "end": 4
+    },
+    {
+      "start": 0,
+      "end": 5
     }
   ],
   "selectedNode": 0

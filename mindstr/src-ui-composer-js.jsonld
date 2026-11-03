@@ -19,36 +19,45 @@
       "bgColor": "#ebc573"
     },
     {
-      "@id": "#ppuaac",
-      "name": "exports",
-      "x": 250,
-      "y": 0,
+      "@id": "#ncsetq",
+      "name": "The composer",
+      "x": 222,
+      "y": -51,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/composer.js#L1",
       "bgColor": "#acd5ff",
       "parent": "#this"
     },
     {
-      "@id": "#f77hg7",
-      "name": "Composer()",
-      "x": 500,
-      "y": 0,
-      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/composer.js#L71",
-      "bgColor": "#daeeff",
-      "parent": "#ppuaac"
+      "@id": "#b9nzdc",
+      "name": "exports",
+      "x": 60,
+      "y": 189,
+      "bgColor": "#f3bee1",
+      "parent": "#this"
     },
     {
-      "@id": "#kpihvt",
+      "@id": "#k8wdpx",
+      "name": "Composer()",
+      "x": 111,
+      "y": 353,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/composer.js#L71",
+      "bgColor": "#fce3f3",
+      "parent": "#b9nzdc"
+    },
+    {
+      "@id": "#a9fnph",
       "name": "349 lines",
-      "x": -125,
-      "y": 184,
+      "x": -222,
+      "y": 51,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/composer.js",
       "bgColor": "#ececec",
       "parent": "#this"
     },
     {
-      "@id": "#k58b5b",
+      "@id": "#yyu7jz",
       "name": "← ui",
-      "x": -125,
-      "y": -184,
+      "x": -60,
+      "y": -189,
       "link": "./src-ui.jsonld",
       "bgColor": "#ececec",
       "parent": "#this"
@@ -60,16 +69,20 @@
       "end": 1
     },
     {
-      "start": 1,
+      "start": 0,
       "end": 2
     },
     {
-      "start": 0,
+      "start": 2,
       "end": 3
     },
     {
       "start": 0,
       "end": 4
+    },
+    {
+      "start": 0,
+      "end": 5
     }
   ],
   "selectedNode": 0

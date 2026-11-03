@@ -20,119 +20,228 @@
     },
     {
       "@id": "#skzt29",
-      "name": "README",
-      "x": 250,
-      "y": -12,
-      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/README.md#anagram-lite",
+      "name": "Live site",
+      "x": 224,
+      "y": -46,
+      "link": "https://nostr.chat/",
       "bgColor": "#acd5ff",
       "parent": "#this"
     },
     {
       "@id": "#t4pwzt",
-      "name": "Transport",
-      "x": 373,
-      "y": -283,
-      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/README.md#transport",
+      "name": "A no-build Preact client for private Nostr DMs and public…",
+      "x": 337,
+      "y": -233,
+      "link": "https://nostr.chat/",
       "bgColor": "#daeeff",
       "parent": "#skzt29"
     },
     {
       "@id": "#jhaa84",
-      "name": "Interoperability",
-      "x": 541,
-      "y": -200,
-      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/README.md#interoperability",
+      "name": "nostr.chat",
+      "x": 474,
+      "y": -136,
+      "link": "https://nostr.chat/",
       "bgColor": "#daeeff",
       "parent": "#skzt29"
     },
     {
       "@id": "#wavvy9",
-      "name": "Privacy",
-      "x": 498,
-      "y": -39,
-      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/README.md#privacy",
+      "name": "Identity",
+      "x": 426,
+      "y": -50,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/README.md#anagram-lite",
       "bgColor": "#daeeff",
       "parent": "#skzt29"
     },
     {
       "@id": "#i9w3v4",
-      "name": "Run",
-      "x": 575,
-      "y": 113,
-      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/README.md#run",
+      "name": "DMs",
+      "x": 499,
+      "y": 22,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/README.md#anagram-lite",
       "bgColor": "#daeeff",
       "parent": "#skzt29"
     },
     {
       "@id": "#e9sufn",
-      "name": "Double-ratchet messaging",
-      "x": 418,
-      "y": 234,
-      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/README.md#double-ratchet-messaging",
-      "bgColor": "#daeeff",
+      "name": "since Oct 2026 · last 21 Oct 2026",
+      "x": 411,
+      "y": 107,
+      "link": "https://github.com/melvincarvalho/anagram/commits/gh-pages",
+      "bgColor": "#ececec",
       "parent": "#skzt29"
     },
     {
       "@id": "#g45zx9",
-      "name": "Docs · 1",
-      "x": 24,
-      "y": 211,
-      "bgColor": "#e9c1ef",
+      "name": "SPEC.md · 10 ›",
+      "x": 147,
+      "y": 151,
+      "link": "./doc-spec.jsonld",
+      "bgColor": "#e0c4f6",
       "parent": "#this"
     },
     {
       "@id": "#vz8rhu",
-      "name": "SPEC.md · 10 ›",
-      "x": 49,
-      "y": 423,
-      "link": "./doc-spec.jsonld",
-      "bgColor": "#f7e4f9",
-      "parent": "#g45zx9"
+      "name": "Scripts · 2",
+      "x": 21,
+      "y": 208,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/package.json",
+      "bgColor": "#febdc6",
+      "parent": "#this"
     },
     {
       "@id": "#35gtrs",
-      "name": "Source · js/ · 31 files ›",
-      "x": -207,
-      "y": 119,
-      "link": "./src.jsonld",
-      "bgColor": "#fec0b1",
-      "parent": "#this"
+      "name": "npm run vendor:ndr",
+      "x": 122,
+      "y": 357,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/scripts/vendor-ndr.mjs",
+      "bgColor": "#ffe2e6",
+      "parent": "#vz8rhu"
     },
     {
       "@id": "#fiqrfa",
-      "name": "Open PRs · 1",
-      "x": -222,
-      "y": -98,
-      "link": "https://github.com/melvincarvalho/anagram/pulls",
-      "bgColor": "#d7d59b",
-      "parent": "#this"
+      "name": "npm run test",
+      "x": -31,
+      "y": 365,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/package.json",
+      "bgColor": "#ffe2e6",
+      "parent": "#vz8rhu"
     },
     {
       "@id": "#fad69b",
-      "name": "#3 Protect private delivery and peer d…",
-      "x": -443,
-      "y": -197,
-      "link": "https://github.com/melvincarvalho/anagram/pull/3",
-      "bgColor": "#eeedd3",
-      "parent": "#fiqrfa"
+      "name": "Source · js/ · 31 files ›",
+      "x": -113,
+      "y": 163,
+      "link": "./src.jsonld",
+      "bgColor": "#f1c99c",
+      "parent": "#this"
     },
     {
       "@id": "#fnrzmm",
-      "name": "Anagram lite: Preact Nostr DMs + public rooms,…",
-      "x": -3,
-      "y": -212,
-      "link": "https://github.com/melvincarvalho/anagram",
-      "bgColor": "#ececec",
+      "name": "README",
+      "x": -215,
+      "y": -70,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/README.md#anagram-lite",
+      "bgColor": "#c1dba8",
       "parent": "#this"
     },
     {
       "@id": "#3y3s3p",
-      "name": "since Oct 2026 · last 21 Oct 2026",
-      "x": -7,
-      "y": -425,
-      "link": "https://github.com/melvincarvalho/anagram/commits/gh-pages",
-      "bgColor": "#ececec",
+      "name": "Transport",
+      "x": -382,
+      "y": 168,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/README.md#transport",
+      "bgColor": "#e3f0d8",
       "parent": "#fnrzmm"
+    },
+    {
+      "@id": "#ujs2ci",
+      "name": "Interoperability",
+      "x": -480,
+      "y": 118,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/README.md#interoperability",
+      "bgColor": "#e3f0d8",
+      "parent": "#fnrzmm"
+    },
+    {
+      "@id": "#442pm7",
+      "name": "Privacy",
+      "x": -388,
+      "y": -157,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/README.md#privacy",
+      "bgColor": "#e3f0d8",
+      "parent": "#fnrzmm"
+    },
+    {
+      "@id": "#imr4n9",
+      "name": "Relays",
+      "x": -630,
+      "y": 5,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/README.md#privacy",
+      "bgColor": "#e3f0d8",
+      "parent": "#442pm7"
+    },
+    {
+      "@id": "#tpktj6",
+      "name": "relay.snort.social",
+      "x": -693,
+      "y": -82,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/README.md#privacy",
+      "bgColor": "#e3f0d8",
+      "parent": "#442pm7"
+    },
+    {
+      "@id": "#u94rpy",
+      "name": "nostr.social",
+      "x": -605,
+      "y": -150,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/README.md#privacy",
+      "bgColor": "#e3f0d8",
+      "parent": "#442pm7"
+    },
+    {
+      "@id": "#7txfyn",
+      "name": "Blossom",
+      "x": -636,
+      "y": -249,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/README.md#privacy",
+      "bgColor": "#e3f0d8",
+      "parent": "#442pm7"
+    },
+    {
+      "@id": "#v5njcx",
+      "name": "Avatars and media hosts",
+      "x": -523,
+      "y": -298,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/README.md#privacy",
+      "bgColor": "#e3f0d8",
+      "parent": "#442pm7"
+    },
+    {
+      "@id": "#z8kicz",
+      "name": "NIP-05 addresses",
+      "x": -519,
+      "y": -406,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/README.md#privacy",
+      "bgColor": "#e3f0d8",
+      "parent": "#442pm7"
+    },
+    {
+      "@id": "#7348h9",
+      "name": "Your key",
+      "x": -389,
+      "y": -419,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/README.md#privacy",
+      "bgColor": "#e3f0d8",
+      "parent": "#442pm7"
+    },
+    {
+      "@id": "#jtny2v",
+      "name": "Double-ratchet messaging",
+      "x": -185,
+      "y": -395,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/README.md#double-ratchet-messaging",
+      "bgColor": "#e3f0d8",
+      "parent": "#fnrzmm"
+    },
+    {
+      "@id": "#zvvi4r",
+      "name": "Open PRs · 1",
+      "x": 51,
+      "y": -188,
+      "link": "https://github.com/melvincarvalho/anagram/pulls",
+      "bgColor": "#96e1dc",
+      "parent": "#this"
+    },
+    {
+      "@id": "#ezqtt6",
+      "name": "#3 Protect private delivery and peer d…",
+      "x": 95,
+      "y": -357,
+      "link": "https://github.com/melvincarvalho/anagram/pull/3",
+      "bgColor": "#d2f3f0",
+      "parent": "#zvvi4r"
     }
   ],
   "connections": [
@@ -165,19 +274,19 @@
       "end": 7
     },
     {
-      "start": 7,
+      "start": 0,
       "end": 8
     },
     {
-      "start": 0,
+      "start": 8,
       "end": 9
     },
     {
-      "start": 0,
+      "start": 8,
       "end": 10
     },
     {
-      "start": 10,
+      "start": 0,
       "end": 11
     },
     {
@@ -187,6 +296,54 @@
     {
       "start": 12,
       "end": 13
+    },
+    {
+      "start": 12,
+      "end": 14
+    },
+    {
+      "start": 12,
+      "end": 15
+    },
+    {
+      "start": 15,
+      "end": 16
+    },
+    {
+      "start": 15,
+      "end": 17
+    },
+    {
+      "start": 15,
+      "end": 18
+    },
+    {
+      "start": 15,
+      "end": 19
+    },
+    {
+      "start": 15,
+      "end": 20
+    },
+    {
+      "start": 15,
+      "end": 21
+    },
+    {
+      "start": 15,
+      "end": 22
+    },
+    {
+      "start": 12,
+      "end": 23
+    },
+    {
+      "start": 0,
+      "end": 24
+    },
+    {
+      "start": 24,
+      "end": 25
     }
   ],
   "selectedNode": 0

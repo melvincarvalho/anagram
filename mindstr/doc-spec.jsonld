@@ -21,16 +21,16 @@
     {
       "@id": "#ab9ysn",
       "name": "sections 1/2",
-      "x": 282,
-      "y": 45,
+      "x": 225,
+      "y": 65,
       "bgColor": "#acd5ff",
       "parent": "#this"
     },
     {
       "@id": "#qhtzie",
       "name": "Identity",
-      "x": 394,
-      "y": -262,
+      "x": 339,
+      "y": -225,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/docs/SPEC.md#1-identity",
       "bgColor": "#daeeff",
       "parent": "#ab9ysn"
@@ -38,8 +38,8 @@
     {
       "@id": "#2sgmjt",
       "name": "Relays and the transport scopes",
-      "x": 578,
-      "y": -103,
+      "x": 489,
+      "y": -87,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/docs/SPEC.md#2-relays-and-the-transport-scopes",
       "bgColor": "#daeeff",
       "parent": "#ab9ysn"
@@ -47,8 +47,8 @@
     {
       "@id": "#j9h6ge",
       "name": "Direct messages",
-      "x": 484,
-      "y": 106,
+      "x": 416,
+      "y": 91,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/docs/SPEC.md#3-direct-messages-nip-17",
       "bgColor": "#daeeff",
       "parent": "#ab9ysn"
@@ -56,8 +56,8 @@
     {
       "@id": "#ejt2c7",
       "name": "Public rooms",
-      "x": 482,
-      "y": 289,
+      "x": 408,
+      "y": 245,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/docs/SPEC.md#4-public-rooms-anagram-public-groups",
       "bgColor": "#daeeff",
       "parent": "#ab9ysn"
@@ -65,8 +65,8 @@
     {
       "@id": "#tvx8v7",
       "name": "Private lists and settings",
-      "x": 255,
-      "y": 365,
+      "x": 220,
+      "y": 314,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/docs/SPEC.md#5-private-lists-and-settings",
       "bgColor": "#daeeff",
       "parent": "#ab9ysn"
@@ -74,16 +74,16 @@
     {
       "@id": "#4bfmpa",
       "name": "sections 2/2",
-      "x": -232,
-      "y": 78,
+      "x": -214,
+      "y": 72,
       "bgColor": "#febdc6",
       "parent": "#this"
     },
     {
       "@id": "#c2mpq8",
       "name": "Media",
-      "x": -146,
-      "y": 406,
+      "x": -126,
+      "y": 350,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/docs/SPEC.md#6-media",
       "bgColor": "#ffe2e6",
       "parent": "#4bfmpa"
@@ -91,8 +91,8 @@
     {
       "@id": "#yykmee",
       "name": "Double-ratchet binding",
-      "x": -379,
-      "y": 385,
+      "x": -321,
+      "y": 326,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/docs/SPEC.md#7-double-ratchet-binding-optional",
       "bgColor": "#ffe2e6",
       "parent": "#4bfmpa"
@@ -100,8 +100,8 @@
     {
       "@id": "#7kgwkb",
       "name": "Message requests, trust and policy",
-      "x": -469,
-      "y": 147,
+      "x": -403,
+      "y": 127,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/docs/SPEC.md#8-message-requests-trust-and-policy",
       "bgColor": "#ffe2e6",
       "parent": "#4bfmpa"
@@ -109,8 +109,8 @@
     {
       "@id": "#x7t4w7",
       "name": "Conformance summary",
-      "x": -584,
-      "y": -71,
+      "x": -495,
+      "y": -60,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/docs/SPEC.md#9-conformance-summary",
       "bgColor": "#ffe2e6",
       "parent": "#4bfmpa"
@@ -118,8 +118,8 @@
     {
       "@id": "#dsw684",
       "name": "Known gaps",
-      "x": -434,
-      "y": -211,
+      "x": -373,
+      "y": -181,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/docs/SPEC.md#10-known-gaps",
       "bgColor": "#ffe2e6",
       "parent": "#4bfmpa"
@@ -127,8 +127,8 @@
     {
       "@id": "#v88t4a",
       "name": "← anagram",
-      "x": -17,
-      "y": -212,
+      "x": -15,
+      "y": -195,
       "link": "./index.jsonld",
       "bgColor": "#ececec",
       "parent": "#this"

@@ -19,36 +19,45 @@
       "bgColor": "#ebc573"
     },
     {
-      "@id": "#eqxhbv",
-      "name": "exports",
-      "x": 250,
-      "y": 0,
+      "@id": "#j52mw6",
+      "name": "One bounded roster subscription for the open Auto…",
+      "x": 222,
+      "y": -65,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ndr-discovery.js#L1",
       "bgColor": "#acd5ff",
       "parent": "#this"
     },
     {
-      "@id": "#m3zt7z",
-      "name": "watchNdrCapability()",
-      "x": 500,
-      "y": 0,
-      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ndr-discovery.js#L5",
-      "bgColor": "#daeeff",
-      "parent": "#eqxhbv"
+      "@id": "#gu5n3w",
+      "name": "exports",
+      "x": 60,
+      "y": 189,
+      "bgColor": "#f3bee1",
+      "parent": "#this"
     },
     {
-      "@id": "#xzgaz8",
+      "@id": "#mukqya",
+      "name": "watchNdrCapability()",
+      "x": 111,
+      "y": 353,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ndr-discovery.js#L5",
+      "bgColor": "#fce3f3",
+      "parent": "#gu5n3w"
+    },
+    {
+      "@id": "#rdjmhy",
       "name": "54 lines",
-      "x": -125,
-      "y": 184,
+      "x": -222,
+      "y": 51,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ndr-discovery.js",
       "bgColor": "#ececec",
       "parent": "#this"
     },
     {
-      "@id": "#brfb5w",
+      "@id": "#nbjpha",
       "name": "← js",
-      "x": -125,
-      "y": -184,
+      "x": -60,
+      "y": -189,
       "link": "./src-root.jsonld",
       "bgColor": "#ececec",
       "parent": "#this"
@@ -60,16 +69,20 @@
       "end": 1
     },
     {
-      "start": 1,
+      "start": 0,
       "end": 2
     },
     {
-      "start": 0,
+      "start": 2,
       "end": 3
     },
     {
       "start": 0,
       "end": 4
+    },
+    {
+      "start": 0,
+      "end": 5
     }
   ],
   "selectedNode": 0

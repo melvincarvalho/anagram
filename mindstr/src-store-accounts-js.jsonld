@@ -20,89 +20,98 @@
     },
     {
       "@id": "#ab9ysn",
-      "name": "exports",
-      "x": 246,
-      "y": 161,
+      "name": "Accounts",
+      "x": 206,
+      "y": -87,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/accounts.js#L1",
       "bgColor": "#acd5ff",
       "parent": "#this"
     },
     {
       "@id": "#qhtzie",
-      "name": "accounts()",
-      "x": 421,
-      "y": -230,
-      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/accounts.js#L18",
-      "bgColor": "#daeeff",
-      "parent": "#ab9ysn"
+      "name": "exports",
+      "x": 18,
+      "y": 246,
+      "bgColor": "#f3bee1",
+      "parent": "#this"
     },
     {
       "@id": "#2sgmjt",
-      "name": "addingAccount()",
-      "x": 582,
-      "y": -81,
-      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/accounts.js#L19",
-      "bgColor": "#daeeff",
-      "parent": "#ab9ysn"
+      "name": "accounts",
+      "x": 375,
+      "y": 179,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/accounts.js#L18",
+      "bgColor": "#fce3f3",
+      "parent": "#qhtzie"
     },
     {
       "@id": "#j9h6ge",
-      "name": "switchAccount()",
-      "x": 485,
-      "y": 104,
-      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/accounts.js#L62",
-      "bgColor": "#daeeff",
-      "parent": "#ab9ysn"
+      "name": "addingAccount",
+      "x": 332,
+      "y": 318,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/accounts.js#L19",
+      "bgColor": "#fce3f3",
+      "parent": "#qhtzie"
     },
     {
       "@id": "#ejt2c7",
-      "name": "login()",
-      "x": 468,
-      "y": 306,
-      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/accounts.js#L70",
-      "bgColor": "#daeeff",
-      "parent": "#ab9ysn"
+      "name": "switchAccount()",
+      "x": 165,
+      "y": 337,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/accounts.js#L62",
+      "bgColor": "#fce3f3",
+      "parent": "#qhtzie"
     },
     {
       "@id": "#tvx8v7",
-      "name": "restoring()",
-      "x": 243,
-      "y": 372,
-      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/accounts.js#L90",
-      "bgColor": "#daeeff",
-      "parent": "#ab9ysn"
+      "name": "login()",
+      "x": 31,
+      "y": 424,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/accounts.js#L70",
+      "bgColor": "#fce3f3",
+      "parent": "#qhtzie"
     },
     {
       "@id": "#4bfmpa",
-      "name": "restoreSession()",
-      "x": 58,
-      "y": 499,
-      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/accounts.js#L92",
-      "bgColor": "#daeeff",
-      "parent": "#ab9ysn"
+      "name": "restoring",
+      "x": -115,
+      "y": 352,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/accounts.js#L90",
+      "bgColor": "#fce3f3",
+      "parent": "#qhtzie"
     },
     {
       "@id": "#c2mpq8",
-      "name": "logout()",
-      "x": -153,
-      "y": 405,
-      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/accounts.js#L119",
-      "bgColor": "#daeeff",
-      "parent": "#ab9ysn"
+      "name": "restoreSession()",
+      "x": -283,
+      "y": 350,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/accounts.js#L92",
+      "bgColor": "#fce3f3",
+      "parent": "#qhtzie"
     },
     {
       "@id": "#yykmee",
+      "name": "logout()",
+      "x": -346,
+      "y": 217,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/accounts.js#L119",
+      "bgColor": "#fce3f3",
+      "parent": "#qhtzie"
+    },
+    {
+      "@id": "#7kgwkb",
       "name": "137 lines",
-      "x": -249,
-      "y": 14,
+      "x": -217,
+      "y": -65,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/accounts.js",
       "bgColor": "#ececec",
       "parent": "#this"
     },
     {
-      "@id": "#7kgwkb",
+      "@id": "#x7t4w7",
       "name": "← store",
-      "x": -49,
-      "y": -208,
+      "x": -14,
+      "y": -195,
       "link": "./src-store.jsonld",
       "bgColor": "#ececec",
       "parent": "#this"
@@ -114,40 +123,44 @@
       "end": 1
     },
     {
-      "start": 1,
+      "start": 0,
       "end": 2
     },
     {
-      "start": 1,
+      "start": 2,
       "end": 3
     },
     {
-      "start": 1,
+      "start": 2,
       "end": 4
     },
     {
-      "start": 1,
+      "start": 2,
       "end": 5
     },
     {
-      "start": 1,
+      "start": 2,
       "end": 6
     },
     {
-      "start": 1,
+      "start": 2,
       "end": 7
     },
     {
-      "start": 1,
+      "start": 2,
       "end": 8
     },
     {
-      "start": 0,
+      "start": 2,
       "end": 9
     },
     {
       "start": 0,
       "end": 10
+    },
+    {
+      "start": 0,
+      "end": 11
     }
   ],
   "selectedNode": 0

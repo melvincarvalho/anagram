@@ -19,196 +19,196 @@
       "bgColor": "#ebc573"
     },
     {
-      "@id": "#x5dcei",
+      "@id": "#f2gvzm",
       "name": "exports 1/3",
-      "x": 253,
-      "y": -38,
+      "x": 252,
+      "y": -34,
       "bgColor": "#acd5ff",
       "parent": "#this"
     },
     {
-      "@id": "#uchvmk",
+      "@id": "#2y862s",
       "name": "fetchEvent()",
-      "x": 352,
-      "y": -301,
+      "x": 304,
+      "y": -261,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js#L731",
       "bgColor": "#daeeff",
-      "parent": "#x5dcei"
+      "parent": "#f2gvzm"
     },
     {
-      "@id": "#72kqt7",
+      "@id": "#8x5xg4",
       "name": "fetchContactList()",
-      "x": 506,
-      "y": -259,
+      "x": 429,
+      "y": -217,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js#L735",
       "bgColor": "#daeeff",
-      "parent": "#x5dcei"
+      "parent": "#f2gvzm"
     },
     {
-      "@id": "#vbasu4",
+      "@id": "#4qhe86",
       "name": "fetchMuteList()",
-      "x": 478,
-      "y": -126,
+      "x": 411,
+      "y": -107,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js#L749",
       "bgColor": "#daeeff",
-      "parent": "#x5dcei"
+      "parent": "#f2gvzm"
     },
     {
-      "@id": "#8gars2",
+      "@id": "#z2x7bd",
       "name": "publishMuteList()",
-      "x": 589,
-      "y": -28,
+      "x": 499,
+      "y": -22,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js#L761",
       "bgColor": "#daeeff",
-      "parent": "#x5dcei"
+      "parent": "#f2gvzm"
     },
     {
-      "@id": "#ttudn3",
-      "name": "SETTINGS_D()",
-      "x": 491,
-      "y": 79,
+      "@id": "#a22mzd",
+      "name": "SETTINGS_D",
+      "x": 422,
+      "y": 70,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js#L778",
       "bgColor": "#daeeff",
-      "parent": "#x5dcei"
+      "parent": "#f2gvzm"
     },
     {
-      "@id": "#nm9jmm",
+      "@id": "#duad9x",
       "name": "fetchSettings()",
-      "x": 536,
-      "y": 209,
+      "x": 453,
+      "y": 180,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js#L780",
       "bgColor": "#daeeff",
-      "parent": "#x5dcei"
+      "parent": "#f2gvzm"
     },
     {
-      "@id": "#fcu6nk",
+      "@id": "#m37qt3",
       "name": "exports 2/3",
-      "x": -17,
-      "y": 212,
+      "x": -19,
+      "y": 195,
       "bgColor": "#f3bee1",
       "parent": "#this"
     },
     {
-      "@id": "#im3caa",
+      "@id": "#k5nh46",
       "name": "parseSettings()",
-      "x": 281,
-      "y": 352,
+      "x": 238,
+      "y": 304,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js#L785",
       "bgColor": "#fce3f3",
-      "parent": "#fcu6nk"
+      "parent": "#m37qt3"
     },
     {
-      "@id": "#up5tww",
+      "@id": "#rqeata",
       "name": "publishSettings()",
-      "x": 193,
-      "y": 474,
+      "x": 159,
+      "y": 408,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js#L795",
       "bgColor": "#fce3f3",
-      "parent": "#fcu6nk"
+      "parent": "#m37qt3"
     },
     {
-      "@id": "#w7nqyt",
+      "@id": "#hk4piu",
       "name": "publishContactList()",
-      "x": 31,
-      "y": 424,
+      "x": 22,
+      "y": 362,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js#L806",
       "bgColor": "#fce3f3",
-      "parent": "#fcu6nk"
+      "parent": "#m37qt3"
     },
     {
-      "@id": "#csuere",
+      "@id": "#k8arpb",
       "name": "signRoomReaction()",
-      "x": -122,
-      "y": 491,
+      "x": -110,
+      "y": 415,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js#L820",
       "bgColor": "#fce3f3",
-      "parent": "#fcu6nk"
+      "parent": "#m37qt3"
     },
     {
-      "@id": "#vb2ctp",
+      "@id": "#jqh9fh",
       "name": "signRoomDeletion()",
-      "x": -222,
-      "y": 379,
+      "x": -177,
+      "y": 323,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js#L835",
       "bgColor": "#fce3f3",
-      "parent": "#fcu6nk"
+      "parent": "#m37qt3"
     },
     {
-      "@id": "#gfdcab",
+      "@id": "#t4du3j",
       "name": "sendRoomDeletion()",
-      "x": -399,
-      "y": 372,
+      "x": -354,
+      "y": 311,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js#L844",
       "bgColor": "#fce3f3",
-      "parent": "#fcu6nk"
+      "parent": "#m37qt3"
     },
     {
-      "@id": "#u3dr42",
+      "@id": "#dxtxsr",
       "name": "exports 3/3",
-      "x": -234,
-      "y": -75,
+      "x": -215,
+      "y": -70,
       "bgColor": "#f1c99c",
       "parent": "#this"
     },
     {
-      "@id": "#hjxwny",
-      "name": "DEFAULT_BLOSSOM()",
-      "x": -480,
-      "y": 119,
+      "@id": "#nmjv76",
+      "name": "DEFAULT_BLOSSOM",
+      "x": -414,
+      "y": 98,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js#L850",
       "bgColor": "#fbe8d3",
-      "parent": "#u3dr42"
+      "parent": "#dxtxsr"
     },
     {
-      "@id": "#u49sh5",
+      "@id": "#mjdvee",
       "name": "normalizeBlossomServer()",
-      "x": -590,
-      "y": 5,
+      "x": -500,
+      "y": 0,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js#L854",
       "bgColor": "#fbe8d3",
-      "parent": "#u3dr42"
+      "parent": "#dxtxsr"
     },
     {
-      "@id": "#xdk3d5",
+      "@id": "#d6tkb9",
       "name": "uploadBlossom()",
-      "x": -483,
-      "y": -110,
+      "x": -414,
+      "y": -98,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js#L865",
       "bgColor": "#fbe8d3",
-      "parent": "#u3dr42"
+      "parent": "#dxtxsr"
     },
     {
-      "@id": "#f4wxnt",
+      "@id": "#tefhrg",
       "name": "deleteBlossom()",
-      "x": -515,
-      "y": -244,
+      "x": -436,
+      "y": -207,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js#L906",
       "bgColor": "#fbe8d3",
-      "parent": "#u3dr42"
+      "parent": "#dxtxsr"
     },
     {
-      "@id": "#izya3w",
+      "@id": "#qmxg97",
       "name": "uploadsOf()",
-      "x": -364,
-      "y": -291,
+      "x": -313,
+      "y": -252,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js#L932",
       "bgColor": "#fbe8d3",
-      "parent": "#u3dr42"
+      "parent": "#dxtxsr"
     },
     {
-      "@id": "#wpzfj8",
+      "@id": "#g4d8c6",
       "name": "enableAuth()",
-      "x": -319,
-      "y": -422,
+      "x": -270,
+      "y": -358,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js#L943",
       "bgColor": "#fbe8d3",
-      "parent": "#u3dr42"
+      "parent": "#dxtxsr"
     },
     {
-      "@id": "#fdyzb2",
+      "@id": "#yzue8k",
       "name": "← nostr.js",
-      "x": 28,
-      "y": -211,
+      "x": 25,
+      "y": -194,
       "link": "./src-nostr-js.jsonld",
       "bgColor": "#ececec",
       "parent": "#this"

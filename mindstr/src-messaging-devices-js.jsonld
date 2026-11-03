@@ -19,36 +19,45 @@
       "bgColor": "#ebc573"
     },
     {
-      "@id": "#qhb5iq",
-      "name": "exports",
-      "x": 250,
-      "y": 0,
+      "@id": "#ttvgv4",
+      "name": "Read-only Settings view",
+      "x": 247,
+      "y": -51,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/messaging-devices.js#L1",
       "bgColor": "#acd5ff",
       "parent": "#this"
     },
     {
-      "@id": "#nvqaxu",
-      "name": "loadMessagingDevices()",
-      "x": 500,
-      "y": 0,
-      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/messaging-devices.js#L6",
-      "bgColor": "#daeeff",
-      "parent": "#qhb5iq"
+      "@id": "#g5xqe3",
+      "name": "exports",
+      "x": 60,
+      "y": 189,
+      "bgColor": "#f3bee1",
+      "parent": "#this"
     },
     {
-      "@id": "#9n2fi8",
+      "@id": "#cvkstp",
+      "name": "loadMessagingDevices()",
+      "x": 111,
+      "y": 353,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/messaging-devices.js#L6",
+      "bgColor": "#fce3f3",
+      "parent": "#g5xqe3"
+    },
+    {
+      "@id": "#jw6hux",
       "name": "37 lines",
-      "x": -125,
-      "y": 184,
+      "x": -222,
+      "y": 51,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/messaging-devices.js",
       "bgColor": "#ececec",
       "parent": "#this"
     },
     {
-      "@id": "#27czbt",
+      "@id": "#ueruwd",
       "name": "← js",
-      "x": -125,
-      "y": -184,
+      "x": -60,
+      "y": -189,
       "link": "./src-root.jsonld",
       "bgColor": "#ececec",
       "parent": "#this"
@@ -60,16 +69,20 @@
       "end": 1
     },
     {
-      "start": 1,
+      "start": 0,
       "end": 2
     },
     {
-      "start": 0,
+      "start": 2,
       "end": 3
     },
     {
       "start": 0,
       "end": 4
+    },
+    {
+      "start": 0,
+      "end": 5
     }
   ],
   "selectedNode": 0

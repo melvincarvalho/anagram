@@ -19,37 +19,37 @@
       "bgColor": "#ebc573"
     },
     {
-      "@id": "#nac2qv",
+      "@id": "#z9jayy",
       "name": "store/ · 9 ›",
-      "x": 241,
-      "y": -55,
+      "x": 222,
+      "y": -51,
       "link": "./src-store.jsonld",
       "bgColor": "#acd5ff",
       "parent": "#this"
     },
     {
-      "@id": "#jgxjap",
+      "@id": "#7c6syt",
       "name": "ui/ · 13 ›",
-      "x": 65,
-      "y": 205,
+      "x": 60,
+      "y": 189,
       "link": "./src-ui.jsonld",
       "bgColor": "#f3bee1",
       "parent": "#this"
     },
     {
-      "@id": "#a2eq5j",
+      "@id": "#attg7q",
       "name": "js/*.js · 9 ›",
-      "x": -241,
-      "y": 55,
+      "x": -222,
+      "y": 51,
       "link": "./src-root.jsonld",
       "bgColor": "#f1c99c",
       "parent": "#this"
     },
     {
-      "@id": "#wgv26u",
+      "@id": "#rf2fdu",
       "name": "← anagram",
-      "x": -65,
-      "y": -205,
+      "x": -60,
+      "y": -189,
       "link": "./index.jsonld",
       "bgColor": "#ececec",
       "parent": "#this"

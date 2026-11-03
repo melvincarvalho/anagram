@@ -19,152 +19,152 @@
       "bgColor": "#ebc573"
     },
     {
-      "@id": "#3vjzm2",
+      "@id": "#9bysfh",
       "name": "exports 1/2",
-      "x": 299,
-      "y": 70,
+      "x": 280,
+      "y": 66,
       "bgColor": "#acd5ff",
       "parent": "#this"
     },
     {
-      "@id": "#6wz95i",
-      "name": "html()",
-      "x": 389,
-      "y": -267,
+      "@id": "#cyd9xx",
+      "name": "html",
+      "x": 335,
+      "y": -229,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/common.js#L11",
       "bgColor": "#daeeff",
-      "parent": "#3vjzm2"
+      "parent": "#9bysfh"
     },
     {
-      "@id": "#mkijzp",
+      "@id": "#bvsynb",
       "name": "Avatar()",
-      "x": 551,
-      "y": -178,
+      "x": 467,
+      "y": -151,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/common.js#L13",
       "bgColor": "#daeeff",
-      "parent": "#3vjzm2"
+      "parent": "#9bysfh"
     },
     {
-      "@id": "#wm3fr8",
+      "@id": "#xintwj",
       "name": "openProfile()",
-      "x": 499,
-      "y": -20,
+      "x": 430,
+      "y": -18,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/common.js#L26",
       "bgColor": "#daeeff",
-      "parent": "#3vjzm2"
+      "parent": "#9bysfh"
     },
     {
-      "@id": "#xx6ai9",
+      "@id": "#yhbdjy",
       "name": "takeInfoOnArrival()",
-      "x": 569,
-      "y": 134,
+      "x": 482,
+      "y": 113,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/common.js#L33",
       "bgColor": "#daeeff",
-      "parent": "#3vjzm2"
+      "parent": "#9bysfh"
     },
     {
-      "@id": "#t5gcp9",
-      "name": "viewer()",
-      "x": 416,
-      "y": 235,
+      "@id": "#hgctui",
+      "name": "viewer",
+      "x": 358,
+      "y": 203,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/common.js#L39",
       "bgColor": "#daeeff",
-      "parent": "#3vjzm2"
+      "parent": "#9bysfh"
     },
     {
-      "@id": "#wdgxta",
-      "name": "infoOpen()",
-      "x": 366,
-      "y": 394,
+      "@id": "#vz6dbr",
+      "name": "infoOpen",
+      "x": 310,
+      "y": 334,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/common.js#L40",
       "bgColor": "#daeeff",
-      "parent": "#3vjzm2"
+      "parent": "#9bysfh"
     },
     {
-      "@id": "#4pcagq",
-      "name": "forwarding()",
-      "x": 173,
-      "y": 399,
+      "@id": "#ecv4rb",
+      "name": "forwarding",
+      "x": 149,
+      "y": 343,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/common.js#L41",
       "bgColor": "#daeeff",
-      "parent": "#3vjzm2"
+      "parent": "#9bysfh"
     },
     {
-      "@id": "#5b4mbz",
+      "@id": "#57jxgj",
       "name": "exports 2/2",
-      "x": -298,
-      "y": 72,
+      "x": -279,
+      "y": 68,
       "bgColor": "#febdc6",
       "parent": "#this"
     },
     {
-      "@id": "#6kbx7u",
-      "name": "theme()",
-      "x": -182,
-      "y": 396,
+      "@id": "#ttdvnf",
+      "name": "theme",
+      "x": -157,
+      "y": 340,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/common.js#L52",
       "bgColor": "#ffe2e6",
-      "parent": "#5b4mbz"
+      "parent": "#57jxgj"
     },
     {
-      "@id": "#9bysfh",
+      "@id": "#pehema",
       "name": "isDark()",
-      "x": -371,
-      "y": 390,
+      "x": -314,
+      "y": 330,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/common.js#L53",
       "bgColor": "#ffe2e6",
-      "parent": "#5b4mbz"
+      "parent": "#57jxgj"
     },
     {
-      "@id": "#cyd9xx",
+      "@id": "#csimu2",
       "name": "setTheme()",
-      "x": -417,
-      "y": 234,
+      "x": -359,
+      "y": 202,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/common.js#L54",
       "bgColor": "#ffe2e6",
-      "parent": "#5b4mbz"
+      "parent": "#57jxgj"
     },
     {
-      "@id": "#bvsynb",
-      "name": "chatSearch()",
-      "x": -567,
-      "y": 138,
+      "@id": "#y2vgqr",
+      "name": "chatSearch",
+      "x": -481,
+      "y": 117,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/common.js#L70",
       "bgColor": "#ffe2e6",
-      "parent": "#5b4mbz"
+      "parent": "#57jxgj"
     },
     {
-      "@id": "#xintwj",
-      "name": "focusMessage()",
-      "x": -500,
-      "y": -12,
+      "@id": "#nb2pv3",
+      "name": "focusMessage",
+      "x": -430,
+      "y": -11,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/common.js#L71",
       "bgColor": "#ffe2e6",
-      "parent": "#5b4mbz"
+      "parent": "#57jxgj"
     },
     {
-      "@id": "#yhbdjy",
+      "@id": "#gb9vd3",
       "name": "nameColor()",
-      "x": -557,
-      "y": -165,
+      "x": -472,
+      "y": -140,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/common.js#L75",
       "bgColor": "#ffe2e6",
-      "parent": "#5b4mbz"
+      "parent": "#57jxgj"
     },
     {
-      "@id": "#hgctui",
+      "@id": "#85n9f9",
       "name": "clock()",
-      "x": -400,
-      "y": -254,
+      "x": -344,
+      "y": -219,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/common.js#L77",
       "bgColor": "#ffe2e6",
-      "parent": "#5b4mbz"
+      "parent": "#57jxgj"
     },
     {
-      "@id": "#vz6dbr",
+      "@id": "#59pd9r",
       "name": "← common.js",
-      "x": -6,
-      "y": -212,
+      "x": -5,
+      "y": -195,
       "link": "./src-ui-common-js.jsonld",
       "bgColor": "#ececec",
       "parent": "#this"

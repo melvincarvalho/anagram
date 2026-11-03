@@ -19,134 +19,134 @@
       "bgColor": "#ebc573"
     },
     {
-      "@id": "#dguykc",
+      "@id": "#j6zbf9",
       "name": "exports 1/2",
-      "x": 248,
-      "y": 44,
+      "x": 247,
+      "y": 41,
       "bgColor": "#acd5ff",
       "parent": "#this"
     },
     {
-      "@id": "#28eue2",
+      "@id": "#2z3p7w",
       "name": "beginSession()",
-      "x": 392,
-      "y": -264,
+      "x": 337,
+      "y": -227,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/prefs.js#L16",
       "bgColor": "#daeeff",
-      "parent": "#dguykc"
+      "parent": "#j6zbf9"
     },
     {
-      "@id": "#f4n9qu",
+      "@id": "#pvzwd8",
       "name": "load()",
-      "x": 560,
-      "y": -157,
+      "x": 475,
+      "y": -133,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/prefs.js#L20",
       "bgColor": "#daeeff",
-      "parent": "#dguykc"
+      "parent": "#j6zbf9"
     },
     {
-      "@id": "#krwt6e",
+      "@id": "#57iy7q",
       "name": "reset()",
-      "x": 500,
-      "y": 14,
+      "x": 430,
+      "y": 12,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/prefs.js#L31",
       "bgColor": "#daeeff",
-      "parent": "#dguykc"
+      "parent": "#j6zbf9"
     },
     {
-      "@id": "#emecna",
+      "@id": "#qprvms",
       "name": "sync()",
-      "x": 547,
-      "y": 189,
+      "x": 463,
+      "y": 160,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/prefs.js#L97",
       "bgColor": "#daeeff",
-      "parent": "#dguykc"
+      "parent": "#j6zbf9"
     },
     {
-      "@id": "#u8v9bw",
-      "name": "hidden()",
-      "x": 370,
-      "y": 286,
+      "@id": "#7fucmt",
+      "name": "hidden",
+      "x": 318,
+      "y": 246,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/prefs.js#L147",
       "bgColor": "#daeeff",
-      "parent": "#dguykc"
+      "parent": "#j6zbf9"
     },
     {
-      "@id": "#j6zbf9",
+      "@id": "#t922yq",
       "name": "isHidden()",
-      "x": 273,
-      "y": 444,
+      "x": 232,
+      "y": 377,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/prefs.js#L148",
       "bgColor": "#daeeff",
-      "parent": "#dguykc"
+      "parent": "#j6zbf9"
     },
     {
-      "@id": "#2z3p7w",
+      "@id": "#26rfi6",
       "name": "exports 2/2",
-      "x": -228,
-      "y": 86,
+      "x": -210,
+      "y": 80,
       "bgColor": "#febdc6",
       "parent": "#this"
     },
     {
-      "@id": "#pvzwd8",
+      "@id": "#u28rkq",
       "name": "hideMessage()",
-      "x": -134,
-      "y": 409,
+      "x": -116,
+      "y": 352,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/prefs.js#L164",
       "bgColor": "#ffe2e6",
-      "parent": "#2z3p7w"
+      "parent": "#26rfi6"
     },
     {
-      "@id": "#57iy7q",
+      "@id": "#varvfj",
       "name": "isPinned()",
-      "x": -345,
-      "y": 407,
+      "x": -292,
+      "y": 345,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/prefs.js#L174",
       "bgColor": "#ffe2e6",
-      "parent": "#2z3p7w"
+      "parent": "#26rfi6"
     },
     {
-      "@id": "#qprvms",
+      "@id": "#ucttef",
       "name": "isMuted()",
-      "x": -414,
-      "y": 238,
+      "x": -356,
+      "y": 205,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/prefs.js#L175",
       "bgColor": "#ffe2e6",
-      "parent": "#2z3p7w"
+      "parent": "#26rfi6"
     },
     {
-      "@id": "#7fucmt",
+      "@id": "#vzipyd",
       "name": "togglePinned()",
-      "x": -573,
-      "y": 121,
+      "x": -485,
+      "y": 102,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/prefs.js#L186",
       "bgColor": "#ffe2e6",
-      "parent": "#2z3p7w"
+      "parent": "#26rfi6"
     },
     {
-      "@id": "#t922yq",
+      "@id": "#miy6ts",
       "name": "toggleMuted()",
-      "x": -497,
-      "y": -46,
+      "x": -427,
+      "y": -40,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/prefs.js#L187",
       "bgColor": "#ffe2e6",
-      "parent": "#2z3p7w"
+      "parent": "#26rfi6"
     },
     {
-      "@id": "#26rfi6",
+      "@id": "#ft3k8u",
       "name": "setDraft()",
-      "x": -528,
-      "y": -223,
+      "x": -448,
+      "y": -189,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/prefs.js#L192",
       "bgColor": "#ffe2e6",
-      "parent": "#2z3p7w"
+      "parent": "#26rfi6"
     },
     {
-      "@id": "#u28rkq",
+      "@id": "#it6792",
       "name": "← prefs.js",
-      "x": -26,
-      "y": -211,
+      "x": -24,
+      "y": -194,
       "link": "./src-store-prefs-js.jsonld",
       "bgColor": "#ececec",
       "parent": "#this"

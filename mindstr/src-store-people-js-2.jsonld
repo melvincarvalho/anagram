@@ -19,169 +19,169 @@
       "bgColor": "#ebc573"
     },
     {
-      "@id": "#ba2cgp",
+      "@id": "#t6q67m",
       "name": "exports 1/3",
-      "x": 257,
-      "y": -43,
+      "x": 258,
+      "y": -39,
       "bgColor": "#acd5ff",
       "parent": "#this"
     },
     {
-      "@id": "#h7ym9k",
+      "@id": "#abq85r",
       "name": "resolveDid()",
-      "x": 359,
-      "y": -296,
+      "x": 309,
+      "y": -254,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/people.js#L217",
       "bgColor": "#daeeff",
-      "parent": "#ba2cgp"
+      "parent": "#t6q67m"
     },
     {
-      "@id": "#ius84b",
-      "name": "nip05Verified()",
-      "x": 521,
-      "y": -235,
+      "@id": "#sy2ncx",
+      "name": "nip05Verified",
+      "x": 442,
+      "y": -199,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/people.js#L241",
       "bgColor": "#daeeff",
-      "parent": "#ba2cgp"
+      "parent": "#t6q67m"
     },
     {
-      "@id": "#583aqh",
+      "@id": "#fertai",
       "name": "verifyNip05Now()",
-      "x": 490,
-      "y": -86,
+      "x": 421,
+      "y": -73,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/people.js#L248",
       "bgColor": "#daeeff",
-      "parent": "#ba2cgp"
+      "parent": "#t6q67m"
     },
     {
-      "@id": "#sbf4ee",
+      "@id": "#9u36xp",
       "name": "verifiedNip05()",
-      "x": 588,
-      "y": 40,
+      "x": 498,
+      "y": 35,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/people.js#L257",
       "bgColor": "#daeeff",
-      "parent": "#ba2cgp"
+      "parent": "#t6q67m"
     },
     {
-      "@id": "#t6q67m",
+      "@id": "#5q2nc4",
       "name": "nip05State()",
-      "x": 467,
-      "y": 151,
+      "x": 402,
+      "y": 131,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/people.js#L267",
       "bgColor": "#daeeff",
-      "parent": "#ba2cgp"
+      "parent": "#t6q67m"
     },
     {
-      "@id": "#abq85r",
+      "@id": "#eegh3a",
       "name": "exports 2/3",
       "x": 1,
-      "y": 212,
+      "y": 195,
       "bgColor": "#f3bee1",
       "parent": "#this"
     },
     {
-      "@id": "#sy2ncx",
+      "@id": "#tmtdcb",
       "name": "saveProfile()",
-      "x": 294,
-      "y": 343,
+      "x": 253,
+      "y": 296,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/people.js#L277",
       "bgColor": "#fce3f3",
-      "parent": "#abq85r"
+      "parent": "#eegh3a"
     },
     {
-      "@id": "#fertai",
+      "@id": "#ziixui",
       "name": "setUpNewAccount()",
-      "x": 188,
-      "y": 475,
+      "x": 159,
+      "y": 406,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/people.js#L299",
       "bgColor": "#fce3f3",
-      "parent": "#abq85r"
+      "parent": "#eegh3a"
     },
     {
-      "@id": "#9u36xp",
+      "@id": "#qnf7j2",
       "name": "publishDefaultInbox()",
-      "x": 1,
-      "y": 425,
+      "x": 2,
+      "y": 361,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/people.js#L303",
       "bgColor": "#fce3f3",
-      "parent": "#abq85r"
+      "parent": "#eegh3a"
     },
     {
-      "@id": "#5q2nc4",
+      "@id": "#rx55k2",
       "name": "saveInboxRelays()",
-      "x": -185,
-      "y": 476,
+      "x": -154,
+      "y": 405,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/people.js#L309",
       "bgColor": "#fce3f3",
-      "parent": "#abq85r"
+      "parent": "#eegh3a"
     },
     {
-      "@id": "#eegh3a",
-      "name": "relayDirectory()",
-      "x": -292,
-      "y": 345,
+      "@id": "#ux93wm",
+      "name": "relayDirectory",
+      "x": -249,
+      "y": 298,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/people.js#L323",
       "bgColor": "#fce3f3",
-      "parent": "#abq85r"
+      "parent": "#eegh3a"
     },
     {
-      "@id": "#tmtdcb",
+      "@id": "#a464iu",
       "name": "exports 3/3",
       "x": -258,
-      "y": -48,
+      "y": -43,
       "bgColor": "#f1c99c",
       "parent": "#this"
     },
     {
-      "@id": "#ziixui",
+      "@id": "#simp87",
       "name": "loadRelayDirectory()",
-      "x": -469,
-      "y": 146,
+      "x": -402,
+      "y": 129,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/people.js#L324",
       "bgColor": "#fbe8d3",
-      "parent": "#tmtdcb"
+      "parent": "#a464iu"
     },
     {
-      "@id": "#qnf7j2",
+      "@id": "#tzmucf",
       "name": "addContact()",
-      "x": -589,
-      "y": 27,
+      "x": -499,
+      "y": 26,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/people.js#L353",
       "bgColor": "#fbe8d3",
-      "parent": "#tmtdcb"
+      "parent": "#a464iu"
     },
     {
-      "@id": "#rx55k2",
-      "name": "conversations()",
-      "x": -486,
-      "y": -100,
+      "@id": "#xmtzgz",
+      "name": "conversations",
+      "x": -419,
+      "y": -83,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/people.js#L374",
       "bgColor": "#fbe8d3",
-      "parent": "#tmtdcb"
+      "parent": "#a464iu"
     },
     {
-      "@id": "#ux93wm",
-      "name": "chatList()",
-      "x": -510,
-      "y": -252,
+      "@id": "#b9snuz",
+      "name": "chatList",
+      "x": -434,
+      "y": -211,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/people.js#L383",
       "bgColor": "#fbe8d3",
-      "parent": "#tmtdcb"
+      "parent": "#a464iu"
     },
     {
-      "@id": "#a464iu",
-      "name": "requests()",
-      "x": -342,
-      "y": -310,
+      "@id": "#nxqgmq",
+      "name": "requests",
+      "x": -296,
+      "y": -265,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/people.js#L384",
       "bgColor": "#fbe8d3",
-      "parent": "#tmtdcb"
+      "parent": "#a464iu"
     },
     {
-      "@id": "#simp87",
+      "@id": "#dguykc",
       "name": "← people.js",
-      "x": 7,
-      "y": -212,
+      "x": 6,
+      "y": -195,
       "link": "./src-store-people-js.jsonld",
       "bgColor": "#ececec",
       "parent": "#this"

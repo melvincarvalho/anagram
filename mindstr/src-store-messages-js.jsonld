@@ -19,37 +19,46 @@
       "bgColor": "#ebc573"
     },
     {
-      "@id": "#r8zm2z",
-      "name": "exports 1–15 of 29 ›",
-      "x": 241,
-      "y": -55,
-      "link": "./src-store-messages-js-1.jsonld",
+      "@id": "#urtpxv",
+      "name": "Message plumbing shared by DMs and rooms",
+      "x": 210,
+      "y": -80,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/messages.js#L1",
       "bgColor": "#acd5ff",
       "parent": "#this"
     },
     {
-      "@id": "#wzv4c3",
-      "name": "exports 16–29 of 29 ›",
-      "x": 65,
-      "y": 205,
-      "link": "./src-store-messages-js-2.jsonld",
-      "bgColor": "#f3bee1",
+      "@id": "#4dg5c4",
+      "name": "exports 1–15 of 29 ›",
+      "x": 154,
+      "y": 145,
+      "link": "./src-store-messages-js-1.jsonld",
+      "bgColor": "#e9c1ef",
       "parent": "#this"
     },
     {
-      "@id": "#7fnz2s",
+      "@id": "#kwm3he",
+      "name": "exports 16–29 of 29 ›",
+      "x": -115,
+      "y": 169,
+      "link": "./src-store-messages-js-2.jsonld",
+      "bgColor": "#fec0b1",
+      "parent": "#this"
+    },
+    {
+      "@id": "#qvd9cw",
       "name": "385 lines",
-      "x": -241,
-      "y": 55,
+      "x": -225,
+      "y": -41,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/store/messages.js",
       "bgColor": "#ececec",
       "parent": "#this"
     },
     {
-      "@id": "#p89exh",
+      "@id": "#sf37xb",
       "name": "← store",
-      "x": -65,
-      "y": -205,
+      "x": -24,
+      "y": -194,
       "link": "./src-store.jsonld",
       "bgColor": "#ececec",
       "parent": "#this"
@@ -71,6 +80,10 @@
     {
       "start": 0,
       "end": 4
+    },
+    {
+      "start": 0,
+      "end": 5
     }
   ],
   "selectedNode": 0

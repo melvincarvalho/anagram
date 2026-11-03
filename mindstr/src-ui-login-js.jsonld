@@ -19,36 +19,45 @@
       "bgColor": "#ebc573"
     },
     {
-      "@id": "#a9fnph",
-      "name": "exports",
-      "x": 250,
-      "y": 0,
+      "@id": "#cvh8ee",
+      "name": "The signed-out screen",
+      "x": 222,
+      "y": -51,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/login.js#L1",
       "bgColor": "#acd5ff",
       "parent": "#this"
     },
     {
-      "@id": "#yyu7jz",
-      "name": "Login()",
-      "x": 500,
-      "y": 0,
-      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/login.js#L9",
-      "bgColor": "#daeeff",
-      "parent": "#a9fnph"
+      "@id": "#3xd5xn",
+      "name": "exports",
+      "x": 60,
+      "y": 189,
+      "bgColor": "#f3bee1",
+      "parent": "#this"
     },
     {
-      "@id": "#wkrebf",
+      "@id": "#jingvu",
+      "name": "Login()",
+      "x": 111,
+      "y": 353,
+      "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/login.js#L9",
+      "bgColor": "#fce3f3",
+      "parent": "#3xd5xn"
+    },
+    {
+      "@id": "#u9rrt3",
       "name": "116 lines",
-      "x": -125,
-      "y": 184,
+      "x": -222,
+      "y": 51,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/js/ui/login.js",
       "bgColor": "#ececec",
       "parent": "#this"
     },
     {
-      "@id": "#bu5bte",
+      "@id": "#kgvapt",
       "name": "← ui",
-      "x": -125,
-      "y": -184,
+      "x": -60,
+      "y": -189,
       "link": "./src-ui.jsonld",
       "bgColor": "#ececec",
       "parent": "#this"
@@ -60,16 +69,20 @@
       "end": 1
     },
     {
-      "start": 1,
+      "start": 0,
       "end": 2
     },
     {
-      "start": 0,
+      "start": 2,
       "end": 3
     },
     {
       "start": 0,
       "end": 4
+    },
+    {
+      "start": 0,
+      "end": 5
     }
   ],
   "selectedNode": 0
