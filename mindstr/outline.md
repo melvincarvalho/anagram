@@ -1,6 +1,6 @@
 # [anagram](https://github.com/melvincarvalho/anagram)
 
-- [README · 5](https://github.com/melvincarvalho/anagram/blob/gh-pages/README.md#anagram-lite)
+- [README](https://github.com/melvincarvalho/anagram/blob/gh-pages/README.md#anagram-lite)
   - [Transport](https://github.com/melvincarvalho/anagram/blob/gh-pages/README.md#transport)
   - [Interoperability](https://github.com/melvincarvalho/anagram/blob/gh-pages/README.md#interoperability)
   - [Privacy](https://github.com/melvincarvalho/anagram/blob/gh-pages/README.md#privacy)
@@ -517,7 +517,5 @@
         - [944 lines](https://github.com/melvincarvalho/anagram/blob/gh-pages/js/nostr.js)
 - [Open PRs · 1](https://github.com/melvincarvalho/anagram/pulls)
   - [#3 Protect private delivery and peer d…](https://github.com/melvincarvalho/anagram/pull/3)
-- [Anagram lite: Preact Nostr DMs + public roo…](https://github.com/melvincarvalho/anagram)
-  - [103 commits, 2026-10-19 to 2026-11-03](https://github.com/melvincarvalho/anagram/commits/gh-pages)
-  - branches: gh-pages, pr3
-  - [1 stars](https://github.com/melvincarvalho/anagram/stargazers)
+- [Anagram lite: Preact Nostr DMs + public rooms,…](https://github.com/melvincarvalho/anagram)
+  - [since Oct 2026 · last 21 Oct 2026](https://github.com/melvincarvalho/anagram/commits/gh-pages)

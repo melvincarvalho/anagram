@@ -20,9 +20,9 @@
     },
     {
       "@id": "#skzt29",
-      "name": "README · 5",
-      "x": 248,
-      "y": -29,
+      "name": "README",
+      "x": 250,
+      "y": -12,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/README.md#anagram-lite",
       "bgColor": "#acd5ff",
       "parent": "#this"
@@ -30,8 +30,8 @@
     {
       "@id": "#t4pwzt",
       "name": "Transport",
-      "x": 364,
-      "y": -291,
+      "x": 373,
+      "y": -283,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/README.md#transport",
       "bgColor": "#daeeff",
       "parent": "#skzt29"
@@ -39,8 +39,8 @@
     {
       "@id": "#jhaa84",
       "name": "Interoperability",
-      "x": 528,
-      "y": -223,
+      "x": 541,
+      "y": -200,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/README.md#interoperability",
       "bgColor": "#daeeff",
       "parent": "#skzt29"
@@ -48,8 +48,8 @@
     {
       "@id": "#wavvy9",
       "name": "Privacy",
-      "x": 493,
-      "y": -71,
+      "x": 498,
+      "y": -39,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/README.md#privacy",
       "bgColor": "#daeeff",
       "parent": "#skzt29"
@@ -57,8 +57,8 @@
     {
       "@id": "#i9w3v4",
       "name": "Run",
-      "x": 585,
-      "y": 63,
+      "x": 575,
+      "y": 113,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/README.md#run",
       "bgColor": "#daeeff",
       "parent": "#skzt29"
@@ -66,8 +66,8 @@
     {
       "@id": "#e9sufn",
       "name": "Double-ratchet messaging",
-      "x": 450,
-      "y": 185,
+      "x": 418,
+      "y": 234,
       "link": "https://github.com/melvincarvalho/anagram/blob/gh-pages/README.md#double-ratchet-messaging",
       "bgColor": "#daeeff",
       "parent": "#skzt29"
@@ -75,16 +75,16 @@
     {
       "@id": "#g45zx9",
       "name": "Docs · 1",
-      "x": 74,
-      "y": 203,
+      "x": 24,
+      "y": 211,
       "bgColor": "#e9c1ef",
       "parent": "#this"
     },
     {
       "@id": "#vz8rhu",
       "name": "SPEC.md · 10 ›",
-      "x": 148,
-      "y": 406,
+      "x": 49,
+      "y": 423,
       "link": "./doc-spec.jsonld",
       "bgColor": "#f7e4f9",
       "parent": "#g45zx9"
@@ -92,8 +92,8 @@
     {
       "@id": "#35gtrs",
       "name": "Source · js/ · 31 files ›",
-      "x": -159,
-      "y": 164,
+      "x": -207,
+      "y": 119,
       "link": "./src.jsonld",
       "bgColor": "#fec0b1",
       "parent": "#this"
@@ -101,8 +101,8 @@
     {
       "@id": "#fiqrfa",
       "name": "Open PRs · 1",
-      "x": -249,
-      "y": -23,
+      "x": -222,
+      "y": -98,
       "link": "https://github.com/melvincarvalho/anagram/pulls",
       "bgColor": "#d7d59b",
       "parent": "#this"
@@ -110,44 +110,27 @@
     {
       "@id": "#fad69b",
       "name": "#3 Protect private delivery and peer d…",
-      "x": -497,
-      "y": -45,
+      "x": -443,
+      "y": -197,
       "link": "https://github.com/melvincarvalho/anagram/pull/3",
       "bgColor": "#eeedd3",
       "parent": "#fiqrfa"
     },
     {
       "@id": "#fnrzmm",
-      "name": "Anagram lite: Preact Nostr DMs + public roo…",
-      "x": -55,
-      "y": -207,
+      "name": "Anagram lite: Preact Nostr DMs + public rooms,…",
+      "x": -3,
+      "y": -212,
       "link": "https://github.com/melvincarvalho/anagram",
       "bgColor": "#ececec",
       "parent": "#this"
     },
     {
       "@id": "#3y3s3p",
-      "name": "103 commits, 2026-10-19 to 2026-11-03",
-      "x": -270,
-      "y": -358,
+      "name": "since Oct 2026 · last 21 Oct 2026",
+      "x": -7,
+      "y": -425,
       "link": "https://github.com/melvincarvalho/anagram/commits/gh-pages",
-      "bgColor": "#ececec",
-      "parent": "#fnrzmm"
-    },
-    {
-      "@id": "#ujs2ci",
-      "name": "branches: gh-pages, pr3",
-      "x": -60,
-      "y": -499,
-      "bgColor": "#ececec",
-      "parent": "#fnrzmm"
-    },
-    {
-      "@id": "#442pm7",
-      "name": "1 stars",
-      "x": 121,
-      "y": -412,
-      "link": "https://github.com/melvincarvalho/anagram/stargazers",
       "bgColor": "#ececec",
       "parent": "#fnrzmm"
     }
@@ -204,14 +187,6 @@
     {
       "start": 12,
       "end": 13
-    },
-    {
-      "start": 12,
-      "end": 14
-    },
-    {
-      "start": 12,
-      "end": 15
     }
   ],
   "selectedNode": 0
