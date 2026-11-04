@@ -9,7 +9,6 @@ import { clearedAt, dms, me, notify, storage } from './core.js';
 import { emitIncoming, isHidden } from './prefs.js';
 import { addContact, isBlocked, requestProfiles } from './people.js';
 import { addMessages, addReactions, applyDeletions, current, isMessageDeleted, markSent, reactionTarget, removeMessage, rootId, setStatus } from './messages.js';
-import { inboxOf } from './dms.js';
 
 export function beginSession() {
   historyReady = new Promise((resolve) => { resolveHistory = resolve; });
@@ -234,11 +233,11 @@ export function startNdr() {
         return () => sub.close();
       },
       fetch: (filter) => transport.queryConfirmed('ndr', filter),
-      publish: async (event, context) => {
-        const recipient = context?.recipientOwnerPubkey;
-        const extra = recipient ? await inboxOf(recipient) : [];
+      publish: async (event) => {
         if (!active()) throw new Error('Account changed');
-        return transport.publish({ ndr: true, relays: extra }, event, signer);
+        // Registration and discovery use this same shared set. A private send
+        // must not look up a peer's relay list on the account's receiving pool.
+        return transport.publish('ndr', event, signer);
       },
       receive: async (event, peer) => {
         if (!active()) throw new Error('Account changed');
